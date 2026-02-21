@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Environment variables (IMPORTANT — มี keys อยู่)
+.env
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Debug & temp
+scraper/debug-*.js
+*.log
+
+# IDE
+.vscode/
+.idea/

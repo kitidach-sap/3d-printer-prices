@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Printer Prices — Compare & Find Best Deals</title>
+  <meta name="description"
+    content="Compare 3D printer prices from Amazon. Find the best deals on FDM printers, resin printers, filaments, and accessories.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Google AdSense — replace ca-pub-XXXXXXXXXXXXXXXX with your publisher ID -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX"
+    crossorigin="anonymous"></script>
+</head>
+
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-content">
+      <div class="logo">
+        <span class="logo-icon">🖨️</span>
+        <div>
+          <h1>3D Printer Prices</h1>
+          <p class="tagline">Compare Amazon deals on 3D printers & accessories</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="theme-toggle" class="btn-icon" aria-label="Toggle theme">🌙</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Ad: Top Banner (Leaderboard 728x90) -->
+  <div class="ad-container ad-banner">
+    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+      data-ad-slot="TOP_BANNER_SLOT" data-ad-format="horizontal" data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  </div>
+
+  <!-- Stats Bar -->
+  <section class="stats-bar" id="stats-bar">
+    <div class="stat-card">
+      <span class="stat-value" id="stat-total">—</span>
+      <span class="stat-label">Total Products</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value" id="stat-printers">—</span>
+      <span class="stat-label">3D Printers</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value" id="stat-filament">—</span>
+      <span class="stat-label">Filaments</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value" id="stat-brands">—</span>
+      <span class="stat-label">Brands</span>
+    </div>
+  </section>
+
+  <!-- Use-Case Chips -->
+  <section class="use-cases" id="use-cases">
+    <div class="use-case-row">
+      <span class="uc-label">Quick filter:</span>
+      <button class="use-case-chip" data-filter='{"category":"3d_printer","max_price":"300"}'>🎮 Hobby &
+        Beginner</button>
+      <button class="use-case-chip" data-filter='{"category":"3d_printer","min_price":"300"}'>🏗️ Pro
+        Prototyping</button>
+      <button class="use-case-chip" data-filter='{"category":"3d_printer","search":"resin"}'>🎨 Miniatures &
+        Detail</button>
+      <button class="use-case-chip" data-filter='{"category":"3d_pen"}'>✏️ Kids & Fun</button>
+      <button class="use-case-chip" data-filter='{"category":"filament,resin"}'>🧵 Materials</button>
+      <button class="use-case-chip" data-filter='{"category":"accessories"}'>🔧 Accessories</button>
+    </div>
+  </section>
+
+  <!-- Main Content -->
+  <main class="main-layout">
+    <!-- Sidebar Filters -->
+    <aside class="sidebar" id="sidebar">
+      <div class="filter-section">
+        <h3>🔍 Search</h3>
+        <input type="text" id="search-input" placeholder="Search products..." class="filter-input">
+      </div>
+
+      <div class="filter-section">
+        <h3>📁 Category</h3>
+        <div id="category-filters" class="filter-group"></div>
+      </div>
+
+      <div class="filter-section">
+        <h3>🏷️ Brand</h3>
+        <div id="brand-filters" class="filter-group"></div>
+      </div>
+
+      <div class="filter-section">
+        <h3>📦 Condition</h3>
+        <div id="condition-filters" class="filter-group"></div>
+      </div>
+
+      <div class="filter-section">
+        <h3>💰 Price Range</h3>
+        <div class="price-range">
+          <input type="number" id="min-price" placeholder="Min $" class="filter-input small">
+          <span>—</span>
+          <input type="number" id="max-price" placeholder="Max $" class="filter-input small">
+        </div>
+      </div>
+
+      <button id="clear-filters" class="btn btn-secondary">Clear Filters</button>
+
+      <!-- Ad: Sidebar (Rectangle 300x250) -->
+      <div class="ad-container ad-sidebar">
+        <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+          data-ad-slot="SIDEBAR_SLOT" data-ad-format="rectangle"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+      </div>
+    </aside>
+
+    <!-- Product Table -->
+    <section class="content">
+      <div class="table-header">
+        <span id="result-count">Loading...</span>
+        <div class="sort-controls">
+          <label>Sort by:</label>
+          <select id="sort-select">
+            <option value="price:asc">Price: Low → High</option>
+            <option value="price:desc">Price: High → Low</option>
+            <option value="product_name:asc">Name: A → Z</option>
+            <option value="rating:desc">Rating: High → Low</option>
+            <option value="review_count:desc">Most Reviews</option>
+            <option value="created_at:desc">Newest First</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table id="products-table">
+          <thead>
+            <tr>
+              <th class="sortable" data-sort="product_name">Product</th>
+              <th class="sortable" data-sort="brand">Brand</th>
+              <th class="sortable" data-sort="price">Price</th>
+              <th>Build Volume</th>
+              <th class="sortable" data-sort="rating">Rating</th>
+              <th>Type</th>
+              <th>Condition</th>
+            </tr>
+          </thead>
+          <tbody id="products-body">
+            <tr>
+              <td colspan="7" class="loading">Loading products...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Ad: In-Feed (between table and pagination) -->
+      <div class="ad-container ad-in-feed">
+        <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+          data-ad-slot="IN_FEED_SLOT" data-ad-format="fluid" data-ad-layout-key="-fb+5w+4e-db+86"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination" id="pagination">
+        <button id="prev-page" class="btn btn-sm" disabled>← Previous</button>
+        <span id="page-info">Page 1</span>
+        <button id="next-page" class="btn btn-sm">Next →</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Ad: Bottom Banner (Leaderboard) -->
+  <div class="ad-container ad-banner">
+    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+      data-ad-slot="BOTTOM_BANNER_SLOT" data-ad-format="horizontal" data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  </div>
+
+  <footer class="footer">
+    <p>Data sourced from Amazon. Updated periodically via automated scraping. Prices in USD.</p>
+    <p class="footer-links">
+      <a href="/privacy.html">Privacy Policy</a> · <a href="/terms.html">Terms of Service</a>
+    </p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
