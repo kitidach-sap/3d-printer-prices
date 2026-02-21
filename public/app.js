@@ -276,7 +276,7 @@ function setupEventListeners() {
         document.getElementById('max-price').value = '';
         document.querySelectorAll('.filter-group input[type="checkbox"]').forEach(cb => cb.checked = false);
         document.querySelectorAll('.use-case-chip').forEach(c => c.classList.remove('active'));
-        document.getElementById('sort-select').value = 'price:asc';
+        document.getElementById('sort-select').value = 'rating:desc';
         loadProducts();
     });
 
