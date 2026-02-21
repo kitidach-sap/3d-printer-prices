@@ -27,6 +27,17 @@ app.use((req, res, next) => {
     next();
 });
 
+// Serve sitemap.xml and robots.txt with correct content types
+app.get('/sitemap.xml', (req, res) => {
+    res.setHeader('Content-Type', 'application/xml');
+    res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
+});
+
+app.get('/robots.txt', (req, res) => {
+    res.setHeader('Content-Type', 'text/plain');
+    res.sendFile(path.join(__dirname, 'public', 'robots.txt'));
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ============================================
