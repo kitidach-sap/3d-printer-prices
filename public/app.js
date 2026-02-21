@@ -7,7 +7,7 @@ const PAGE_SIZE = 100;
 
 // Amazon Affiliate Tag — replace with your Associates tag
 // สมัครได้ที่: https://affiliate-program.amazon.com
-const AMAZON_AFFILIATE_TAG = 'YOUR-TAG-20';
+const AMAZON_AFFILIATE_TAG = 'kiti09-20';
 
 let currentPage = 0;
 let totalProducts = 0;
