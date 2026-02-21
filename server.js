@@ -159,8 +159,11 @@ app.get('/api/scrape-logs', async (req, res) => {
     }
 });
 
-// Fallback to index.html for SPA (Express 5 syntax)
-app.get('/{*path}', (req, res) => {
+// Fallback to index.html for SPA — skip files with extensions (.xml, .txt, etc.)
+app.get('/{*path}', (req, res, next) => {
+    if (path.extname(req.path)) {
+        return next(); // Let static middleware handle real files
+    }
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
