@@ -1,0 +1,9 @@
+# Allow all search engines
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://3d-printer-prices.com/sitemap.xml
+
+# Block scraper/scripts paths from indexing
+Disallow: /api/
