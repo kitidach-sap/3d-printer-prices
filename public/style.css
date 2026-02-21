@@ -621,7 +621,7 @@ td.loading {
 }
 
 /* ============================================
-   Responsive
+   Responsive — Tablet (≤ 900px)
    ============================================ */
 @media (max-width: 900px) {
   .main-layout {
@@ -640,29 +640,231 @@ td.loading {
     padding: 0.75rem 1rem;
   }
 
+  .logo-icon {
+    font-size: 1.5rem;
+  }
+
+  .logo h1 {
+    font-size: 1.1rem;
+  }
+
+  .tagline {
+    font-size: 0.7rem;
+  }
+
   .stats-bar,
   .use-cases {
     padding: 0.75rem 1rem;
+  }
+
+  .stat-value {
+    font-size: 1.2rem;
   }
 
   .use-case-chip {
     font-size: 0.72rem;
     padding: 0.3rem 0.65rem;
   }
+
+  /* Make table horizontally scrollable */
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .product-name {
+    max-width: 250px;
+    min-width: 180px;
+  }
+
+  td,
+  th {
+    padding: 0.55rem 0.75rem;
+    font-size: 0.82rem;
+  }
+
+  .table-header {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+
+  .ad-sidebar {
+    display: none;
+  }
 }
 
+/* ============================================
+   Responsive — Mobile (≤ 600px)
+   ============================================ */
 @media (max-width: 600px) {
+  .header {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .logo-icon {
+    font-size: 1.3rem;
+  }
+
+  .logo h1 {
+    font-size: 0.95rem;
+  }
+
+  .tagline {
+    display: none;
+  }
+
+  .header-actions {
+    gap: 0.3rem;
+  }
+
+  .btn-icon {
+    padding: 0.35rem;
+    font-size: 1rem;
+  }
+
+  /* Stats — 2-column grid */
   .stats-bar {
     grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .stat-card {
+    padding: 0.6rem 0.75rem;
+  }
+
+  .stat-value {
+    font-size: 1rem;
+  }
+
+  .stat-label {
+    font-size: 0.65rem;
+  }
+
+  /* Use-case chips — wrap */
+  .use-cases {
+    padding: 0.4rem 0.5rem;
+  }
+
+  .use-case-row {
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+
+  .uc-label {
+    display: none;
+  }
+
+  .use-case-chip {
+    font-size: 0.68rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  /* Sidebar — single column on small phone */
+  .sidebar {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .filter-section h3 {
+    font-size: 0.8rem;
+  }
+
+  .filter-input {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.6rem;
+  }
+
+  /* Table — compact & scrollable */
+  .main-layout {
+    padding: 0 0.5rem 0.5rem;
+  }
+
+  .content {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table {
+    min-width: 600px;
   }
 
   .product-name {
     max-width: 200px;
+    min-width: 150px;
   }
 
   td,
   th {
     padding: 0.5rem 0.6rem;
     font-size: 0.78rem;
+  }
+
+  thead th {
+    font-size: 0.7rem;
+    padding: 0.5rem 0.6rem;
+  }
+
+  .brand-badge {
+    font-size: 0.68rem;
+    padding: 0.1rem 0.35rem;
+  }
+
+  .type-badge {
+    font-size: 0.68rem;
+  }
+
+  /* Sort controls */
+  .table-header {
+    padding: 0.5rem;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+
+  .sort-controls {
+    width: 100%;
+  }
+
+  .sort-controls select {
+    width: 100%;
+    font-size: 0.82rem;
+    padding: 0.4rem;
+  }
+
+  /* Pagination */
+  .pagination {
+    padding: 0.75rem 0;
+    gap: 0.5rem;
+  }
+
+  .pagination button {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.78rem;
+  }
+
+  #page-info {
+    font-size: 0.75rem;
+  }
+
+  /* Ads */
+  .ad-banner {
+    padding: 0.25rem 0.5rem;
+    min-height: 50px;
+  }
+
+  .ad-sidebar {
+    display: none;
+  }
+
+  /* Footer */
+  .footer {
+    font-size: 0.7rem;
+    padding: 1rem;
+  }
+
+  .footer-links {
+    gap: 0.3rem;
   }
 }
