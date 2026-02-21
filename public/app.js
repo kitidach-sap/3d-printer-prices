@@ -14,14 +14,74 @@ let totalProducts = 0;
 let activeFilters = { category: '3d_printer' };  // Show printers first by default
 
 // ============================================
+// URL Parameter Handling
+// ============================================
+function readUrlFilters() {
+    const params = new URLSearchParams(window.location.search);
+    const urlFilters = {};
+
+    // Read filter params from URL
+    ['category', 'search', 'brand', 'condition', 'min_price', 'max_price', 'product_type'].forEach(key => {
+        if (params.has(key)) urlFilters[key] = params.get(key);
+    });
+
+    // Read sort from URL
+    if (params.has('sort')) {
+        const sortEl = document.getElementById('sort-select');
+        if (sortEl) sortEl.value = params.get('sort');
+    }
+
+    // If URL has any filters, use them; otherwise use default
+    if (Object.keys(urlFilters).length > 0) {
+        activeFilters = urlFilters;
+    }
+}
+
+function updateUrl() {
+    const params = new URLSearchParams();
+
+    // Add active filters to URL (skip default category=3d_printer to keep URL clean)
+    Object.entries(activeFilters).forEach(([key, val]) => {
+        if (val) params.set(key, val);
+    });
+
+    // Add sort if not default
+    const sortVal = document.getElementById('sort-select')?.value;
+    if (sortVal && sortVal !== 'rating:desc') {
+        params.set('sort', sortVal);
+    }
+
+    const queryStr = params.toString();
+    const newUrl = queryStr ? `${window.location.pathname}?${queryStr}` : window.location.pathname;
+    window.history.replaceState(null, '', newUrl);
+}
+
+function syncUiFromFilters() {
+    // Sync search input
+    const searchEl = document.getElementById('search-input');
+    if (searchEl) searchEl.value = activeFilters.search || '';
+
+    // Sync price inputs
+    const minEl = document.getElementById('min-price');
+    const maxEl = document.getElementById('max-price');
+    if (minEl) minEl.value = activeFilters.min_price || '';
+    if (maxEl) maxEl.value = activeFilters.max_price || '';
+
+    // Sync checkboxes (after they load)
+    setTimeout(() => syncSidebarCheckboxes(), 500);
+}
+
+// ============================================
 // Init
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
+    readUrlFilters();
     loadStats();
     loadFilters();
     loadProducts();
     setupEventListeners();
     setupTheme();
+    syncUiFromFilters();
 });
 
 // ============================================
@@ -133,6 +193,9 @@ async function loadProducts() {
         const [sortBy, sortOrder] = sortVal.split(':');
         params.set('sort_by', sortBy);
         params.set('sort_order', sortOrder);
+
+        // Update URL to match current filters
+        updateUrl();
 
         const res = await fetch(`${API_BASE}/products?${params}`);
         const { data, pagination } = await res.json();
