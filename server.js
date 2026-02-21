@@ -38,6 +38,100 @@ app.get('/robots.txt', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'robots.txt'));
 });
 
+// ============================================
+// Use-Case Landing Pages (SEO)
+// ============================================
+const fs = require('fs');
+const USE_CASE_PAGES = {
+    '/budget-3d-printers': {
+        title: 'Best Budget 3D Printers Under $300 — Compare Prices',
+        description: 'Find the best affordable 3D printers under $300. Compare prices, ratings, and specs from top brands like Bambu Lab, Creality, and ELEGOO.',
+        filters: { category: '3d_printer', max_price: '300' },
+        h1: '🎮 Budget 3D Printers Under $300'
+    },
+    '/professional-3d-printers': {
+        title: 'Professional 3D Printers $300+ — Compare Prices',
+        description: 'Compare professional-grade 3D printers starting from $300. High-speed, large format, and multi-material printers for serious makers.',
+        filters: { category: '3d_printer', min_price: '300' },
+        h1: '🏗️ Professional 3D Printers'
+    },
+    '/resin-3d-printers': {
+        title: 'Resin 3D Printers — Best MSLA/SLA Printers for Detail',
+        description: 'Compare resin 3D printer prices. Perfect for miniatures, jewelry, and high-detail prints. ELEGOO, Anycubic, Phrozen and more.',
+        filters: { category: '3d_printer', search: 'resin' },
+        h1: '🎨 Resin 3D Printers'
+    },
+    '/3d-pens': {
+        title: '3D Pens — Best 3D Printing Pens for Kids & Adults',
+        description: 'Compare 3D pen prices. Fun and creative 3D drawing tools for kids, students, and artists. Find the best deals on Amazon.',
+        filters: { category: '3d_pen' },
+        h1: '✏️ 3D Pens'
+    },
+    '/filament': {
+        title: '3D Printer Filament & Resin — Compare Material Prices',
+        description: 'Compare prices for PLA, ABS, PETG filament and UV resin. Find the best deals on 3D printing materials from top brands.',
+        filters: { category: 'filament,resin' },
+        h1: '🧵 3D Printing Materials'
+    },
+    '/accessories': {
+        title: '3D Printer Accessories — Tools, Parts & Upgrades',
+        description: 'Compare prices for 3D printer accessories, tools, nozzles, build plates, and upgrades. Find everything you need to improve your 3D printing.',
+        filters: { category: 'accessories' },
+        h1: '🔧 3D Printer Accessories'
+    }
+};
+
+let indexTemplate = null;
+function getIndexTemplate() {
+    if (!indexTemplate) {
+        indexTemplate = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf-8');
+    }
+    return indexTemplate;
+}
+
+// Register use-case routes
+Object.entries(USE_CASE_PAGES).forEach(([route, page]) => {
+    app.get(route, (req, res) => {
+        let html = getIndexTemplate();
+
+        // Replace title
+        html = html.replace(
+            /<title>.*?<\/title>/,
+            `<title>${page.title}</title>`
+        );
+
+        // Replace meta description
+        html = html.replace(
+            /<meta name="description"[\s\S]*?>/,
+            `<meta name="description" content="${page.description}">`
+        );
+
+        // Replace OG title and description
+        html = html.replace(
+            /<meta property="og:title".*?>/,
+            `<meta property="og:title" content="${page.title}">`
+        );
+        html = html.replace(
+            /<meta property="og:description"[\s\S]*?>/,
+            `<meta property="og:description" content="${page.description}">`
+        );
+        html = html.replace(
+            /<meta property="og:url".*?>/,
+            `<meta property="og:url" content="https://3d-printer-prices.com${route}">`
+        );
+        html = html.replace(
+            /<link rel="canonical".*?>/,
+            `<link rel="canonical" href="https://3d-printer-prices.com${route}">`
+        );
+
+        // Inject pre-set filters before app.js loads
+        const filterScript = `<script>window.__PRESET_FILTERS = ${JSON.stringify(page.filters)};</script>`;
+        html = html.replace('</head>', `${filterScript}\n</head>`);
+
+        res.send(html);
+    });
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ============================================

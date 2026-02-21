@@ -17,6 +17,13 @@ let activeFilters = { category: '3d_printer' };  // Show printers first by defau
 // URL Parameter Handling
 // ============================================
 function readUrlFilters() {
+    // 1. Check for server-injected preset filters (use-case landing pages)
+    if (window.__PRESET_FILTERS) {
+        activeFilters = { ...window.__PRESET_FILTERS };
+        return;
+    }
+
+    // 2. Check URL query parameters
     const params = new URLSearchParams(window.location.search);
     const urlFilters = {};
 
