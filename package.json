@@ -20,6 +20,7 @@
   "type": "commonjs",
   "dependencies": {
     "@supabase/supabase-js": "^2.97.0",
+    "@vercel/analytics": "^1.6.1",
     "cheerio": "^1.2.0",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
