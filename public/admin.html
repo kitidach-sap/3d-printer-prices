@@ -417,10 +417,67 @@
                         <span class="info-value" id="last-saved">—</span>
                     </div>
                 </div>
-                <button class="btn btn-primary" id="btn-scrape" onclick="runScrape()">
-                    🔄 Run Scraper Now
-                </button>
+
+                <hr style="border-color:var(--border);margin:1rem 0">
+
+                <h3 style="margin-top:0">🏷️ Select Categories to Scrape</h3>
+                <div style="display:flex;flex-wrap:wrap;gap:0.6rem;margin-bottom:0.75rem" id="scrape-cats">
+                    <label style="display:flex;align-items:center;gap:0.3rem;font-size:0.82rem;cursor:pointer">
+                        <input type="checkbox" value="all" id="cat-all" checked onchange="toggleAllCats(this)">
+                        <strong>Select All</strong>
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.3rem;font-size:0.82rem;cursor:pointer">
+                        <input type="checkbox" class="cat-box" value="3d_printer" checked> 🖨️ 3D Printers
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.3rem;font-size:0.82rem;cursor:pointer">
+                        <input type="checkbox" class="cat-box" value="filament" checked> 🧵 Filament
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.3rem;font-size:0.82rem;cursor:pointer">
+                        <input type="checkbox" class="cat-box" value="resin" checked> 🧪 Resin
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.3rem;font-size:0.82rem;cursor:pointer">
+                        <input type="checkbox" class="cat-box" value="accessories" checked> 🔧 Accessories
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.3rem;font-size:0.82rem;cursor:pointer">
+                        <input type="checkbox" class="cat-box" value="3d_pen" checked> 🖊️ 3D Pen
+                    </label>
+                </div>
+
+                <p style="font-size:0.72rem;color:var(--text-muted);margin-bottom:0.75rem">
+                    🔗 Affiliate Tag: <code>kiti09-20</code> — All links auto-converted ·
+                    🛡️ Dedup: <span class="badge badge-active">ASIN Upsert</span> (ไม่ซ้ำ)
+                </p>
+
+                <div class="form-row" style="margin-bottom:0.75rem">
+                    <div class="form-group" style="margin-bottom:0">
+                        <label>Max Products per Query</label>
+                        <select class="form-select" id="scrape-limit">
+                            <option value="10">10 products</option>
+                            <option value="20">20 products</option>
+                            <option value="30" selected>30 products (default)</option>
+                            <option value="50">50 products</option>
+                            <option value="100">100 products (max)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0">
+                        <label style="visibility:hidden">.</label>
+                        <p style="font-size:0.72rem;color:var(--text-muted);margin-top:0.3rem">
+                            📊 13 queries × <span id="limit-preview">30</span> = up to <strong
+                                id="limit-total">390</strong> products
+                        </p>
+                    </div>
+                </div>
+
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+                    <button class="btn btn-primary" id="btn-scrape" onclick="runScrape()">
+                        🔄 Scrape New Products
+                    </button>
+                    <button class="btn btn-warning" id="btn-update" onclick="updatePrices()">
+                        💰 Update Prices
+                    </button>
+                </div>
                 <div id="status-msg"></div>
+                <div id="update-msg" style="margin-top:0.3rem;font-size:0.82rem"></div>
             </div>
 
             <div class="admin-card">
@@ -464,6 +521,71 @@
                         <span class="info-value" id="p-brands">—</span>
                     </div>
                 </div>
+            </div>
+
+            <!-- ADD PRODUCT FORM -->
+            <div class="admin-card">
+                <h3>➕ Add Product Manually</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Product Name *</label>
+                        <input type="text" class="form-input" id="add-name" placeholder="e.g. Bambu Lab P1S">
+                    </div>
+                    <div class="form-group">
+                        <label>Price (USD) *</label>
+                        <input type="number" class="form-input" id="add-price" placeholder="e.g. 599.00" step="0.01">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Brand</label>
+                        <input type="text" class="form-input" id="add-brand" placeholder="e.g. Bambu Lab">
+                    </div>
+                    <div class="form-group">
+                        <label>Category *</label>
+                        <select class="form-select" id="add-category">
+                            <option value="3d_printer">🖨️ 3D Printer</option>
+                            <option value="filament">🧵 Filament</option>
+                            <option value="resin">🧪 Resin</option>
+                            <option value="accessories">🔧 Accessories</option>
+                            <option value="3d_pen">🖊️ 3D Pen</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Product Type</label>
+                        <select class="form-select" id="add-type">
+                            <option value="fdm">FDM</option>
+                            <option value="resin_sla">Resin / SLA</option>
+                            <option value="pla">PLA</option>
+                            <option value="abs">ABS</option>
+                            <option value="petg">PETG</option>
+                            <option value="tpu">TPU</option>
+                            <option value="uv_resin">UV Resin</option>
+                            <option value="nozzle">Nozzle</option>
+                            <option value="build_plate">Build Plate</option>
+                            <option value="tools">Tools</option>
+                            <option value="3d_pen">3D Pen</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Condition</label>
+                        <select class="form-select" id="add-condition">
+                            <option value="new">New</option>
+                            <option value="used">Used</option>
+                            <option value="refurbished">Refurbished</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Amazon / Product URL (optional)</label>
+                    <input type="url" class="form-input" id="add-url" placeholder="https://amazon.com/dp/...">
+                </div>
+                <button class="btn btn-success" id="btn-add-product" onclick="addProduct()">
+                    ➕ Add Product
+                </button>
+                <div id="add-product-msg" style="margin-top:0.5rem;font-size:0.82rem"></div>
             </div>
 
             <div class="admin-card">
@@ -558,37 +680,59 @@
         <!-- ==================== SCHEDULE TAB ==================== -->
         <div class="tab-content" id="tab-schedule">
             <div class="admin-card">
-                <h3>⏰ Automated Schedules</h3>
-                <div class="blog-item">
-                    <div>
-                        <div class="blog-item-title">🔄 Product Scraper</div>
-                        <div class="blog-item-meta">Fetches latest prices from Amazon</div>
+                <h3>⏰ Scraper Schedule</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Current Schedule</span>
+                        <span class="info-value" id="sch-current">Daily 6 AM UTC</span>
                     </div>
-                    <span class="badge badge-active">Active</span>
+                    <div class="info-item">
+                        <span class="info-label">Last Run</span>
+                        <span class="info-value" id="sch-last">—</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Next Run</span>
+                        <span class="info-value" id="sch-next">—</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Status</span>
+                        <span class="info-value"><span class="badge badge-active">Active</span></span>
+                    </div>
                 </div>
-                <div class="schedule-row">
-                    <span>⏱️ Schedule:</span>
-                    <span class="badge badge-cron">Daily at 6:00 AM UTC</span>
-                    <span style="color:var(--text-muted);font-size:0.75rem">(Vercel Cron)</span>
-                </div>
-                <p style="margin-top:1rem;font-size:0.8rem;color:var(--text-muted)">
-                    💡 Cron schedule is configured in <code>vercel.json</code>. To change frequency, edit the
-                    <code>crons[].schedule</code> field using standard cron syntax.
-                </p>
 
                 <hr style="border-color:var(--border);margin:1rem 0">
 
-                <div class="blog-item">
-                    <div>
-                        <div class="blog-item-title">📝 Blog Auto-Generation</div>
-                        <div class="blog-item-meta">Generate SEO blog posts automatically</div>
+                <h3 style="margin-top:0.5rem">🔄 Change Schedule</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Frequency</label>
+                        <select class="form-select" id="sch-freq">
+                            <option value="0 6 * * *">Daily at 6:00 AM UTC</option>
+                            <option value="0 */12 * * *">Every 12 Hours</option>
+                            <option value="0 */6 * * *">Every 6 Hours</option>
+                            <option value="0 */3 * * *">Every 3 Hours</option>
+                            <option value="0 8 * * 1">Weekly (Monday 8 AM)</option>
+                            <option value="custom">Custom Cron...</option>
+                        </select>
                     </div>
-                    <span class="badge badge-cron" style="opacity:0.5">Coming Soon</span>
+                    <div class="form-group" id="custom-cron-group" style="display:none">
+                        <label>Custom Cron Expression</label>
+                        <input type="text" class="form-input" id="sch-custom-cron" placeholder="e.g. 0 */4 * * *">
+                    </div>
                 </div>
-                <p style="margin-top:0.5rem;font-size:0.8rem;color:var(--text-muted)">
-                    🔮 Blog auto-generation via AI API will be available in a future update. For now, use the Blog tab
-                    to
-                    manually generate posts.
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+                    <button class="btn btn-primary" onclick="saveSchedule()">
+                        💾 Save Schedule
+                    </button>
+                    <button class="btn btn-warning" onclick="runScheduledScrape()">
+                        ▶️ Run Now
+                    </button>
+                </div>
+                <div id="sch-msg" style="margin-top:0.5rem;font-size:0.82rem"></div>
+
+                <p style="margin-top:1rem;font-size:0.78rem;color:var(--text-muted)">
+                    💡 Schedule changes update <code>vercel.json</code> locally. Redeploy to apply on Vercel.
+                    "Run Now" triggers the scraper immediately regardless of schedule.
                 </p>
             </div>
 
@@ -606,7 +750,7 @@
                         <tr>
                             <td>Every day 6 AM</td>
                             <td><code>0 6 * * *</code></td>
-                            <td>Current setting</td>
+                            <td>Default</td>
                         </tr>
                         <tr>
                             <td>Every 12 hours</td>
@@ -619,9 +763,14 @@
                             <td>4x daily</td>
                         </tr>
                         <tr>
-                            <td>Every Monday 8 AM</td>
+                            <td>Every 3 hours</td>
+                            <td><code>0 */3 * * *</code></td>
+                            <td>8x daily</td>
+                        </tr>
+                        <tr>
+                            <td>Weekly (Mon 8 AM)</td>
                             <td><code>0 8 * * 1</code></td>
-                            <td>Weekly</td>
+                            <td>Low frequency</td>
                         </tr>
                     </tbody>
                 </table>
@@ -717,11 +866,18 @@
                 e.target.value === 'custom' ? 'block' : 'none';
         });
 
+        // ===== Schedule freq toggle =====
+        document.getElementById('sch-freq').addEventListener('change', (e) => {
+            document.getElementById('custom-cron-group').style.display =
+                e.target.value === 'custom' ? 'block' : 'none';
+        });
+
         // ===== Init =====
         function init() {
             loadStatus();
             loadHistory();
             loadProductStats();
+            loadSchedule();
             setInterval(checkRunning, 5000);
         }
 
@@ -769,15 +925,50 @@
             } catch (e) { }
         }
 
+        function toggleAllCats(el) {
+            document.querySelectorAll('.cat-box').forEach(cb => cb.checked = el.checked);
+        }
+        document.querySelectorAll('.cat-box').forEach(cb => {
+            cb.addEventListener('change', () => {
+                const all = document.querySelectorAll('.cat-box');
+                const checked = document.querySelectorAll('.cat-box:checked');
+                document.getElementById('cat-all').checked = all.length === checked.length;
+            });
+        });
+
+        // Limit preview
+        document.getElementById('scrape-limit').addEventListener('change', (e) => {
+            const v = parseInt(e.target.value);
+            document.getElementById('limit-preview').textContent = v;
+            const catCount = document.querySelectorAll('.cat-box:checked').length || 13;
+            document.getElementById('limit-total').textContent = v * catCount;
+        });
+
         async function runScrape() {
+            // Gather selected categories
+            const checked = Array.from(document.querySelectorAll('.cat-box:checked')).map(c => c.value);
+            if (checked.length === 0) {
+                document.getElementById('status-msg').textContent = '⚠️ Please select at least one category';
+                return;
+            }
+
+            const allChecked = checked.length === document.querySelectorAll('.cat-box').length;
+            const categories = allChecked ? null : checked; // null = all
+            const maxPerQuery = parseInt(document.getElementById('scrape-limit').value) || 30;
+
             const btn = document.getElementById('btn-scrape');
             const msg = document.getElementById('status-msg');
             btn.disabled = true;
             btn.classList.add('running');
             btn.innerHTML = '⏳ Scraping...';
-            msg.textContent = 'Scraper started — this may take 1-2 minutes...';
+            const catLabel = allChecked ? 'all categories' : checked.join(', ');
+            msg.textContent = `Scraping ${catLabel} (max ${maxPerQuery}/query) — this may take 1-2 minutes...`;
             try {
-                const res = await fetch('/api/admin/scrape', { method: 'POST', headers: apiHeaders() });
+                const res = await fetch('/api/admin/scrape', {
+                    method: 'POST',
+                    headers: apiHeaders(),
+                    body: JSON.stringify({ categories, maxPerQuery }),
+                });
                 const d = await res.json();
                 if (res.ok) {
                     msg.textContent = '✅ ' + d.message;
@@ -785,13 +976,13 @@
                     msg.textContent = '❌ ' + d.error;
                     btn.disabled = false;
                     btn.classList.remove('running');
-                    btn.innerHTML = '🔄 Run Scraper Now';
+                    btn.innerHTML = '🔄 Scrape New Products';
                 }
             } catch (e) {
                 msg.textContent = '❌ ' + e.message;
                 btn.disabled = false;
                 btn.classList.remove('running');
-                btn.innerHTML = '🔄 Run Scraper Now';
+                btn.innerHTML = '🔄 Scrape New Products';
             }
         }
 
@@ -803,13 +994,54 @@
                 if (!d.running && btn.classList.contains('running')) {
                     btn.disabled = false;
                     btn.classList.remove('running');
-                    btn.innerHTML = '🔄 Run Scraper Now';
+                    btn.innerHTML = '🔄 Scrape New Products';
                     document.getElementById('status-msg').textContent = '✅ Scraper finished!';
                     loadStatus();
                     loadHistory();
                     loadProductStats();
                 }
+                // Also check price update status
+                const upRes = await fetch('/api/admin/update-prices-running');
+                const upD = await upRes.json();
+                const upBtn = document.getElementById('btn-update');
+                if (!upD.running && upBtn.classList.contains('running')) {
+                    upBtn.disabled = false;
+                    upBtn.classList.remove('running');
+                    upBtn.innerHTML = '💰 Update Prices';
+                    document.getElementById('update-msg').textContent = '✅ Price update finished!';
+                    loadProductStats();
+                }
             } catch (e) { }
+        }
+
+        // ===== Update Prices =====
+        async function updatePrices() {
+            const btn = document.getElementById('btn-update');
+            const msg = document.getElementById('update-msg');
+            btn.disabled = true;
+            btn.classList.add('running');
+            btn.innerHTML = '⏳ Updating...';
+            msg.textContent = 'Checking all products for price changes & availability...';
+            try {
+                const res = await fetch('/api/admin/update-prices', {
+                    method: 'POST',
+                    headers: apiHeaders(),
+                });
+                const d = await res.json();
+                if (res.ok) {
+                    msg.textContent = '✅ ' + d.message;
+                } else {
+                    msg.textContent = '❌ ' + d.error;
+                    btn.disabled = false;
+                    btn.classList.remove('running');
+                    btn.innerHTML = '💰 Update Prices';
+                }
+            } catch (e) {
+                msg.textContent = '❌ ' + e.message;
+                btn.disabled = false;
+                btn.classList.remove('running');
+                btn.innerHTML = '💰 Update Prices';
+            }
         }
 
         // ===== Product Stats =====
@@ -835,6 +1067,127 @@
                     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">No products</td></tr>';
                 }
             } catch (e) { }
+        }
+
+        // ===== Add Product =====
+        async function addProduct() {
+            const name = document.getElementById('add-name').value.trim();
+            const price = document.getElementById('add-price').value;
+            const brand = document.getElementById('add-brand').value.trim();
+            const category = document.getElementById('add-category').value;
+            const product_type = document.getElementById('add-type').value;
+            const condition = document.getElementById('add-condition').value;
+            const amazon_url = document.getElementById('add-url').value.trim();
+            const msg = document.getElementById('add-product-msg');
+
+            if (!name || !price) {
+                msg.textContent = '⚠️ Product name and price are required';
+                msg.style.color = 'var(--warning)';
+                return;
+            }
+
+            const btn = document.getElementById('btn-add-product');
+            btn.disabled = true;
+            btn.textContent = '⏳ Adding...';
+
+            try {
+                const res = await fetch('/api/admin/product', {
+                    method: 'POST',
+                    headers: apiHeaders(),
+                    body: JSON.stringify({ product_name: name, price, brand, category, product_type, condition, amazon_url }),
+                });
+                const d = await res.json();
+                if (res.ok) {
+                    msg.textContent = '✅ Product added: ' + name;
+                    msg.style.color = 'var(--success)';
+                    document.getElementById('add-name').value = '';
+                    document.getElementById('add-price').value = '';
+                    document.getElementById('add-brand').value = '';
+                    document.getElementById('add-url').value = '';
+                    loadProductStats();
+                } else {
+                    msg.textContent = '❌ ' + d.error;
+                    msg.style.color = 'var(--danger)';
+                }
+            } catch (e) {
+                msg.textContent = '❌ ' + e.message;
+                msg.style.color = 'var(--danger)';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '➕ Add Product';
+            }
+        }
+
+        // ===== Schedule =====
+        async function loadSchedule() {
+            try {
+                const res = await fetch('/api/admin/schedule?key=' + encodeURIComponent(adminKey));
+                const d = await res.json();
+                if (d.lastRun) document.getElementById('sch-last').textContent = timeAgo(d.lastRun);
+                if (d.nextRun) document.getElementById('sch-next').textContent = fmtDate(d.nextRun);
+                if (d.cronExpression) {
+                    const sel = document.getElementById('sch-freq');
+                    const opts = Array.from(sel.options).map(o => o.value);
+                    if (opts.includes(d.cronExpression)) {
+                        sel.value = d.cronExpression;
+                    } else {
+                        sel.value = 'custom';
+                        document.getElementById('custom-cron-group').style.display = 'block';
+                        document.getElementById('sch-custom-cron').value = d.cronExpression;
+                    }
+                }
+            } catch (e) { }
+        }
+
+        function saveSchedule() {
+            const freq = document.getElementById('sch-freq').value;
+            const customCron = document.getElementById('sch-custom-cron').value;
+            const cron = freq === 'custom' ? customCron : freq;
+            const msg = document.getElementById('sch-msg');
+
+            if (!cron || cron === 'custom') {
+                msg.textContent = '⚠️ Please enter a valid cron expression';
+                msg.style.color = 'var(--warning)';
+                return;
+            }
+
+            const cronLabels = {
+                '0 6 * * *': 'Daily at 6 AM UTC',
+                '0 */12 * * *': 'Every 12 Hours',
+                '0 */6 * * *': 'Every 6 Hours',
+                '0 */3 * * *': 'Every 3 Hours',
+                '0 8 * * 1': 'Weekly (Mon 8 AM)',
+            };
+            const label = cronLabels[cron] || cron;
+            document.getElementById('sch-current').textContent = label;
+
+            msg.innerHTML = `
+                <div style="margin-top:0.5rem;padding:0.75rem;background:var(--bg-primary);border-radius:var(--radius-sm)">
+                    <p style="color:var(--success)">✅ Schedule set to: <strong>${label}</strong></p>
+                    <p style="margin-top:0.5rem;font-size:0.78rem;color:var(--text-muted)">Update <code>vercel.json</code> crons section to:</p>
+                    <code style="display:block;margin-top:0.3rem;padding:0.4rem;background:var(--bg-card);border-radius:4px;font-size:0.75rem">"schedule": "${cron}"</code>
+                    <p style="margin-top:0.5rem;font-size:0.78rem;color:var(--text-muted)">Then <code>git push</code> to apply.</p>
+                </div>`;
+        }
+
+        async function runScheduledScrape() {
+            const msg = document.getElementById('sch-msg');
+            msg.textContent = '⏳ Triggering scrape now...';
+            msg.style.color = 'var(--text-secondary)';
+            try {
+                const res = await fetch('/api/admin/scrape', { method: 'POST', headers: apiHeaders() });
+                const d = await res.json();
+                if (res.ok) {
+                    msg.textContent = '✅ ' + d.message + ' — Check Scraper tab for progress.';
+                    msg.style.color = 'var(--success)';
+                } else {
+                    msg.textContent = '❌ ' + d.error;
+                    msg.style.color = 'var(--danger)';
+                }
+            } catch (e) {
+                msg.textContent = '❌ ' + e.message;
+                msg.style.color = 'var(--danger)';
+            }
         }
 
         // ===== Blog Generation =====
