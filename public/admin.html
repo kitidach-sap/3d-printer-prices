@@ -745,24 +745,72 @@
             </div>
 
             <div class="admin-card">
-                <h3>🆕 Recently Added Products</h3>
+                <div
+                    style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.75rem">
+                    <h3 style="margin:0">📦 Product Management</h3>
+                    <span style="font-size:0.75rem;color:var(--text-muted)" id="pm-count">— products</span>
+                </div>
+
+                <!-- Search & Filter Bar -->
+                <div style="display:flex;gap:0.4rem;margin-bottom:0.6rem;flex-wrap:wrap">
+                    <input type="text" class="form-input" id="pm-search" placeholder="🔍 Search product name..."
+                        style="flex:1;min-width:180px;font-size:0.78rem;padding:0.35rem 0.6rem"
+                        oninput="pmDebounceSearch()">
+                    <select class="form-select" id="pm-cat" style="font-size:0.78rem;padding:0.35rem 0.5rem;width:auto"
+                        onchange="pmLoadProducts(1)">
+                        <option value="">All Categories</option>
+                        <option value="3d_printer">🖨️ 3D Printer</option>
+                        <option value="filament">🧵 Filament</option>
+                        <option value="resin">🧪 Resin</option>
+                        <option value="accessories">🔧 Accessories</option>
+                        <option value="3d_pen">🖊️ 3D Pen</option>
+                    </select>
+                    <button class="btn btn-danger" id="pm-bulk-delete"
+                        style="font-size:0.72rem;padding:0.35rem 0.6rem;display:none" onclick="pmBulkDelete()">
+                        🗑️ Delete Selected (<span id="pm-sel-count">0</span>)
+                    </button>
+                </div>
+
+                <!-- Product Table -->
                 <div style="overflow-x:auto">
-                    <table class="admin-table">
+                    <table class="admin-table" style="font-size:0.75rem">
                         <thead>
                             <tr>
-                                <th>Product</th>
+                                <th style="width:30px"><input type="checkbox" id="pm-select-all"
+                                        onchange="pmToggleAll()"></th>
+                                <th style="cursor:pointer" onclick="pmSort('product_name')">Product ↕</th>
                                 <th>Brand</th>
-                                <th>Price</th>
+                                <th style="cursor:pointer" onclick="pmSort('price')">Price ↕</th>
                                 <th>Category</th>
-                                <th>Added</th>
+                                <th>Rating</th>
+                                <th style="cursor:pointer" onclick="pmSort('created_at')">Added ↕</th>
+                                <th style="width:70px">Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="recent-products">
+                        <tbody id="pm-body">
                             <tr>
-                                <td colspan="5" style="text-align:center;color:var(--text-muted)">Loading...</td>
+                                <td colspan="8" style="text-align:center;color:var(--text-muted)">Loading...</td>
                             </tr>
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Pagination -->
+                <div
+                    style="display:flex;justify-content:space-between;align-items:center;margin-top:0.5rem;font-size:0.75rem">
+                    <div>
+                        <button class="btn" style="font-size:0.72rem;padding:0.25rem 0.5rem" id="pm-prev"
+                            onclick="pmLoadProducts(pmPage-1)">← Prev</button>
+                        <span id="pm-page-info" style="margin:0 0.5rem;color:var(--text-muted)">Page 1</span>
+                        <button class="btn" style="font-size:0.72rem;padding:0.25rem 0.5rem" id="pm-next"
+                            onclick="pmLoadProducts(pmPage+1)">Next →</button>
+                    </div>
+                    <select class="form-select" style="font-size:0.72rem;padding:0.2rem 0.35rem;width:auto"
+                        id="pm-limit" onchange="pmLoadProducts(1)">
+                        <option value="20">20 per page</option>
+                        <option value="50">50 per page</option>
+                        <option value="100">100 per page</option>
+                    </select>
                 </div>
             </div>
         </div>
@@ -1013,6 +1061,8 @@
                 document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
                 tab.classList.add('active');
                 document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+                // Auto-load products when switching to products tab
+                if (tab.dataset.tab === 'products') pmLoadProducts(pmPage);
             });
         });
 
@@ -1092,6 +1142,142 @@
                 btn.disabled = false;
                 btn.textContent = '🧪 Test & Save';
             }
+        }
+        // ===== Product Management =====
+        let pmPage = 1, pmTotalPages = 1, pmSortCol = 'created_at', pmSortOrder = 'desc';
+        let pmSelected = new Set();
+        let pmSearchTimer = null;
+
+        function pmDebounceSearch() {
+            clearTimeout(pmSearchTimer);
+            pmSearchTimer = setTimeout(() => pmLoadProducts(1), 400);
+        }
+
+        function pmSort(col) {
+            if (pmSortCol === col) {
+                pmSortOrder = pmSortOrder === 'desc' ? 'asc' : 'desc';
+            } else {
+                pmSortCol = col;
+                pmSortOrder = col === 'product_name' ? 'asc' : 'desc';
+            }
+            pmLoadProducts(pmPage);
+        }
+
+        async function pmLoadProducts(page = 1) {
+            pmPage = page;
+            pmSelected.clear();
+            pmUpdateBulkBtn();
+            const search = document.getElementById('pm-search').value.trim();
+            const cat = document.getElementById('pm-cat').value;
+            const limit = document.getElementById('pm-limit').value;
+            const params = new URLSearchParams({ page, limit, sort: pmSortCol, order: pmSortOrder });
+            if (search) params.set('search', search);
+            if (cat) params.set('category', cat);
+
+            try {
+                const res = await fetch(`/api/admin/products?${params}`, { headers: apiHeaders() });
+                const d = await res.json();
+                if (d.error) throw new Error(d.error);
+
+                pmTotalPages = d.totalPages || 1;
+                document.getElementById('pm-count').textContent = `${d.total} products`;
+                document.getElementById('pm-page-info').textContent = `Page ${d.page} / ${pmTotalPages}`;
+                document.getElementById('pm-prev').disabled = d.page <= 1;
+                document.getElementById('pm-next').disabled = d.page >= pmTotalPages;
+                document.getElementById('pm-select-all').checked = false;
+
+                const tbody = document.getElementById('pm-body');
+                if (!d.products?.length) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted)">No products found</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = d.products.map(p => `
+                    <tr data-id="${p.id}">
+                        <td><input type="checkbox" class="pm-cb" value="${p.id}" onchange="pmUpdateBulkBtn()"></td>
+                        <td style="max-width:280px">
+                            <div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${(p.product_name || '').replace(/"/g, '&quot;')}">
+                                ${p.amazon_url ? `<a href="${p.amazon_url}" target="_blank" style="color:var(--primary);text-decoration:none">${p.product_name || '—'}</a>` : (p.product_name || '—')}
+                            </div>
+                            <div style="font-size:0.65rem;color:var(--text-muted)">${p.amazon_asin || ''}</div>
+                        </td>
+                        <td>${p.brand || '—'}</td>
+                        <td style="color:var(--primary);font-weight:600">$${Number(p.price).toFixed(2)}</td>
+                        <td><span class="badge badge-active" style="font-size:0.65rem">${p.category || '—'}</span></td>
+                        <td>${p.rating ? `⭐ ${p.rating}` : '—'}</td>
+                        <td style="font-size:0.68rem;color:var(--text-muted)">${pmTimeAgo(p.created_at)}</td>
+                        <td>
+                            <button class="btn btn-danger" style="font-size:0.65rem;padding:0.15rem 0.4rem" onclick="pmDeleteProduct('${p.id}', this)">🗑️</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                document.getElementById('pm-body').innerHTML = `<tr><td colspan="8" style="color:var(--danger)">${e.message}</td></tr>`;
+            }
+        }
+
+        function pmToggleAll() {
+            const checked = document.getElementById('pm-select-all').checked;
+            document.querySelectorAll('.pm-cb').forEach(cb => { cb.checked = checked; });
+            pmUpdateBulkBtn();
+        }
+
+        function pmUpdateBulkBtn() {
+            const checks = document.querySelectorAll('.pm-cb:checked');
+            pmSelected = new Set([...checks].map(c => c.value));
+            const btn = document.getElementById('pm-bulk-delete');
+            const cnt = document.getElementById('pm-sel-count');
+            btn.style.display = pmSelected.size > 0 ? 'inline-flex' : 'none';
+            cnt.textContent = pmSelected.size;
+        }
+
+        async function pmDeleteProduct(id, btn) {
+            if (!confirm('ลบสินค้านี้จริงหรือ?')) return;
+            btn.disabled = true;
+            btn.textContent = '...';
+            try {
+                await fetch(`/api/admin/products/${id}`, { method: 'DELETE', headers: apiHeaders() });
+                btn.closest('tr').remove();
+                // Update count
+                const countEl = document.getElementById('pm-count');
+                const current = parseInt(countEl.textContent) || 0;
+                countEl.textContent = `${Math.max(0, current - 1)} products`;
+            } catch (e) {
+                alert('Delete failed: ' + e.message);
+                btn.disabled = false;
+                btn.textContent = '🗑️';
+            }
+        }
+
+        async function pmBulkDelete() {
+            const ids = [...pmSelected];
+            if (!ids.length) return;
+            if (!confirm(`ลบสินค้า ${ids.length} รายการ จริงหรือ?`)) return;
+            const btn = document.getElementById('pm-bulk-delete');
+            btn.disabled = true;
+            try {
+                await fetch('/api/admin/products/bulk-delete', {
+                    method: 'POST',
+                    headers: apiHeaders(),
+                    body: JSON.stringify({ ids }),
+                });
+                pmLoadProducts(pmPage);
+            } catch (e) {
+                alert('Bulk delete failed: ' + e.message);
+            }
+            btn.disabled = false;
+        }
+
+        function pmTimeAgo(dateStr) {
+            if (!dateStr) return '—';
+            const diff = Date.now() - new Date(dateStr).getTime();
+            const mins = Math.floor(diff / 60000);
+            if (mins < 1) return 'Just now';
+            if (mins < 60) return mins + 'm ago';
+            const hrs = Math.floor(mins / 60);
+            if (hrs < 24) return hrs + 'h ago';
+            const days = Math.floor(hrs / 24);
+            return days + 'd ago';
         }
 
         // ===== API helpers =====

@@ -479,29 +479,59 @@ async function runLightScrape(filterCategories = null, maxPerQuery = 30) {
             const products = [];
             for (const asin of newAsins) {
                 if (products.length >= maxPerQuery) break;
-                const titleRx = new RegExp(`data-asin="${asin}"[\\s\\S]*?<span[^>]*class="a-size-[^"]*a-text-normal"[^>]*>([^<]+)</span>`, 'i');
-                const priceRx = new RegExp(`data-asin="${asin}"[\\s\\S]*?<span class="a-price"[^>]*>[\\s\\S]*?<span[^>]*>\\$([\\d,.]+)</span>`, 'i');
-                const tMatch = html.match(titleRx);
-                const pMatch = html.match(priceRx);
-                if (tMatch?.[1] && pMatch?.[1]) {
-                    const price = parseFloat(pMatch[1].replace(/,/g, ''));
-                    if (price > 0) {
-                        products.push({
-                            asin: asin,
-                            amazon_asin: asin,
-                            product_name: tMatch[1].trim(),
-                            price,
-                            brand: detectBrandFromTitle(tMatch[1]),
-                            category: search.category,
-                            product_type: search.productType,
-                            condition: 'new',
-                            locale: 'us',
-                            is_available: true,
-                            amazon_url: `https://www.amazon.com/dp/${asin}?tag=${AFFILIATE_TAG}`,
-                            updated_at: new Date().toISOString(),
-                        });
-                    }
+
+                // Extract the product block for this ASIN
+                const blockStart = html.indexOf(`data-asin="${asin}"`);
+                if (blockStart === -1) continue;
+                // Find the end of this product block (next data-asin or end)
+                const nextAsin = html.indexOf('data-asin="', blockStart + 20);
+                const block = html.substring(blockStart, nextAsin > 0 ? nextAsin : blockStart + 5000);
+
+                // Extract title — try multiple patterns within this block only
+                let title = null;
+                // Pattern 1: h2 > a > span (most common)
+                const h2Match = block.match(/<h2[^>]*>[\s\S]*?<a[^>]*>[\s\S]*?<span[^>]*>([^<]{10,})<\/span>/i);
+                if (h2Match?.[1]) title = h2Match[1].trim();
+                // Pattern 2: span with a-text-normal class (within block)
+                if (!title) {
+                    const spanMatch = block.match(/<span[^>]*class="[^"]*a-text-normal[^"]*"[^>]*>([^<]{10,})<\/span>/i);
+                    if (spanMatch?.[1]) title = spanMatch[1].trim();
                 }
+                // Pattern 3: aria-label on the link
+                if (!title) {
+                    const ariaMatch = block.match(/<a[^>]*aria-label="([^"]{10,})"[^>]*>/i);
+                    if (ariaMatch?.[1]) title = ariaMatch[1].trim();
+                }
+
+                // Skip garbage titles
+                if (!title || title.includes('Check each product') || title.includes('buying options') || title.length < 10) continue;
+
+                // Extract price within this block
+                const priceMatch = block.match(/<span class="a-price"[^>]*>[\s\S]*?<span[^>]*>\$([0-9,]+\.\d{2})<\/span>/i);
+                if (!priceMatch?.[1]) continue;
+                const price = parseFloat(priceMatch[1].replace(/,/g, ''));
+                if (price <= 0) continue;
+
+                // Extract rating if available
+                const ratingMatch = block.match(/<span[^>]*aria-label="([0-9.]+) out of 5 stars"/i);
+                const reviewMatch = block.match(/(\d[\d,]*)\s*(?:ratings?|reviews?)/i);
+
+                products.push({
+                    asin: asin,
+                    amazon_asin: asin,
+                    product_name: title,
+                    price,
+                    brand: detectBrandFromTitle(title),
+                    rating: ratingMatch ? parseFloat(ratingMatch[1]) : null,
+                    review_count: reviewMatch ? parseInt(reviewMatch[1].replace(/,/g, '')) : null,
+                    category: search.category,
+                    product_type: search.productType,
+                    condition: 'new',
+                    locale: 'us',
+                    is_available: true,
+                    amazon_url: `https://www.amazon.com/dp/${asin}?tag=${AFFILIATE_TAG}`,
+                    updated_at: new Date().toISOString(),
+                });
             }
 
             totalFound += products.length;
@@ -733,6 +763,62 @@ app.get('/api/admin/update-prices-running', (req, res) => {
 // GET /api/admin/scrape-running — check if scraper is active
 app.get('/api/admin/scrape-running', (req, res) => {
     res.json({ running: scraperRunning });
+});
+
+// ===== Product Management =====
+
+// GET /api/admin/products — paginated product list with search
+app.get('/api/admin/products', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
+    const page = parseInt(req.query.page) || 1;
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+    const search = req.query.search || '';
+    const category = req.query.category || '';
+    const sort = req.query.sort || 'created_at';
+    const order = req.query.order === 'asc' ? true : false;
+
+    try {
+        let query = supabase.from('products')
+            .select('id, product_name, brand, price, category, product_type, amazon_asin, amazon_url, rating, review_count, is_available, created_at, updated_at', { count: 'exact' });
+
+        if (search) query = query.ilike('product_name', `%${search}%`);
+        if (category) query = query.eq('category', category);
+
+        const { data, count, error } = await query
+            .order(sort, { ascending: order })
+            .range((page - 1) * limit, page * limit - 1);
+
+        if (error) return res.status(500).json({ error: error.message });
+        res.json({ products: data, total: count, page, limit, totalPages: Math.ceil((count || 0) / limit) });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// DELETE /api/admin/products/:id — delete single product
+app.delete('/api/admin/products/:id', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
+    try {
+        const { error } = await supabase.from('products').delete().eq('id', req.params.id);
+        if (error) return res.status(500).json({ error: error.message });
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// POST /api/admin/products/bulk-delete — delete multiple products
+app.post('/api/admin/products/bulk-delete', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
+    const { ids } = req.body;
+    if (!ids?.length) return res.status(400).json({ error: 'No IDs provided' });
+    try {
+        const { error } = await supabase.from('products').delete().in('id', ids);
+        if (error) return res.status(500).json({ error: error.message });
+        res.json({ success: true, deleted: ids.length });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
 });
 
 // GET /api/admin/product-stats — detailed product stats for admin
