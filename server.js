@@ -487,24 +487,48 @@ async function runLightScrape(filterCategories = null, maxPerQuery = 30) {
                 const nextAsin = html.indexOf('data-asin="', blockStart + 20);
                 const block = html.substring(blockStart, nextAsin > 0 ? nextAsin : blockStart + 5000);
 
+                // Helper: is this a garbage/non-product title?
+                const isGarbageTitle = (t) => {
+                    if (!t || t.length < 10) return true;
+                    if (/^\d[\d.]* out of \d/i.test(t)) return true; // "4.2 out of 5 stars"
+                    if (t.includes('Check each product')) return true;
+                    if (t.includes('buying options')) return true;
+                    if (t.includes('Sponsored')) return true;
+                    if (t.includes('Best Seller')) return true;
+                    if (/^[\d\s.$,]+$/.test(t)) return true; // just numbers/prices
+                    return false;
+                };
+
                 // Extract title — try multiple patterns within this block only
                 let title = null;
-                // Pattern 1: h2 > a > span (most common)
-                const h2Match = block.match(/<h2[^>]*>[\s\S]*?<a[^>]*>[\s\S]*?<span[^>]*>([^<]{10,})<\/span>/i);
-                if (h2Match?.[1]) title = h2Match[1].trim();
-                // Pattern 2: span with a-text-normal class (within block)
-                if (!title) {
-                    const spanMatch = block.match(/<span[^>]*class="[^"]*a-text-normal[^"]*"[^>]*>([^<]{10,})<\/span>/i);
-                    if (spanMatch?.[1]) title = spanMatch[1].trim();
-                }
-                // Pattern 3: aria-label on the link
-                if (!title) {
-                    const ariaMatch = block.match(/<a[^>]*aria-label="([^"]{10,})"[^>]*>/i);
-                    if (ariaMatch?.[1]) title = ariaMatch[1].trim();
+
+                // Pattern 1: span with a-text-normal class inside h2 (most reliable)
+                const normalSpans = block.match(/<span[^>]*class="[^"]*a-text-normal[^"]*"[^>]*>([^<]+)<\/span>/gi);
+                if (normalSpans) {
+                    for (const s of normalSpans) {
+                        const m = s.match(/>([^<]+)</);
+                        if (m?.[1] && !isGarbageTitle(m[1].trim())) { title = m[1].trim(); break; }
+                    }
                 }
 
-                // Skip garbage titles
-                if (!title || title.includes('Check each product') || title.includes('buying options') || title.length < 10) continue;
+                // Pattern 2: aria-label on the product link (usually full title)
+                if (!title) {
+                    const ariaMatches = [...block.matchAll(/<a[^>]*aria-label="([^"]{15,})"[^>]*>/gi)];
+                    for (const am of ariaMatches) {
+                        if (!isGarbageTitle(am[1].trim())) { title = am[1].trim(); break; }
+                    }
+                }
+
+                // Pattern 3: h2 > a > span content (fallback)
+                if (!title) {
+                    const h2Spans = [...block.matchAll(/<h2[^>]*>[\s\S]*?<span[^>]*>([^<]{15,})<\/span>/gi)];
+                    for (const hs of h2Spans) {
+                        if (!isGarbageTitle(hs[1].trim())) { title = hs[1].trim(); break; }
+                    }
+                }
+
+                // Final check
+                if (!title || isGarbageTitle(title)) continue;
 
                 // Extract price within this block
                 const priceMatch = block.match(/<span class="a-price"[^>]*>[\s\S]*?<span[^>]*>\$([0-9,]+\.\d{2})<\/span>/i);
