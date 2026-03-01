@@ -264,6 +264,82 @@ app.get('/api/scrape-logs', async (req, res) => {
     }
 });
 
+// GET /api/scrape-status — last scrape time for frontend display
+app.get('/api/scrape-status', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('scrape_logs')
+            .select('completed_at, status, products_found, products_saved')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+        if (error || !data) {
+            return res.json({ lastScrape: null });
+        }
+
+        res.json({
+            lastScrape: data.completed_at,
+            status: data.status,
+            productsFound: data.products_found,
+            productsSaved: data.products_saved,
+        });
+    } catch (err) {
+        res.json({ lastScrape: null });
+    }
+});
+
+// ============================================
+// Admin — Manual Scrape Trigger
+// ============================================
+const { execFile } = require('child_process');
+let scraperRunning = false;
+
+function verifyAdmin(req, res) {
+    const adminKey = req.headers['x-admin-key'] || req.query.key;
+    const expectedKey = process.env.ADMIN_KEY;
+    if (!expectedKey || adminKey !== expectedKey) {
+        res.status(401).json({ error: 'Unauthorized — invalid admin key' });
+        return false;
+    }
+    return true;
+}
+
+// POST /api/admin/scrape — trigger scraper manually
+app.post('/api/admin/scrape', (req, res) => {
+    if (!verifyAdmin(req, res)) return;
+
+    if (scraperRunning) {
+        return res.status(409).json({ error: 'Scraper is already running' });
+    }
+
+    scraperRunning = true;
+    const startTime = new Date().toISOString();
+
+    // Spawn scraper as child process
+    const child = execFile('node', [path.join(__dirname, 'scraper', 'agent.js')], {
+        timeout: 600000, // 10 min max
+        env: { ...process.env },
+    }, (err, stdout, stderr) => {
+        scraperRunning = false;
+        if (err) {
+            console.error('Scraper error:', err.message);
+        }
+        console.log('Scraper completed. Output:', stdout?.slice(-500));
+    });
+
+    res.json({
+        message: 'Scraper started',
+        startedAt: startTime,
+        pid: child.pid,
+    });
+});
+
+// GET /api/admin/scrape-running — check if scraper is active
+app.get('/api/admin/scrape-running', (req, res) => {
+    res.json({ running: scraperRunning });
+});
+
 // Fallback to index.html for SPA — skip files with extensions (.xml, .txt, etc.)
 app.get('/{*path}', (req, res, next) => {
     if (path.extname(req.path)) {

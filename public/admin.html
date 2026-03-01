@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin — 3D Printer Prices</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .admin-container {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .admin-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .admin-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .admin-card h3 {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            color: var(--accent);
+        }
+
+        .scrape-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .scrape-info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+
+        .scrape-info-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .scrape-info-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .btn-scrape {
+            background: linear-gradient(135deg, var(--accent), #0891b2);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 0.75rem 1.5rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-scrape:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px var(--accent-glow);
+        }
+
+        .btn-scrape:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-scrape.running {
+            background: linear-gradient(135deg, var(--warning), #d97706);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .log-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+
+        .log-table th {
+            text-align: left;
+            padding: 0.5rem 0.75rem;
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .log-table td {
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .status-success {
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        .status-failed {
+            color: var(--danger);
+            font-weight: 600;
+        }
+
+        .status-running {
+            color: var(--warning);
+            font-weight: 600;
+        }
+
+        #status-msg {
+            margin-top: 0.75rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .login-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+        }
+
+        .login-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 2rem;
+            text-align: center;
+            max-width: 360px;
+            width: 100%;
+        }
+
+        .login-box h2 {
+            margin-bottom: 1rem;
+        }
+
+        .login-box input {
+            width: 100%;
+            padding: 0.6rem 1rem;
+            margin-bottom: 1rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .login-box button {
+            width: 100%;
+            padding: 0.6rem;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .login-error {
+            color: var(--danger);
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Login Overlay -->
+    <div class="login-overlay" id="login-overlay">
+        <div class="login-box">
+            <h2>🔐 Admin Login</h2>
+            <input type="password" id="admin-key-input" placeholder="Enter Admin Key" autofocus>
+            <button onclick="doLogin()">Login</button>
+            <div class="login-error" id="login-error"></div>
+        </div>
+    </div>
+
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <a href="/" class="logo-link">
+                    <span class="logo-icon">🖨️</span>
+                    <div>
+                        <h1>3D Printer Prices</h1>
+                        <p class="tagline">Admin Panel</p>
+                    </div>
+                </a>
+            </div>
+            <nav class="header-actions">
+                <a href="/" class="nav-link">← Back to Site</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="admin-container">
+        <h2 class="admin-title">⚙️ Scraper Control Panel</h2>
+
+        <!-- Status Card -->
+        <div class="admin-card">
+            <h3>📊 Last Scrape Status</h3>
+            <div class="scrape-info">
+                <div class="scrape-info-item">
+                    <span class="scrape-info-label">Last Run</span>
+                    <span class="scrape-info-value" id="last-run">Loading...</span>
+                </div>
+                <div class="scrape-info-item">
+                    <span class="scrape-info-label">Status</span>
+                    <span class="scrape-info-value" id="last-status">—</span>
+                </div>
+                <div class="scrape-info-item">
+                    <span class="scrape-info-label">Products Found</span>
+                    <span class="scrape-info-value" id="last-found">—</span>
+                </div>
+                <div class="scrape-info-item">
+                    <span class="scrape-info-label">Products Saved</span>
+                    <span class="scrape-info-value" id="last-saved">—</span>
+                </div>
+            </div>
+
+            <button class="btn-scrape" id="btn-scrape" onclick="runScrape()">
+                🔄 Run Scraper Now
+            </button>
+            <div id="status-msg"></div>
+        </div>
+
+        <!-- Scrape History -->
+        <div class="admin-card">
+            <h3>📋 Scrape History</h3>
+            <div style="overflow-x:auto">
+                <table class="log-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Found</th>
+                            <th>Saved</th>
+                            <th>Errors</th>
+                        </tr>
+                    </thead>
+                    <tbody id="log-body">
+                        <tr>
+                            <td colspan="5" style="text-align:center;color:var(--text-muted)">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let adminKey = '';
+
+        function doLogin() {
+            adminKey = document.getElementById('admin-key-input').value;
+            if (!adminKey) {
+                document.getElementById('login-error').textContent = 'Please enter admin key';
+                return;
+            }
+            // Test the key by checking scrape-status (public) and load data
+            document.getElementById('login-overlay').style.display = 'none';
+            loadStatus();
+            loadHistory();
+            // Poll scraper running status
+            setInterval(checkRunning, 5000);
+        }
+
+        // Enter key to login
+        document.getElementById('admin-key-input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') doLogin();
+        });
+
+        async function loadStatus() {
+            try {
+                const res = await fetch('/api/scrape-status');
+                const data = await res.json();
+                if (data.lastScrape) {
+                    document.getElementById('last-run').textContent = timeAgo(data.lastScrape);
+                    document.getElementById('last-status').innerHTML =
+                        `<span class="status-${data.status}">${data.status}</span>`;
+                    document.getElementById('last-found').textContent = data.productsFound || '—';
+                    document.getElementById('last-saved').textContent = data.productsSaved || '—';
+                } else {
+                    document.getElementById('last-run').textContent = 'Never';
+                }
+            } catch (e) {
+                document.getElementById('last-run').textContent = 'Error';
+            }
+        }
+
+        async function loadHistory() {
+            try {
+                const res = await fetch('/api/scrape-logs');
+                const logs = await res.json();
+                const tbody = document.getElementById('log-body');
+
+                if (!logs || logs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">No scrape history</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = logs.map(log => `
+                    <tr>
+                        <td>${formatDate(log.completed_at || log.created_at)}</td>
+                        <td><span class="status-${log.status}">${log.status}</span></td>
+                        <td>${log.products_found || 0}</td>
+                        <td>${log.products_saved || 0}</td>
+                        <td>${log.errors_count || 0}</td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                console.error('Failed to load logs:', e);
+            }
+        }
+
+        async function runScrape() {
+            const btn = document.getElementById('btn-scrape');
+            const msg = document.getElementById('status-msg');
+
+            btn.disabled = true;
+            btn.classList.add('running');
+            btn.innerHTML = '⏳ Scraper Running...';
+            msg.textContent = 'Scraper started. This may take 5-10 minutes...';
+
+            try {
+                const res = await fetch('/api/admin/scrape', {
+                    method: 'POST',
+                    headers: { 'X-Admin-Key': adminKey },
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    msg.textContent = `✅ Scraper started at ${data.startedAt}. Refresh in a few minutes to see results.`;
+                } else {
+                    msg.textContent = `❌ ${data.error}`;
+                    btn.disabled = false;
+                    btn.classList.remove('running');
+                    btn.innerHTML = '🔄 Run Scraper Now';
+                }
+            } catch (e) {
+                msg.textContent = `❌ Failed to start scraper: ${e.message}`;
+                btn.disabled = false;
+                btn.classList.remove('running');
+                btn.innerHTML = '🔄 Run Scraper Now';
+            }
+        }
+
+        async function checkRunning() {
+            try {
+                const res = await fetch('/api/admin/scrape-running');
+                const data = await res.json();
+                const btn = document.getElementById('btn-scrape');
+
+                if (!data.running && btn.classList.contains('running')) {
+                    btn.disabled = false;
+                    btn.classList.remove('running');
+                    btn.innerHTML = '🔄 Run Scraper Now';
+                    document.getElementById('status-msg').textContent = '✅ Scraper finished! Refreshing data...';
+                    loadStatus();
+                    loadHistory();
+                }
+            } catch (e) { }
+        }
+
+        function timeAgo(dateStr) {
+            const diff = Date.now() - new Date(dateStr).getTime();
+            const mins = Math.floor(diff / 60000);
+            if (mins < 1) return 'Just now';
+            if (mins < 60) return `${mins}m ago`;
+            const hours = Math.floor(mins / 60);
+            if (hours < 24) return `${hours}h ago`;
+            const days = Math.floor(hours / 24);
+            return `${days}d ago`;
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '—';
+            return new Date(dateStr).toLocaleString();
+        }
+    </script>
+</body>
+
+</html>

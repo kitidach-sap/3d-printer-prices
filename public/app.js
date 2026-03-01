@@ -130,9 +130,35 @@ async function loadStats() {
 
         const brandCount = stats.topBrands?.length || 0;
         document.getElementById('stat-brands').textContent = brandCount;
+
+        // Fetch last scrape time
+        try {
+            const scrapeRes = await fetch(`${API_BASE}/scrape-status`);
+            const scrapeData = await scrapeRes.json();
+            if (scrapeData.lastScrape) {
+                document.getElementById('stat-updated').textContent = timeAgo(scrapeData.lastScrape);
+                document.getElementById('stat-updated').title = new Date(scrapeData.lastScrape).toLocaleString();
+            } else {
+                document.getElementById('stat-updated').textContent = '—';
+            }
+        } catch (e) {
+            document.getElementById('stat-updated').textContent = '—';
+        }
     } catch (err) {
         console.error('Stats error:', err);
     }
+}
+
+function timeAgo(dateStr) {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 30) return `${days}d ago`;
+    return `${Math.floor(days / 30)}mo ago`;
 }
 
 // ============================================

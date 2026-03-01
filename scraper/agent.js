@@ -15,20 +15,43 @@ require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 // ============================================
 const CONFIG = {
     searches: [
+        // 3D Printers — FDM
         { query: '3D printer FDM', category: '3d_printer', productType: 'fdm' },
+        { query: 'Bambu Lab 3D printer', category: '3d_printer', productType: 'fdm' },
+        { query: 'Creality 3D printer', category: '3d_printer', productType: 'fdm' },
+        { query: 'ELEGOO FDM 3D printer', category: '3d_printer', productType: 'fdm' },
+        { query: 'Anycubic FDM 3D printer', category: '3d_printer', productType: 'fdm' },
+        { query: 'FLASHFORGE 3D printer', category: '3d_printer', productType: 'fdm' },
+        { query: 'high speed 3D printer CoreXY', category: '3d_printer', productType: 'fdm' },
+        { query: 'large format 3D printer 300mm', category: '3d_printer', productType: 'fdm' },
+        // 3D Printers — Resin
         { query: '3D printer resin SLA', category: '3d_printer', productType: 'resin_sla' },
+        { query: 'ELEGOO resin 3D printer', category: '3d_printer', productType: 'resin_sla' },
+        { query: 'Anycubic Photon resin printer', category: '3d_printer', productType: 'resin_sla' },
+        { query: 'Phrozen resin 3D printer', category: '3d_printer', productType: 'resin_sla' },
+        // Filament
         { query: '3D printer filament PLA', category: 'filament', productType: 'pla' },
         { query: '3D printer filament ABS', category: 'filament', productType: 'abs' },
         { query: '3D printer filament PETG', category: 'filament', productType: 'petg' },
+        { query: '3D printer filament TPU flexible', category: 'filament', productType: 'tpu' },
+        { query: '3D printer filament silk PLA', category: 'filament', productType: 'silk_pla' },
+        { query: '3D printer filament carbon fiber', category: 'filament', productType: 'carbon_fiber' },
+        { query: '3D printer filament wood', category: 'filament', productType: 'wood' },
+        // Resin
         { query: '3D printer resin UV', category: 'resin', productType: 'uv_resin' },
+        { query: '3D printer resin water washable', category: 'resin', productType: 'water_washable' },
+        // Accessories
         { query: '3D printer nozzle set', category: 'accessories', productType: 'nozzle' },
         { query: '3D printer build plate PEI', category: 'accessories', productType: 'build_plate' },
         { query: '3D printer enclosure', category: 'accessories', productType: 'enclosure' },
+        { query: '3D printer tool kit accessories', category: 'accessories', productType: 'tools' },
+        { query: '3D printer filament dryer', category: 'accessories', productType: 'dryer' },
+        // 3D Pens
         { query: '3D pen', category: '3d_pen', productType: '3d_pen' },
     ],
 
     maxPages: 2,
-    maxProducts: 40,
+    maxProducts: 60,
     delayMin: 2000,
     delayMax: 5000,
     locale: 'us',
@@ -246,7 +269,10 @@ async function saveProducts(products) {
 
     for (let i = 0; i < products.length; i += BATCH_SIZE) {
         const batch = products.slice(i, i + BATCH_SIZE);
-        const { error } = await supabase.from('products').insert(batch);
+        const { error } = await supabase.from('products').upsert(batch, {
+            onConflict: 'amazon_asin',
+            ignoreDuplicates: false,
+        });
 
         if (error) {
             console.error(`   ❌ Insert error:`, error.message);
