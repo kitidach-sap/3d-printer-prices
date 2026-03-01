@@ -458,6 +458,7 @@ async function runLightScrape(filterCategories = null, maxPerQuery = 30) {
                     const price = parseFloat(pMatch[1].replace(/,/g, ''));
                     if (price > 0) {
                         products.push({
+                            asin: asin,
                             amazon_asin: asin,
                             product_name: tMatch[1].trim(),
                             price,
@@ -468,6 +469,7 @@ async function runLightScrape(filterCategories = null, maxPerQuery = 30) {
                             locale: 'us',
                             is_available: true,
                             amazon_url: `https://www.amazon.com/dp/${asin}?tag=${AFFILIATE_TAG}`,
+                            updated_at: new Date().toISOString(),
                         });
                     }
                 }
