@@ -46,6 +46,7 @@
     <main class="blog-list">
         <h2 class="blog-list-title">Latest Articles</h2>
 
+        <!-- Static article (always shown) -->
         <a href="best-3d-printers-under-300.html" class="blog-card">
             <div class="blog-card-badge">Buying Guide</div>
             <h3>🏆 Best 3D Printers Under $300 in 2026</h3>
@@ -57,18 +58,8 @@
             </div>
         </a>
 
-        <!-- Future articles go here -->
-        <!--
-    <a href="fdm-vs-resin.html" class="blog-card">
-      <div class="blog-card-badge">Comparison</div>
-      <h3>🔬 FDM vs Resin: Which 3D Printer Should You Buy?</h3>
-      <p>A detailed comparison of FDM and resin 3D printing technologies to help you choose the right one.</p>
-      <div class="blog-card-meta">
-        <span>📅 Coming Soon</span>
-      </div>
-    </a>
-    -->
-
+        <!-- Dynamic posts loaded from API -->
+        <div id="dynamic-posts"></div>
     </main>
 
     <footer class="footer">
@@ -77,6 +68,50 @@
                 Service</a>
         </p>
     </footer>
+
+    <script>
+        const typeEmoji = {
+            'buying-guide': '🏆',
+            'comparison': '🔬',
+            'tutorial': '🛠️',
+            'review': '⭐',
+        };
+        const typeLabel = {
+            'buying-guide': 'Buying Guide',
+            'comparison': 'Comparison',
+            'tutorial': 'Tutorial',
+            'review': 'Review',
+        };
+
+        async function loadPosts() {
+            try {
+                const res = await fetch('/api/blog/posts');
+                const posts = await res.json();
+                if (!posts.length) return;
+
+                const el = document.getElementById('dynamic-posts');
+                el.innerHTML = posts.map(p => {
+                    const emoji = typeEmoji[p.article_type] || '📝';
+                    const badge = typeLabel[p.article_type] || p.article_type;
+                    const date = p.published_at ? new Date(p.published_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) : '';
+                    const readTime = Math.max(1, Math.round(p.word_count / 250));
+                    return `
+                        <a href="/blog/${p.slug}" class="blog-card">
+                            <div class="blog-card-badge">${badge}</div>
+                            <h3>${emoji} ${p.title}</h3>
+                            <p>${p.description || ''}</p>
+                            <div class="blog-card-meta">
+                                <span>📅 ${date}</span>
+                                <span>⏱️ ${readTime} min read</span>
+                            </div>
+                        </a>`;
+                }).join('');
+            } catch (e) {
+                console.log('Failed to load posts:', e);
+            }
+        }
+        loadPosts();
+    </script>
 </body>
 
 </html>

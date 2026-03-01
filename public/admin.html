@@ -889,9 +889,28 @@
                         </div>
                     </div>
                     <div id="blog-preview"
-                        style="background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.75rem;max-height:500px;overflow-y:auto;font-size:0.78rem;line-height:1.6;white-space:pre-wrap">
+                        style="background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.75rem;max-height:400px;overflow-y:auto;font-size:0.78rem;line-height:1.6;white-space:pre-wrap">
                     </div>
+                    <div style="display:flex;gap:0.4rem;margin-top:0.5rem;flex-wrap:wrap">
+                        <button class="btn btn-success" onclick="publishBlog(true)">
+                            🚀 Publish to Website
+                        </button>
+                        <button class="btn" onclick="publishBlog(false)">
+                            💾 Save as Draft
+                        </button>
+                    </div>
+                    <div id="publish-status" style="margin-top:0.3rem;font-size:0.72rem"></div>
                 </div>
+            </div>
+
+            <!-- Published Posts Management -->
+            <div class="admin-card">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
+                    <h3 style="margin:0">📚 Blog Posts</h3>
+                    <button class="btn" style="font-size:0.65rem;padding:0.2rem 0.5rem" onclick="loadBlogPosts()">🔄
+                        Refresh</button>
+                </div>
+                <div id="blog-posts-list" style="font-size:0.75rem;color:var(--text-muted)">Loading...</div>
             </div>
 
             <!-- X Post Generator -->
@@ -1354,6 +1373,7 @@
             loadApiKeysStatus();
             loadBlogSchedule();
             loadXSchedule();
+            loadBlogPosts();
             setInterval(checkRunning, 2000);
         }
 
@@ -2176,6 +2196,82 @@
                 btn.textContent = '✅ Copied!';
                 setTimeout(() => btn.textContent = '📋 Copy', 1500);
             });
+        }
+
+        // ===== Blog Publish & Management =====
+        async function publishBlog(publishNow) {
+            const status = document.getElementById('publish-status');
+            if (!currentBlogContent) {
+                status.innerHTML = '<span style="color:var(--warning)">⚠️ Generate a blog post first</span>';
+                return;
+            }
+
+            status.innerHTML = '<span style="color:var(--text-muted)">💾 Saving...</span>';
+            try {
+                const res = await fetch('/api/admin/publish-blog', {
+                    method: 'POST', headers: apiHeaders(),
+                    body: JSON.stringify({
+                        content: currentBlogContent,
+                        articleType: document.getElementById('blog-type').value,
+                        publishNow,
+                    }),
+                });
+                const d = await res.json();
+                if (d.success) {
+                    const link = publishNow ? ` <a href="/blog/${d.post.slug}" target="_blank" style="color:var(--primary)">→ View Post</a>` : '';
+                    status.innerHTML = `<span style="color:var(--success)">${d.message}${link}</span>`;
+                    loadBlogPosts();
+                } else {
+                    status.innerHTML = `<span style="color:var(--danger)">❌ ${d.error}</span>`;
+                }
+            } catch (e) {
+                status.innerHTML = `<span style="color:var(--danger)">❌ ${e.message}</span>`;
+            }
+        }
+
+        async function loadBlogPosts() {
+            const el = document.getElementById('blog-posts-list');
+            if (!el) return;
+            try {
+                const res = await fetch('/api/admin/blog/list', { headers: apiHeaders() });
+                const posts = await res.json();
+                if (!posts.length) {
+                    el.innerHTML = '<span style="color:var(--text-muted)">No blog posts yet. Generate and publish one above!</span>';
+                    return;
+                }
+                el.innerHTML = posts.map(p => `
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:0.4rem;border-bottom:1px solid var(--border)">
+                        <div style="flex:1;min-width:0">
+                            <strong style="font-size:0.76rem">${esc(p.title)}</strong>
+                            <div style="font-size:0.65rem;color:var(--text-muted);margin-top:0.1rem">
+                                ${p.article_type} · ${p.word_count} words · ${p.published_at ? new Date(p.published_at).toLocaleDateString() : 'Draft'}
+                            </div>
+                        </div>
+                        <div style="display:flex;gap:0.2rem;flex-shrink:0">
+                            <span class="badge ${p.is_published ? 'badge-active' : ''}" style="font-size:0.6rem">${p.is_published ? '✅ Live' : '📝 Draft'}</span>
+                            ${p.is_published ? `<a href="/blog/${p.slug}" target="_blank" class="btn" style="font-size:0.6rem;padding:0.15rem 0.3rem">👁️</a>` : ''}
+                            <button class="btn" style="font-size:0.6rem;padding:0.15rem 0.3rem" onclick="toggleBlogPost('${p.id}')">${p.is_published ? '⏸️' : '🚀'}</button>
+                            <button class="btn" style="font-size:0.6rem;padding:0.15rem 0.3rem;color:var(--danger)" onclick="deleteBlogPost('${p.id}')">🗑️</button>
+                        </div>
+                    </div>`).join('');
+            } catch (e) {
+                el.innerHTML = `<span style="color:var(--danger)">Error: ${e.message}</span>`;
+            }
+        }
+
+        async function toggleBlogPost(id) {
+            try {
+                await fetch(`/api/admin/blog/${id}/toggle`, { method: 'PATCH', headers: apiHeaders() });
+                loadBlogPosts();
+            } catch (e) { alert(e.message); }
+        }
+
+        async function deleteBlogPost(id) {
+            if (!confirm('Delete this blog post?')) return;
+            try {
+                await fetch(`/api/admin/blog/${id}`, { method: 'DELETE', headers: apiHeaders() });
+                loadBlogPosts();
+            } catch (e) { alert(e.message); }
         }
 
         // ===== X Post AI Generation =====

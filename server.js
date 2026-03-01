@@ -1015,6 +1015,145 @@ Output ONLY the tweet text, nothing else. No quotes around it.`;
     }
 });
 
+// ===== Blog Publishing =====
+
+// Helper: generate slug from title
+function slugify(text) {
+    return text.toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '')
+        .slice(0, 80);
+}
+
+// Helper: extract first heading and first paragraph from markdown
+function extractMeta(markdown) {
+    const lines = markdown.split('\n').map(l => l.trim()).filter(Boolean);
+    let title = '', description = '';
+    for (const line of lines) {
+        if (!title && /^#{1,3}\s/.test(line)) {
+            title = line.replace(/^#{1,3}\s*/, '').replace(/\*+/g, '').trim();
+        } else if (title && !description && !line.startsWith('#') && !line.startsWith('|') && !line.startsWith('-')) {
+            description = line.slice(0, 200);
+        }
+        if (title && description) break;
+    }
+    return { title: title || 'Untitled Post', description };
+}
+
+// POST /api/admin/publish-blog — save generated blog post to DB
+app.post('/api/admin/publish-blog', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
+    const { content, articleType, publishNow } = req.body;
+
+    if (!content || content.length < 50) {
+        return res.status(400).json({ error: 'Content too short' });
+    }
+
+    try {
+        const { title, description } = extractMeta(content);
+        const baseSlug = slugify(title);
+        const slug = baseSlug || 'blog-post-' + Date.now();
+        const wordCount = content.split(/\s+/).length;
+
+        const post = {
+            slug,
+            title,
+            description,
+            content,
+            article_type: articleType || 'buying-guide',
+            word_count: wordCount,
+            is_published: !!publishNow,
+            published_at: publishNow ? new Date().toISOString() : null,
+        };
+
+        const { data, error } = await supabase.from('blog_posts')
+            .upsert(post, { onConflict: 'slug' })
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        res.json({
+            success: true,
+            post: data,
+            url: `/blog/${data.slug}`,
+            message: publishNow ? '✅ Published!' : '✅ Saved as draft',
+        });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// GET /api/blog/posts — public: list published blog posts
+app.get('/api/blog/posts', async (req, res) => {
+    try {
+        const { data } = await supabase.from('blog_posts')
+            .select('id, slug, title, description, article_type, word_count, published_at')
+            .eq('is_published', true)
+            .order('published_at', { ascending: false });
+        res.json(data || []);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// GET /api/blog/posts/:slug — public: get single blog post
+app.get('/api/blog/posts/:slug', async (req, res) => {
+    try {
+        const { data } = await supabase.from('blog_posts')
+            .select('*')
+            .eq('slug', req.params.slug)
+            .eq('is_published', true)
+            .single();
+        if (!data) return res.status(404).json({ error: 'Post not found' });
+        res.json(data);
+    } catch (e) {
+        res.status(404).json({ error: 'Post not found' });
+    }
+});
+
+// GET /api/admin/blog/list — admin: list all posts (including drafts)
+app.get('/api/admin/blog/list', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
+    try {
+        const { data } = await supabase.from('blog_posts')
+            .select('id, slug, title, article_type, word_count, is_published, published_at, created_at')
+            .order('created_at', { ascending: false });
+        res.json(data || []);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// PATCH /api/admin/blog/:id/toggle — toggle publish status
+app.patch('/api/admin/blog/:id/toggle', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
+    try {
+        const { data: post } = await supabase.from('blog_posts').select('is_published').eq('id', req.params.id).single();
+        const newStatus = !post.is_published;
+        await supabase.from('blog_posts').update({
+            is_published: newStatus,
+            published_at: newStatus ? new Date().toISOString() : null,
+        }).eq('id', req.params.id);
+        res.json({ success: true, is_published: newStatus });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// DELETE /api/admin/blog/:id — delete blog post
+app.delete('/api/admin/blog/:id', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
+    try {
+        await supabase.from('blog_posts').delete().eq('id', req.params.id);
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // GET /api/admin/scrape-progress — live progress feed
 app.get('/api/admin/scrape-progress', (req, res) => {
     res.json({
@@ -1298,6 +1437,103 @@ app.get('/api/admin/schedule', async (req, res) => {
         });
     } catch (err) {
         res.json({ cronExpression: '0 6 * * *', frequency: 'daily', lastRun: null, nextRun: null });
+    }
+});
+
+// GET /blog/:slug — serve blog post as HTML page
+app.get('/blog/:slug', async (req, res, next) => {
+    const slug = req.params.slug;
+    // Skip if it looks like a file (has extension)
+    if (path.extname(slug)) return next();
+
+    try {
+        const { data } = await supabase.from('blog_posts')
+            .select('*')
+            .eq('slug', slug)
+            .eq('is_published', true)
+            .single();
+
+        if (!data) return next();
+
+        // Convert markdown to basic HTML
+        let html = data.content
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+            .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+            .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.+?)\*/g, '<em>$1</em>')
+            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+            .replace(/^- (.+)$/gm, '<li>$1</li>')
+            .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
+            .replace(/\n\n/g, '</p><p>')
+            .replace(/\n/g, '<br>');
+        html = '<p>' + html + '</p>';
+        html = html.replace(/<p><h([123])>/g, '<h$1>').replace(/<\/h([123])><\/p>/g, '</h$1>');
+        html = html.replace(/<p><ul>/g, '<ul>').replace(/<\/ul><\/p>/g, '</ul>');
+
+        const readTime = Math.max(1, Math.round(data.word_count / 250));
+        const pubDate = data.published_at ? new Date(data.published_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+
+        res.send(`<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${data.title} — 3D Printer Prices</title>
+    <meta name="description" content="${(data.description || '').replace(/"/g, '&quot;')}">
+    <link rel="canonical" href="https://3d-printer-prices.com/blog/${data.slug}">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="${data.title}">
+    <meta property="og:description" content="${(data.description || '').replace(/"/g, '&quot;')}">
+    <meta property="og:url" content="https://3d-printer-prices.com/blog/${data.slug}">
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"Article","headline":"${data.title}","description":"${(data.description || '').replace(/"/g, '\\"')}","datePublished":"${data.published_at || ''}","author":{"@type":"Organization","name":"3D Printer Prices"},"publisher":{"@type":"Organization","name":"3D Printer Prices"}}
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/blog/blog.css">
+    <script defer src="/_vercel/insights/script.js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <a href="/" class="logo-link">
+                    <span class="logo-icon">🖨️</span>
+                    <div>
+                        <h1>3D Printer Prices</h1>
+                        <p class="tagline">${data.article_type || 'Blog'}</p>
+                    </div>
+                </a>
+            </div>
+            <nav class="header-actions">
+                <a href="/blog/" class="nav-link">← Blog</a>
+                <a href="/" class="nav-link">Compare Prices</a>
+            </nav>
+        </div>
+    </header>
+    <article class="blog-article">
+        <div class="article-meta">
+            <span>📅 ${pubDate}</span>
+            <span>⏱️ ${readTime} min read</span>
+            <span>📝 ${data.word_count} words</span>
+        </div>
+        <div class="article-body">${html}</div>
+        <div class="article-cta">
+            <p>🔍 <strong>Compare all 3D printer prices at <a href="/">3d-printer-prices.com</a></strong></p>
+        </div>
+    </article>
+    <footer class="footer">
+        <p class="footer-links">
+            <a href="/">Home</a> · <a href="/blog/">Blog</a> · <a href="/privacy.html">Privacy Policy</a> · <a href="/terms.html">Terms of Service</a>
+        </p>
+    </footer>
+</body>
+</html>`);
+    } catch (e) {
+        next();
     }
 });
 
