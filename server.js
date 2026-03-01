@@ -324,6 +324,59 @@ const SCRAPE_SEARCHES = [
 ];
 
 const AFFILIATE_TAG = 'kiti09-20';
+let SCRAPER_API_KEY = process.env.SCRAPER_API_KEY || '';
+
+// Load saved API key from Supabase on startup
+(async () => {
+    try {
+        const { data } = await supabase
+            .from('settings')
+            .select('value')
+            .eq('key', 'scraper_api_key')
+            .single();
+        if (data?.value && !SCRAPER_API_KEY) {
+            SCRAPER_API_KEY = data.value;
+            console.log('[Scraper] Loaded API key from Supabase settings');
+        }
+    } catch (e) {
+        console.log('[Scraper] No saved API key found (settings table may not exist)');
+    }
+})();
+
+// Fetch Amazon page — uses ScraperAPI proxy if configured, else direct fetch
+async function fetchAmazonPage(amazonUrl, stepLabel) {
+    if (SCRAPER_API_KEY) {
+        // Route through ScraperAPI proxy (bypasses CAPTCHA/bot detection)
+        const proxyUrl = `http://api.scraperapi.com?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(amazonUrl)}&country_code=us`;
+        logProgress('search', `${stepLabel} — via ScraperAPI proxy...`);
+        const res = await fetch(proxyUrl, { headers: { 'Accept': 'text/html' } });
+        return res;
+    } else {
+        // Direct fetch with realistic browser headers
+        const userAgents = [
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:126.0) Gecko/20100101 Firefox/126.0',
+            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        ];
+        const res = await fetch(amazonUrl, {
+            headers: {
+                'User-Agent': userAgents[Math.floor(Math.random() * userAgents.length)],
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache',
+                'Sec-Fetch-Dest': 'document',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'none',
+                'Sec-Fetch-User': '?1',
+                'Upgrade-Insecure-Requests': '1',
+            },
+        });
+        return res;
+    }
+}
 
 // Progress tracking
 let scrapeProgress = [];
@@ -353,7 +406,12 @@ async function runLightScrape(filterCategories = null, maxPerQuery = 30) {
         ? SCRAPE_SEARCHES.filter(s => filterCategories.includes(s.category))
         : SCRAPE_SEARCHES;
 
-    logProgress('start', `Starting scrape: ${searches.length} queries, max ${maxPerQuery}/query`);
+    const mode = SCRAPER_API_KEY ? '🔑 ScraperAPI' : '⚡ Direct (may be blocked)';
+    logProgress('start', `Starting scrape: ${searches.length} queries, max ${maxPerQuery}/query — Mode: ${mode}`);
+
+    if (!SCRAPER_API_KEY) {
+        logProgress('warn', '⚠️ No SCRAPER_API_KEY set — using direct fetch. Amazon may block with 503. Set env var SCRAPER_API_KEY for reliable scraping.');
+    }
 
     for (let i = 0; i < searches.length; i++) {
         const search = searches[i];
@@ -362,14 +420,8 @@ async function runLightScrape(filterCategories = null, maxPerQuery = 30) {
         try {
             logProgress('search', `${stepLabel} — Searching Amazon...`, { query: search.query });
 
-            const url = `https://www.amazon.com/s?k=${search.query}&tag=${AFFILIATE_TAG}`;
-            const res = await fetch(url, {
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                    'Accept': 'text/html,application/xhtml+xml',
-                    'Accept-Language': 'en-US,en;q=0.9',
-                },
-            });
+            const amazonUrl = `https://www.amazon.com/s?k=${search.query}&tag=${AFFILIATE_TAG}`;
+            const res = await fetchAmazonPage(amazonUrl, stepLabel);
 
             if (!res.ok) {
                 logProgress('error', `${stepLabel} — HTTP ${res.status} (${res.statusText})`, { status: res.status });
@@ -439,7 +491,9 @@ async function runLightScrape(filterCategories = null, maxPerQuery = 30) {
                 logProgress('warn', `${stepLabel} — No products with price found`);
             }
 
-            await new Promise(r => setTimeout(r, 1500));
+            // Random delay 2-4s between queries to avoid rate limiting
+            const delay = 2000 + Math.floor(Math.random() * 2000);
+            await new Promise(r => setTimeout(r, delay));
         } catch (e) {
             logProgress('error', `${stepLabel} — Exception: ${e.message}`, { error: e.message });
             errorsCount++;
@@ -462,6 +516,64 @@ async function runLightScrape(filterCategories = null, maxPerQuery = 30) {
 
     return { totalFound, totalSaved, errorsCount };
 }
+
+// GET /api/admin/scraper-mode — check scraper configuration
+app.get('/api/admin/scraper-mode', (req, res) => {
+    const masked = SCRAPER_API_KEY
+        ? SCRAPER_API_KEY.slice(0, 8) + '••••••' + SCRAPER_API_KEY.slice(-4)
+        : '';
+    res.json({
+        mode: SCRAPER_API_KEY ? 'scraperapi' : 'direct',
+        hasApiKey: !!SCRAPER_API_KEY,
+        maskedKey: masked,
+    });
+});
+
+// POST /api/admin/scraper-key — save & validate ScraperAPI key
+app.post('/api/admin/scraper-key', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
+    const { apiKey } = req.body;
+
+    if (!apiKey || apiKey.length < 10) {
+        return res.status(400).json({ error: 'Invalid API key format' });
+    }
+
+    // Test the key with a simple request
+    try {
+        const testUrl = `http://api.scraperapi.com?api_key=${apiKey}&url=${encodeURIComponent('https://httpbin.org/ip')}`;
+        const testRes = await fetch(testUrl, { signal: AbortSignal.timeout(15000) });
+
+        if (testRes.status === 401 || testRes.status === 403) {
+            return res.json({ valid: false, error: 'API key is invalid or expired' });
+        }
+        if (!testRes.ok) {
+            return res.json({ valid: false, error: `API returned HTTP ${testRes.status}` });
+        }
+
+        const body = await testRes.text();
+
+        // Key is valid — save to Supabase settings and activate
+        SCRAPER_API_KEY = apiKey;
+
+        // Try to save to Supabase settings table
+        try {
+            await supabase.from('settings').upsert(
+                { key: 'scraper_api_key', value: apiKey },
+                { onConflict: 'key' }
+            );
+        } catch (e) {
+            // Table might not exist — that's OK, key still works in memory
+        }
+
+        res.json({
+            valid: true,
+            message: '✅ API Key is valid and activated!',
+            testResult: body.slice(0, 200),
+        });
+    } catch (e) {
+        res.json({ valid: false, error: 'Connection failed: ' + e.message });
+    }
+});
 
 // GET /api/admin/scrape-progress — live progress feed
 app.get('/api/admin/scrape-progress', (req, res) => {

@@ -561,10 +561,33 @@
                     </label>
                 </div>
 
-                <p style="font-size:0.72rem;color:var(--text-muted);margin-bottom:0.75rem">
+                <p style="font-size:0.72rem;color:var(--text-muted);margin-bottom:0.3rem">
                     🔗 Affiliate Tag: <code>kiti09-20</code> — All links auto-converted ·
                     🛡️ Dedup: <span class="badge badge-active">ASIN Upsert</span> (ไม่ซ้ำ)
                 </p>
+                <div
+                    style="background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.75rem;margin-bottom:0.75rem">
+                    <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
+                        <strong style="font-size:0.82rem">🔑 ScraperAPI Key</strong>
+                        <span id="scraper-mode" style="font-size:0.72rem;color:var(--warning)">Loading...</span>
+                    </div>
+                    <div style="display:flex;gap:0.4rem;margin-bottom:0.4rem">
+                        <input type="text" id="api-key-input" class="form-input"
+                            placeholder="Paste your ScraperAPI key here..."
+                            style="flex:1;font-size:0.78rem;font-family:monospace;padding:0.4rem 0.6rem">
+                        <button class="btn btn-primary" id="btn-test-key" onclick="testApiKey()"
+                            style="font-size:0.75rem;padding:0.4rem 0.8rem;white-space:nowrap">
+                            🧪 Test & Save
+                        </button>
+                    </div>
+                    <div id="api-key-msg" style="font-size:0.72rem;min-height:1rem"></div>
+                    <p style="font-size:0.68rem;color:var(--text-muted);margin-top:0.3rem;margin-bottom:0">
+                        Amazon blocks direct requests (503). สมัครฟรีที่
+                        <a href="https://www.scraperapi.com/signup" target="_blank"
+                            style="color:var(--primary)">scraperapi.com/signup</a>
+                        (5,000 free/mo, ไม่ต้องใส่บัตร) → Copy API Key → วางที่นี่ → กด Test & Save
+                    </p>
+                </div>
 
                 <div class="form-row" style="margin-bottom:0.75rem">
                     <div class="form-group" style="margin-bottom:0">
@@ -1011,7 +1034,64 @@
             loadHistory();
             loadProductStats();
             loadSchedule();
+            loadScraperMode();
             setInterval(checkRunning, 2000);
+        }
+
+        async function loadScraperMode() {
+            try {
+                const res = await fetch('/api/admin/scraper-mode');
+                const d = await res.json();
+                const el = document.getElementById('scraper-mode');
+                const input = document.getElementById('api-key-input');
+                if (d.hasApiKey) {
+                    el.innerHTML = `✅ Active <span style="font-family:monospace;opacity:0.7">(${d.maskedKey})</span>`;
+                    el.style.color = 'var(--success)';
+                    input.placeholder = d.maskedKey + ' (key saved — paste new to replace)';
+                    document.getElementById('api-key-msg').innerHTML = '<span style="color:var(--success)">🟢 API Key is configured and ready</span>';
+                } else {
+                    el.textContent = '❌ Not configured — Amazon จะ block (503)';
+                    el.style.color = 'var(--danger)';
+                    document.getElementById('api-key-msg').innerHTML = '<span style="color:var(--danger)">⚠️ ต้องใส่ API Key ก่อนถึงจะดึงสินค้าได้</span>';
+                }
+            } catch (e) { }
+        }
+
+        async function testApiKey() {
+            const apiKey = document.getElementById('api-key-input').value.trim();
+            const msg = document.getElementById('api-key-msg');
+            const btn = document.getElementById('btn-test-key');
+
+            if (!apiKey) {
+                msg.innerHTML = '<span style="color:var(--warning)">⚠️ กรุณาวาง API Key ก่อน</span>';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = '⏳ Testing...';
+            msg.innerHTML = '<span style="color:var(--text-muted)">🔄 กำลังทดสอบ API Key กับ ScraperAPI...</span>';
+
+            try {
+                const res = await fetch('/api/admin/scraper-key', {
+                    method: 'POST',
+                    headers: apiHeaders(),
+                    body: JSON.stringify({ apiKey }),
+                });
+                const d = await res.json();
+
+                if (d.valid) {
+                    msg.innerHTML = `<span style="color:var(--success)">✅ API Key ใช้ได้! บันทึกแล้ว — พร้อมดึงสินค้า</span>`;
+                    document.getElementById('api-key-input').value = '';
+                    loadScraperMode(); // Refresh mode display
+                } else {
+                    msg.innerHTML = `<span style="color:var(--danger)">❌ ${d.error}</span>`;
+                }
+            } catch (e) {
+                msg.innerHTML = `<span style="color:var(--danger)">❌ ${e.message}</span>`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🧪 Test & Save';
+            }
         }
 
         // ===== API helpers =====
