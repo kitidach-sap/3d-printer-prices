@@ -795,6 +795,174 @@ app.get('/api/admin/get-schedule/:type', async (req, res) => {
     }
 });
 
+// ===== AI Generation (Gemini) =====
+
+// Helper: call Gemini API
+async function callGemini(prompt, maxTokens = 8192) {
+    // Load Gemini key from settings
+    let geminiKey = '';
+    try {
+        const { data } = await supabase.from('settings').select('value').eq('key', 'gemini_api_key').single();
+        geminiKey = data?.value || '';
+    } catch (e) { }
+    if (!geminiKey) throw new Error('Gemini API Key not configured — go to Settings tab');
+
+    const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+        {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: { maxOutputTokens: maxTokens, temperature: 0.8 },
+            }),
+            signal: AbortSignal.timeout(60000),
+        }
+    );
+    if (!res.ok) {
+        const err = await res.text();
+        throw new Error(`Gemini API error (${res.status}): ${err.slice(0, 200)}`);
+    }
+    const json = await res.json();
+    return json.candidates?.[0]?.content?.parts?.[0]?.text || '';
+}
+
+// POST /api/admin/generate-blog — AI generate blog post
+app.post('/api/admin/generate-blog', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
+    const { topic, articleType, length, instructions, autoTopic } = req.body;
+
+    try {
+        // Fetch top products for context
+        const { data: products } = await supabase.from('products')
+            .select('product_name, brand, price, category, product_type, rating, review_count, amazon_url')
+            .eq('is_available', true)
+            .order('rating', { ascending: false, nullsLast: true })
+            .limit(30);
+
+        const productList = (products || []).map(p =>
+            `- ${p.product_name} | $${p.price} | ${p.brand || 'Unknown'} | Rating: ${p.rating || 'N/A'} (${p.review_count || 0} reviews) | ${p.amazon_url || ''}`
+        ).join('\n');
+
+        const lengthMap = { short: '800-1000', medium: '1500-2000', long: '2500-3500' };
+        const wordCount = lengthMap[length] || '1500-2000';
+
+        let topicText = topic;
+        if (autoTopic) {
+            // Auto-pick a topic based on product data
+            const topicPrompt = `You are a content strategist for 3D Printer Prices (3d-printer-prices.com), a price comparison site for 3D printers, filaments, and accessories.
+
+Based on these current products in our database:
+${productList.slice(0, 2000)}
+
+Suggest ONE compelling blog post topic that would drive organic traffic. Just reply with the topic title, nothing else. Make it SEO-friendly with specific keywords. Examples of good topics:
+- "Best Budget 3D Printers Under $300 in 2026"
+- "Creality vs Bambu Lab: Which 3D Printer is Worth Your Money?"
+- "Top 5 PLA Filaments for Beginners (Tested & Ranked)"`;
+            topicText = await callGemini(topicPrompt, 200);
+            topicText = topicText.replace(/^["'\s]+|["'\s]+$/g, '');
+        }
+
+        const blogPrompt = `You are an expert 3D printing content writer for **3D Printer Prices** (3d-printer-prices.com), a price comparison website that aggregates 3D printer, filament, and accessory prices from Amazon with affiliate links.
+
+## Your Task
+Write a comprehensive, SEO-optimized blog article.
+
+**Topic:** ${topicText}
+**Article Type:** ${articleType || 'buying-guide'}
+**Target Length:** ${wordCount} words
+${instructions ? `**Special Instructions:** ${instructions}` : ''}
+
+## Product Data (use these real prices and products)
+${productList}
+
+## Writing Guidelines
+1. **Tone:** Friendly, knowledgeable, helpful — like a maker community expert talking to friends
+2. **SEO:** Include the main keyword in the first paragraph, use H2/H3 headings, include "3D Printer Prices" brand mentions naturally
+3. **Structure:**
+   - Compelling intro with hook
+   - Clear H2 sections (use ## in markdown)
+   - Product recommendations with REAL prices from the data above
+   - Comparison tables where relevant (markdown tables)
+   - Pros/Cons lists
+   - "Bottom Line" or "Our Pick" conclusion
+4. **Affiliate:** When mentioning specific products, include their Amazon links from the data
+5. **CTA:** End with a call-to-action like "Compare all 3D printer prices at 3d-printer-prices.com"
+6. **Format:** Output in clean Markdown format
+7. **Authenticity:** Use real product names and prices from the data. Don't make up products.
+
+Write the complete article now:`;
+
+        const content = await callGemini(blogPrompt, 8192);
+        res.json({ success: true, topic: topicText, content, wordCount: content.split(/\s+/).length });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// POST /api/admin/generate-x-post — AI generate X/Twitter post
+app.post('/api/admin/generate-x-post', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
+    const { postType, customPrompt } = req.body;
+
+    try {
+        let contextData = '';
+        let typeInstruction = '';
+
+        if (postType === 'new_products' || postType === 'deals') {
+            const { data: products } = await supabase.from('products')
+                .select('product_name, brand, price, category, rating, amazon_url')
+                .eq('is_available', true)
+                .order('created_at', { ascending: false })
+                .limit(10);
+
+            contextData = (products || []).map(p =>
+                `${p.product_name} — $${p.price} (${p.brand || ''}) ${p.amazon_url || ''}`
+            ).join('\n');
+
+            if (postType === 'new_products') {
+                typeInstruction = 'Create an engaging tweet about NEW 3D printer products just added to our site. Highlight the best one or two with prices.';
+            } else {
+                typeInstruction = 'Create an engaging tweet about 3D printer DEALS and price drops. Make it feel urgent and valuable.';
+            }
+        } else if (postType === 'blog_links') {
+            typeInstruction = 'Create an engaging tweet promoting our latest 3D printing content/guide. Drive clicks to 3d-printer-prices.com';
+            contextData = 'Latest blog topics: Best 3D Printers Under $300, FDM vs Resin Guide, Best Filament for Beginners';
+        }
+
+        const xPrompt = `You are the social media manager for **3D Printer Prices** (3d-printer-prices.com), a 3D printer price comparison website.
+
+## Task
+Write ONE engaging X (Twitter) post. ${typeInstruction}
+
+## Context Data
+${contextData}
+
+${customPrompt ? `## Additional Instructions: ${customPrompt}` : ''}
+
+## Rules
+1. MAX 280 characters (Twitter limit)
+2. Include 2-3 relevant hashtags: #3DPrinting #3DPrinter #MakerCommunity #3DPrinterDeals
+3. Include a link: https://3d-printer-prices.com
+4. Use emojis strategically (🖨️ 🔥 💰 ✨ 🎯 ⬇️)
+5. Create urgency or curiosity
+6. Be conversational, not salesy
+7. Include a real product name and price from the data if available
+
+## Format
+Output ONLY the tweet text, nothing else. No quotes around it.`;
+
+        const tweet = await callGemini(xPrompt, 400);
+        // Clean up — remove quotes, ensure within 280 chars
+        let cleanTweet = tweet.replace(/^["'\s\n]+|["'\s\n]+$/g, '').trim();
+        if (cleanTweet.length > 280) cleanTweet = cleanTweet.slice(0, 277) + '...';
+
+        res.json({ success: true, tweet: cleanTweet, charCount: cleanTweet.length });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // GET /api/admin/scrape-progress — live progress feed
 app.get('/api/admin/scrape-progress', (req, res) => {
     res.json({

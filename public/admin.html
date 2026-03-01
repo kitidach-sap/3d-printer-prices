@@ -858,10 +858,73 @@
                     <textarea class="form-textarea" id="blog-instructions"
                         placeholder="e.g. Focus on printers under $200, include comparison table, mention specific brands..."></textarea>
                 </div>
-                <button class="btn btn-success" id="btn-blog" onclick="generateBlog()">
-                    ✍️ Generate Blog Post
-                </button>
-                <div id="blog-status"></div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+                    <button class="btn btn-success" id="btn-blog" onclick="generateBlog(false)">
+                        ✍️ Generate Blog Post
+                    </button>
+                    <button class="btn btn-primary" id="btn-auto-blog" onclick="generateBlog(true)">
+                        🤖 AI Auto (Topic + Write)
+                    </button>
+                </div>
+                <div id="blog-status" style="margin-top:0.5rem;font-size:0.78rem"></div>
+
+                <!-- Blog Preview -->
+                <div id="blog-preview-area" style="display:none;margin-top:0.75rem">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem">
+                        <strong style="font-size:0.82rem">📄 Generated Article</strong>
+                        <div style="display:flex;gap:0.3rem;align-items:center">
+                            <span id="blog-word-count" style="font-size:0.68rem;color:var(--text-muted)"></span>
+                            <button class="btn" style="font-size:0.65rem;padding:0.2rem 0.4rem"
+                                onclick="copyBlogContent()">📋 Copy</button>
+                        </div>
+                    </div>
+                    <div id="blog-preview"
+                        style="background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.75rem;max-height:500px;overflow-y:auto;font-size:0.78rem;line-height:1.6;white-space:pre-wrap">
+                    </div>
+                </div>
+            </div>
+
+            <!-- X Post Generator -->
+            <div class="admin-card">
+                <h3>🐦 Generate X Post</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Post Type</label>
+                        <select class="form-select" id="x-gen-type">
+                            <option value="new_products">🆕 New Products</option>
+                            <option value="blog_links">📝 Blog / Guide Link</option>
+                            <option value="deals">💰 Deals & Price Drops</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Custom Instructions (optional)</label>
+                        <input type="text" class="form-input" id="x-custom-prompt"
+                            placeholder="e.g. Focus on Creality K1C...">
+                    </div>
+                </div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+                    <button class="btn btn-primary" id="btn-gen-x" onclick="generateXPost()">
+                        🤖 Generate Tweet
+                    </button>
+                </div>
+                <div id="x-gen-status" style="margin-top:0.3rem;font-size:0.72rem"></div>
+
+                <!-- X Post Preview -->
+                <div id="x-preview-area" style="display:none;margin-top:0.5rem">
+                    <div
+                        style="background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.6rem">
+                        <div id="x-preview-text" style="font-size:0.82rem;line-height:1.5;margin-bottom:0.4rem"></div>
+                        <div style="display:flex;justify-content:space-between;align-items:center">
+                            <span id="x-char-count" style="font-size:0.65rem;color:var(--text-muted)"></span>
+                            <div style="display:flex;gap:0.3rem">
+                                <button class="btn" style="font-size:0.65rem;padding:0.2rem 0.4rem"
+                                    onclick="copyXPost()">📋 Copy</button>
+                                <button class="btn btn-primary" style="font-size:0.65rem;padding:0.2rem 0.4rem"
+                                    onclick="generateXPost()">🔄 Regenerate</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -1994,6 +2057,118 @@
                     </p>
                     <code style="display:block;margin-top:0.5rem;padding:0.5rem;background:var(--bg-card);border-radius:4px;font-size:0.75rem;overflow-x:auto">${JSON.stringify(blogConfig, null, 2)}</code>
                 </div>`;
+        }
+
+        // ===== Blog AI Generation =====
+        let currentBlogContent = '';
+
+        document.getElementById('blog-topic').addEventListener('change', (e) => {
+            document.getElementById('custom-topic-group').style.display =
+                e.target.value === 'custom' ? 'block' : 'none';
+        });
+
+        async function generateBlog(auto = false) {
+            const status = document.getElementById('blog-status');
+            const btn = auto ? document.getElementById('btn-auto-blog') : document.getElementById('btn-blog');
+            const origText = btn.textContent;
+
+            let topic = '';
+            if (!auto) {
+                const sel = document.getElementById('blog-topic').value;
+                if (sel === 'custom') topic = document.getElementById('custom-topic').value.trim();
+                else topic = sel ? document.getElementById('blog-topic').selectedOptions[0].text : '';
+                if (!topic) {
+                    status.innerHTML = '<span style="color:var(--warning)">⚠️ เลือก Topic ก่อนครับ</span>';
+                    return;
+                }
+            }
+
+            btn.disabled = true;
+            btn.textContent = '⏳ AI กำลังเขียน...';
+            status.innerHTML = '<span style="color:var(--text-muted)">🤖 Gemini กำลัง generate blog... (~30-60 วินาที)</span>';
+
+            try {
+                const res = await fetch('/api/admin/generate-blog', {
+                    method: 'POST', headers: apiHeaders(),
+                    body: JSON.stringify({
+                        topic,
+                        autoTopic: auto,
+                        articleType: document.getElementById('blog-type').value,
+                        length: document.getElementById('blog-length').value,
+                        instructions: document.getElementById('blog-instructions').value,
+                    }),
+                });
+                const d = await res.json();
+                if (d.success) {
+                    currentBlogContent = d.content;
+                    status.innerHTML = `<span style="color:var(--success)">✅ สร้างเสร็จแล้ว! หัวข้อ: <strong>${esc(d.topic)}</strong></span>`;
+                    document.getElementById('blog-preview-area').style.display = 'block';
+                    document.getElementById('blog-preview').textContent = d.content;
+                    document.getElementById('blog-word-count').textContent = `${d.wordCount} words`;
+                } else {
+                    status.innerHTML = `<span style="color:var(--danger)">❌ ${d.error}</span>`;
+                }
+            } catch (e) {
+                status.innerHTML = `<span style="color:var(--danger)">❌ ${e.message}</span>`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = origText;
+            }
+        }
+
+        function copyBlogContent() {
+            navigator.clipboard.writeText(currentBlogContent).then(() => {
+                const btn = event.target;
+                btn.textContent = '✅ Copied!';
+                setTimeout(() => btn.textContent = '📋 Copy', 1500);
+            });
+        }
+
+        // ===== X Post AI Generation =====
+        let currentXPost = '';
+
+        async function generateXPost() {
+            const status = document.getElementById('x-gen-status');
+            const btn = document.getElementById('btn-gen-x');
+            const origText = btn.textContent;
+
+            btn.disabled = true;
+            btn.textContent = '⏳ Generating...';
+            status.innerHTML = '<span style="color:var(--text-muted)">🤖 AI กำลังเขียน tweet...</span>';
+
+            try {
+                const res = await fetch('/api/admin/generate-x-post', {
+                    method: 'POST', headers: apiHeaders(),
+                    body: JSON.stringify({
+                        postType: document.getElementById('x-gen-type').value,
+                        customPrompt: document.getElementById('x-custom-prompt').value,
+                    }),
+                });
+                const d = await res.json();
+                if (d.success) {
+                    currentXPost = d.tweet;
+                    status.innerHTML = '<span style="color:var(--success)">✅ Tweet generated!</span>';
+                    document.getElementById('x-preview-area').style.display = 'block';
+                    document.getElementById('x-preview-text').textContent = d.tweet;
+                    document.getElementById('x-char-count').textContent = `${d.charCount}/280 characters`;
+                    document.getElementById('x-char-count').style.color = d.charCount > 260 ? 'var(--warning)' : 'var(--text-muted)';
+                } else {
+                    status.innerHTML = `<span style="color:var(--danger)">❌ ${d.error}</span>`;
+                }
+            } catch (e) {
+                status.innerHTML = `<span style="color:var(--danger)">❌ ${e.message}</span>`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = origText;
+            }
+        }
+
+        function copyXPost() {
+            navigator.clipboard.writeText(currentXPost).then(() => {
+                const btn = event.target;
+                btn.textContent = '✅ Copied!';
+                setTimeout(() => btn.textContent = '📋 Copy', 1500);
+            });
         }
 
         // ===== Helpers =====
