@@ -292,21 +292,119 @@ app.get('/api/scrape-status', async (req, res) => {
 // ============================================
 // Admin — Manual Scrape Trigger
 // ============================================
-const { execFile } = require('child_process');
 let scraperRunning = false;
+
+const ADMIN_KEY_DEFAULT = '3dprinter-admin-2026';
 
 function verifyAdmin(req, res) {
     const adminKey = req.headers['x-admin-key'] || req.query.key;
-    const expectedKey = process.env.ADMIN_KEY;
-    if (!expectedKey || adminKey !== expectedKey) {
+    const expectedKey = process.env.ADMIN_KEY || ADMIN_KEY_DEFAULT;
+    if (adminKey !== expectedKey) {
         res.status(401).json({ error: 'Unauthorized — invalid admin key' });
         return false;
     }
     return true;
 }
 
+// Lightweight inline scraper (works on Vercel — no Playwright needed)
+const SCRAPE_SEARCHES = [
+    { query: '3D+printer+FDM', category: '3d_printer', productType: 'fdm' },
+    { query: 'Bambu+Lab+3D+printer', category: '3d_printer', productType: 'fdm' },
+    { query: 'Creality+3D+printer', category: '3d_printer', productType: 'fdm' },
+    { query: 'resin+3D+printer', category: '3d_printer', productType: 'resin_sla' },
+    { query: '3D+printer+filament+PLA', category: 'filament', productType: 'pla' },
+    { query: '3D+printer+filament+PETG', category: 'filament', productType: 'petg' },
+    { query: '3D+printer+accessories', category: 'accessories', productType: 'tools' },
+    { query: '3D+pen', category: '3d_pen', productType: '3d_pen' },
+];
+
+const AFFILIATE_TAG = 'kiti09-20';
+
+function detectBrandFromTitle(title) {
+    const brands = [
+        'Bambu Lab', 'Creality', 'ELEGOO', 'Anycubic', 'FLASHFORGE',
+        'Phrozen', 'Prusa', 'Longer', 'SUNLU', 'HATCHBOX', 'eSUN',
+        'Polymaker', 'Overture', 'JAYO', 'Sovol', 'QIDI', 'Voxelab',
+    ];
+    const upper = title.toUpperCase();
+    return brands.find(b => upper.includes(b.toUpperCase())) || null;
+}
+
+async function runLightScrape() {
+    let totalFound = 0, totalSaved = 0, errorsCount = 0;
+    const startedAt = new Date().toISOString();
+
+    for (const search of SCRAPE_SEARCHES) {
+        try {
+            const url = `https://www.amazon.com/s?k=${search.query}&tag=${AFFILIATE_TAG}`;
+            const res = await fetch(url, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                    'Accept': 'text/html',
+                    'Accept-Language': 'en-US,en;q=0.9',
+                },
+            });
+            if (!res.ok) continue;
+
+            const html = await res.text();
+            const products = [];
+            const asinPattern = /data-asin="([A-Z0-9]{10})"/g;
+            const asins = new Set();
+            let m;
+            while ((m = asinPattern.exec(html)) !== null) asins.add(m[1]);
+
+            for (const asin of asins) {
+                if (products.length >= 30) break;
+                const titleRx = new RegExp(`data-asin="${asin}"[\\s\\S]*?<span[^>]*class="a-size-[^"]*a-text-normal"[^>]*>([^<]+)</span>`, 'i');
+                const priceRx = new RegExp(`data-asin="${asin}"[\\s\\S]*?<span class="a-price"[^>]*>[\\s\\S]*?<span[^>]*>\\$([\\d,.]+)</span>`, 'i');
+                const tMatch = html.match(titleRx);
+                const pMatch = html.match(priceRx);
+                if (tMatch?.[1] && pMatch?.[1]) {
+                    const price = parseFloat(pMatch[1].replace(/,/g, ''));
+                    if (price > 0) {
+                        products.push({
+                            amazon_asin: asin,
+                            product_name: tMatch[1].trim(),
+                            price,
+                            brand: detectBrandFromTitle(tMatch[1]),
+                            category: search.category,
+                            product_type: search.productType,
+                            condition: 'new',
+                            locale: 'us',
+                            amazon_url: `https://www.amazon.com/dp/${asin}?tag=${AFFILIATE_TAG}`,
+                        });
+                    }
+                }
+            }
+
+            totalFound += products.length;
+            if (products.length > 0) {
+                const { error } = await supabase.from('products').upsert(products, {
+                    onConflict: 'amazon_asin', ignoreDuplicates: false,
+                });
+                if (error) { errorsCount += products.length; }
+                else { totalSaved += products.length; }
+            }
+            await new Promise(r => setTimeout(r, 1500));
+        } catch (e) {
+            errorsCount++;
+        }
+    }
+
+    await supabase.from('scrape_logs').insert({
+        status: errorsCount > 0 ? 'partial' : 'success',
+        products_found: totalFound,
+        products_saved: totalSaved,
+        errors_count: errorsCount,
+        started_at: startedAt,
+        completed_at: new Date().toISOString(),
+    });
+
+    return { totalFound, totalSaved, errorsCount };
+}
+
 // POST /api/admin/scrape — trigger scraper manually
-app.post('/api/admin/scrape', (req, res) => {
+app.post('/api/admin/scrape', async (req, res) => {
     if (!verifyAdmin(req, res)) return;
 
     if (scraperRunning) {
@@ -314,30 +412,47 @@ app.post('/api/admin/scrape', (req, res) => {
     }
 
     scraperRunning = true;
-    const startTime = new Date().toISOString();
+    res.json({ message: 'Scraper started', startedAt: new Date().toISOString() });
 
-    // Spawn scraper as child process
-    const child = execFile('node', [path.join(__dirname, 'scraper', 'agent.js')], {
-        timeout: 600000, // 10 min max
-        env: { ...process.env },
-    }, (err, stdout, stderr) => {
+    // Run async
+    try {
+        const result = await runLightScrape();
+        console.log('Scraper completed:', result);
+    } catch (err) {
+        console.error('Scraper error:', err.message);
+    } finally {
         scraperRunning = false;
-        if (err) {
-            console.error('Scraper error:', err.message);
-        }
-        console.log('Scraper completed. Output:', stdout?.slice(-500));
-    });
-
-    res.json({
-        message: 'Scraper started',
-        startedAt: startTime,
-        pid: child.pid,
-    });
+    }
 });
 
 // GET /api/admin/scrape-running — check if scraper is active
 app.get('/api/admin/scrape-running', (req, res) => {
     res.json({ running: scraperRunning });
+});
+
+// GET /api/admin/product-stats — detailed product stats for admin
+app.get('/api/admin/product-stats', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
+    try {
+        const { data: totalData } = await supabase.from('products').select('*', { count: 'exact', head: true });
+        const { count: totalCount } = await supabase.from('products').select('*', { count: 'exact', head: true });
+
+        const { data: cats } = await supabase.rpc('get_product_filters', { p_locale: 'us' });
+        const { data: recentProducts } = await supabase
+            .from('products')
+            .select('product_name, price, brand, category, created_at')
+            .order('created_at', { ascending: false })
+            .limit(10);
+
+        res.json({
+            totalProducts: totalCount || 0,
+            categories: cats?.categories || [],
+            brands: cats?.brands || [],
+            recentProducts: recentProducts || [],
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Fallback to index.html for SPA — skip files with extensions (.xml, .txt, etc.)

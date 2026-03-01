@@ -10,10 +10,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
-        .admin-container {
-            max-width: 900px;
-            margin: 2rem auto;
-            padding: 0 1.5rem;
+        .admin-wrap {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 1.5rem;
         }
 
         .admin-title {
@@ -25,74 +25,131 @@
             gap: 0.5rem;
         }
 
+        /* Tabs */
+        .admin-tabs {
+            display: flex;
+            gap: 0.25rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--border);
+            overflow-x: auto;
+        }
+
+        .admin-tab {
+            padding: 0.6rem 1.2rem;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            border: none;
+            background: none;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .admin-tab:hover {
+            color: var(--text-primary);
+        }
+
+        .admin-tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Cards */
         .admin-card {
             background: var(--bg-card);
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
         }
 
         .admin-card h3 {
-            font-size: 1rem;
+            font-size: 0.95rem;
             margin-bottom: 1rem;
             color: var(--accent);
         }
 
-        .scrape-info {
+        /* Grid info */
+        .info-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 0.75rem;
             margin-bottom: 1rem;
         }
 
-        .scrape-info-item {
+        .info-item {
             display: flex;
             flex-direction: column;
-            gap: 0.2rem;
+            gap: 0.15rem;
         }
 
-        .scrape-info-label {
-            font-size: 0.7rem;
+        .info-label {
+            font-size: 0.65rem;
             color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
 
-        .scrape-info-value {
+        .info-value {
             font-size: 1.1rem;
             font-weight: 700;
-            color: var(--text-primary);
         }
 
-        .btn-scrape {
-            background: linear-gradient(135deg, var(--accent), #0891b2);
-            color: white;
+        /* Buttons */
+        .btn {
             border: none;
             border-radius: var(--radius-sm);
-            padding: 0.75rem 1.5rem;
-            font-size: 0.9rem;
+            padding: 0.6rem 1.2rem;
+            font-size: 0.85rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.4rem;
         }
 
-        .btn-scrape:hover {
+        .btn:hover {
             transform: translateY(-1px);
-            box-shadow: 0 4px 15px var(--accent-glow);
         }
 
-        .btn-scrape:disabled {
+        .btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
             transform: none;
         }
 
-        .btn-scrape.running {
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), #0891b2);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: white;
+        }
+
+        .btn-warning {
             background: linear-gradient(135deg, var(--warning), #d97706);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn.running {
             animation: pulse 2s infinite;
         }
 
@@ -108,23 +165,24 @@
             }
         }
 
-        .log-table {
+        /* Tables */
+        .admin-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.82rem;
+            font-size: 0.8rem;
         }
 
-        .log-table th {
+        .admin-table th {
             text-align: left;
-            padding: 0.5rem 0.75rem;
+            padding: 0.45rem 0.6rem;
             color: var(--text-muted);
-            font-size: 0.7rem;
+            font-size: 0.68rem;
             text-transform: uppercase;
             border-bottom: 2px solid var(--border);
         }
 
-        .log-table td {
-            padding: 0.5rem 0.75rem;
+        .admin-table td {
+            padding: 0.45rem 0.6rem;
             border-bottom: 1px solid var(--border);
         }
 
@@ -138,17 +196,75 @@
             font-weight: 600;
         }
 
-        .status-running {
+        .status-partial {
             color: var(--warning);
             font-weight: 600;
         }
 
-        #status-msg {
-            margin-top: 0.75rem;
+        /* Forms */
+        .form-group {
+            margin-bottom: 0.75rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.3rem;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: var(--bg-primary);
+            color: var(--text-primary);
             font-size: 0.85rem;
+            font-family: inherit;
+        }
+
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        #status-msg,
+        #blog-status {
+            margin-top: 0.5rem;
+            font-size: 0.82rem;
             color: var(--text-secondary);
         }
 
+        /* Blog list */
+        .blog-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .blog-item-title {
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .blog-item-meta {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+
+        /* Login */
         .login-overlay {
             position: fixed;
             inset: 0;
@@ -165,7 +281,7 @@
             border-radius: var(--radius);
             padding: 2rem;
             text-align: center;
-            max-width: 360px;
+            max-width: 340px;
             width: 100%;
         }
 
@@ -176,7 +292,7 @@
         .login-box input {
             width: 100%;
             padding: 0.6rem 1rem;
-            margin-bottom: 1rem;
+            margin-bottom: 0.75rem;
             border-radius: var(--radius-sm);
             border: 1px solid var(--border);
             background: var(--bg-primary);
@@ -195,22 +311,58 @@
             cursor: pointer;
         }
 
-        .login-error {
-            color: var(--danger);
-            font-size: 0.8rem;
-            margin-top: 0.5rem;
+        .schedule-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+            font-size: 0.85rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.1rem 0.4rem;
+            border-radius: 999px;
+            font-size: 0.68rem;
+            font-weight: 600;
+        }
+
+        .badge-active {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .badge-cron {
+            background: var(--accent-glow);
+            color: var(--accent);
+            border: 1px solid var(--accent);
+        }
+
+        @media (max-width: 600px) {
+            .admin-wrap {
+                padding: 0.75rem;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .info-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
     </style>
 </head>
 
 <body>
-    <!-- Login Overlay -->
+    <!-- Login -->
     <div class="login-overlay" id="login-overlay">
         <div class="login-box">
             <h2>🔐 Admin Login</h2>
             <input type="password" id="admin-key-input" placeholder="Enter Admin Key" autofocus>
             <button onclick="doLogin()">Login</button>
-            <div class="login-error" id="login-error"></div>
+            <div id="login-error" style="color:var(--danger);font-size:0.8rem;margin-top:0.5rem"></div>
         </div>
     </div>
 
@@ -221,7 +373,7 @@
                     <span class="logo-icon">🖨️</span>
                     <div>
                         <h1>3D Printer Prices</h1>
-                        <p class="tagline">Admin Panel</p>
+                        <p class="tagline">Admin Dashboard</p>
                     </div>
                 </a>
             </div>
@@ -231,57 +383,303 @@
         </div>
     </header>
 
-    <main class="admin-container">
-        <h2 class="admin-title">⚙️ Scraper Control Panel</h2>
+    <main class="admin-wrap">
+        <h2 class="admin-title">⚙️ Admin Dashboard</h2>
 
-        <!-- Status Card -->
-        <div class="admin-card">
-            <h3>📊 Last Scrape Status</h3>
-            <div class="scrape-info">
-                <div class="scrape-info-item">
-                    <span class="scrape-info-label">Last Run</span>
-                    <span class="scrape-info-value" id="last-run">Loading...</span>
+        <!-- Tabs -->
+        <div class="admin-tabs">
+            <button class="admin-tab active" data-tab="scraper">🔄 Scraper</button>
+            <button class="admin-tab" data-tab="products">📦 Products</button>
+            <button class="admin-tab" data-tab="blog">📝 Blog</button>
+            <button class="admin-tab" data-tab="schedule">⏰ Schedule</button>
+            <button class="admin-tab" data-tab="settings">⚙️ Settings</button>
+        </div>
+
+        <!-- ==================== SCRAPER TAB ==================== -->
+        <div class="tab-content active" id="tab-scraper">
+            <div class="admin-card">
+                <h3>📊 Last Scrape Status</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Last Run</span>
+                        <span class="info-value" id="last-run">Loading...</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Status</span>
+                        <span class="info-value" id="last-status">—</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Found</span>
+                        <span class="info-value" id="last-found">—</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Saved</span>
+                        <span class="info-value" id="last-saved">—</span>
+                    </div>
                 </div>
-                <div class="scrape-info-item">
-                    <span class="scrape-info-label">Status</span>
-                    <span class="scrape-info-value" id="last-status">—</span>
+                <button class="btn btn-primary" id="btn-scrape" onclick="runScrape()">
+                    🔄 Run Scraper Now
+                </button>
+                <div id="status-msg"></div>
+            </div>
+
+            <div class="admin-card">
+                <h3>📋 Scrape History</h3>
+                <div style="overflow-x:auto">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Found</th>
+                                <th>Saved</th>
+                                <th>Errors</th>
+                            </tr>
+                        </thead>
+                        <tbody id="log-body">
+                            <tr>
+                                <td colspan="5" style="text-align:center;color:var(--text-muted)">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-                <div class="scrape-info-item">
-                    <span class="scrape-info-label">Products Found</span>
-                    <span class="scrape-info-value" id="last-found">—</span>
-                </div>
-                <div class="scrape-info-item">
-                    <span class="scrape-info-label">Products Saved</span>
-                    <span class="scrape-info-value" id="last-saved">—</span>
+            </div>
+        </div>
+
+        <!-- ==================== PRODUCTS TAB ==================== -->
+        <div class="tab-content" id="tab-products">
+            <div class="admin-card">
+                <h3>📦 Product Overview</h3>
+                <div class="info-grid" id="product-stats">
+                    <div class="info-item">
+                        <span class="info-label">Total Products</span>
+                        <span class="info-value" id="p-total">—</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Categories</span>
+                        <span class="info-value" id="p-categories">—</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Brands</span>
+                        <span class="info-value" id="p-brands">—</span>
+                    </div>
                 </div>
             </div>
 
-            <button class="btn-scrape" id="btn-scrape" onclick="runScrape()">
-                🔄 Run Scraper Now
-            </button>
-            <div id="status-msg"></div>
+            <div class="admin-card">
+                <h3>🆕 Recently Added Products</h3>
+                <div style="overflow-x:auto">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Brand</th>
+                                <th>Price</th>
+                                <th>Category</th>
+                                <th>Added</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-products">
+                            <tr>
+                                <td colspan="5" style="text-align:center;color:var(--text-muted)">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
-        <!-- Scrape History -->
-        <div class="admin-card">
-            <h3>📋 Scrape History</h3>
-            <div style="overflow-x:auto">
-                <table class="log-table">
+        <!-- ==================== BLOG TAB ==================== -->
+        <div class="tab-content" id="tab-blog">
+            <div class="admin-card">
+                <h3>📝 Existing Blog Posts</h3>
+                <div id="blog-list">
+                    <div class="blog-item">
+                        <div>
+                            <div class="blog-item-title">🏆 Best 3D Printers Under $300 in 2026</div>
+                            <div class="blog-item-meta">📅 Feb 21, 2026 · Buying Guide</div>
+                        </div>
+                        <a href="/blog/best-3d-printers-under-300.html" target="_blank" class="btn btn-primary"
+                            style="padding:0.3rem 0.6rem;font-size:0.75rem">View</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <h3>✍️ Generate New Blog Post</h3>
+                <div class="form-group">
+                    <label>Blog Topic</label>
+                    <select class="form-select" id="blog-topic">
+                        <option value="">— Select a topic —</option>
+                        <option value="best-resin-printers">Best Resin 3D Printers 2026</option>
+                        <option value="fdm-vs-resin">FDM vs Resin: Which Should You Buy?</option>
+                        <option value="best-filament">Best 3D Printer Filament Guide</option>
+                        <option value="beginner-guide">Complete Beginner's Guide to 3D Printing</option>
+                        <option value="accessories-must-have">Must-Have 3D Printer Accessories</option>
+                        <option value="custom">Custom Topic...</option>
+                    </select>
+                </div>
+                <div class="form-group" id="custom-topic-group" style="display:none">
+                    <label>Custom Topic</label>
+                    <input type="text" class="form-input" id="custom-topic"
+                        placeholder="e.g. Best 3D Printers for Cosplay">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Article Type</label>
+                        <select class="form-select" id="blog-type">
+                            <option value="buying-guide">Buying Guide</option>
+                            <option value="comparison">Comparison</option>
+                            <option value="tutorial">Tutorial / How-To</option>
+                            <option value="review">Review</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Target Length</label>
+                        <select class="form-select" id="blog-length">
+                            <option value="medium">Medium (~1,500 words)</option>
+                            <option value="long">Long (~3,000 words)</option>
+                            <option value="short">Short (~800 words)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Additional Instructions (optional)</label>
+                    <textarea class="form-textarea" id="blog-instructions"
+                        placeholder="e.g. Focus on printers under $200, include comparison table, mention specific brands..."></textarea>
+                </div>
+                <button class="btn btn-success" id="btn-blog" onclick="generateBlog()">
+                    ✍️ Generate Blog Post
+                </button>
+                <div id="blog-status"></div>
+            </div>
+        </div>
+
+        <!-- ==================== SCHEDULE TAB ==================== -->
+        <div class="tab-content" id="tab-schedule">
+            <div class="admin-card">
+                <h3>⏰ Automated Schedules</h3>
+                <div class="blog-item">
+                    <div>
+                        <div class="blog-item-title">🔄 Product Scraper</div>
+                        <div class="blog-item-meta">Fetches latest prices from Amazon</div>
+                    </div>
+                    <span class="badge badge-active">Active</span>
+                </div>
+                <div class="schedule-row">
+                    <span>⏱️ Schedule:</span>
+                    <span class="badge badge-cron">Daily at 6:00 AM UTC</span>
+                    <span style="color:var(--text-muted);font-size:0.75rem">(Vercel Cron)</span>
+                </div>
+                <p style="margin-top:1rem;font-size:0.8rem;color:var(--text-muted)">
+                    💡 Cron schedule is configured in <code>vercel.json</code>. To change frequency, edit the
+                    <code>crons[].schedule</code> field using standard cron syntax.
+                </p>
+
+                <hr style="border-color:var(--border);margin:1rem 0">
+
+                <div class="blog-item">
+                    <div>
+                        <div class="blog-item-title">📝 Blog Auto-Generation</div>
+                        <div class="blog-item-meta">Generate SEO blog posts automatically</div>
+                    </div>
+                    <span class="badge badge-cron" style="opacity:0.5">Coming Soon</span>
+                </div>
+                <p style="margin-top:0.5rem;font-size:0.8rem;color:var(--text-muted)">
+                    🔮 Blog auto-generation via AI API will be available in a future update. For now, use the Blog tab
+                    to
+                    manually generate posts.
+                </p>
+            </div>
+
+            <div class="admin-card">
+                <h3>📊 Cron Schedule Reference</h3>
+                <table class="admin-table">
                     <thead>
                         <tr>
-                            <th>Date</th>
-                            <th>Status</th>
-                            <th>Found</th>
-                            <th>Saved</th>
-                            <th>Errors</th>
+                            <th>Schedule</th>
+                            <th>Cron Expression</th>
+                            <th>Description</th>
                         </tr>
                     </thead>
-                    <tbody id="log-body">
+                    <tbody>
                         <tr>
-                            <td colspan="5" style="text-align:center;color:var(--text-muted)">Loading...</td>
+                            <td>Every day 6 AM</td>
+                            <td><code>0 6 * * *</code></td>
+                            <td>Current setting</td>
+                        </tr>
+                        <tr>
+                            <td>Every 12 hours</td>
+                            <td><code>0 */12 * * *</code></td>
+                            <td>Twice daily</td>
+                        </tr>
+                        <tr>
+                            <td>Every 6 hours</td>
+                            <td><code>0 */6 * * *</code></td>
+                            <td>4x daily</td>
+                        </tr>
+                        <tr>
+                            <td>Every Monday 8 AM</td>
+                            <td><code>0 8 * * 1</code></td>
+                            <td>Weekly</td>
                         </tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- ==================== SETTINGS TAB ==================== -->
+        <div class="tab-content" id="tab-settings">
+            <div class="admin-card">
+                <h3>🔑 Environment Variables</h3>
+                <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:1rem">
+                    Set these in Vercel Dashboard → Settings → Environment Variables
+                </p>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Variable</th>
+                            <th>Description</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>SUPABASE_URL</code></td>
+                            <td>Supabase project URL</td>
+                            <td class="status-success">✅ Set</td>
+                        </tr>
+                        <tr>
+                            <td><code>SUPABASE_ANON_KEY</code></td>
+                            <td>Supabase anonymous key</td>
+                            <td class="status-success">✅ Set</td>
+                        </tr>
+                        <tr>
+                            <td><code>ADMIN_KEY</code></td>
+                            <td>Admin panel password</td>
+                            <td class="status-success">✅ Set</td>
+                        </tr>
+                        <tr>
+                            <td><code>CRON_SECRET</code></td>
+                            <td>Vercel cron authentication</td>
+                            <td style="color:var(--text-muted)">⚠️ Set in Vercel</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="admin-card">
+                <h3>🔗 Quick Links</h3>
+                <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.5rem">
+                    <a href="https://vercel.com/dashboard" target="_blank" class="btn btn-primary"
+                        style="font-size:0.75rem">Vercel Dashboard</a>
+                    <a href="https://supabase.com/dashboard" target="_blank" class="btn btn-success"
+                        style="font-size:0.75rem">Supabase Dashboard</a>
+                    <a href="https://search.google.com/search-console" target="_blank" class="btn btn-warning"
+                        style="font-size:0.75rem">Search Console</a>
+                    <a href="https://www.google.com/adsense" target="_blank" class="btn"
+                        style="font-size:0.75rem;background:var(--bg-hover);color:var(--text-primary)">AdSense</a>
+                </div>
             </div>
         </div>
     </main>
@@ -289,35 +687,60 @@
     <script>
         let adminKey = '';
 
+        // ===== Login =====
         function doLogin() {
             adminKey = document.getElementById('admin-key-input').value;
             if (!adminKey) {
                 document.getElementById('login-error').textContent = 'Please enter admin key';
                 return;
             }
-            // Test the key by checking scrape-status (public) and load data
             document.getElementById('login-overlay').style.display = 'none';
-            loadStatus();
-            loadHistory();
-            // Poll scraper running status
-            setInterval(checkRunning, 5000);
+            init();
         }
-
-        // Enter key to login
-        document.getElementById('admin-key-input').addEventListener('keydown', (e) => {
+        document.getElementById('admin-key-input').addEventListener('keydown', e => {
             if (e.key === 'Enter') doLogin();
         });
 
+        // ===== Tabs =====
+        document.querySelectorAll('.admin-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+            });
+        });
+
+        // ===== Blog topic toggle =====
+        document.getElementById('blog-topic').addEventListener('change', (e) => {
+            document.getElementById('custom-topic-group').style.display =
+                e.target.value === 'custom' ? 'block' : 'none';
+        });
+
+        // ===== Init =====
+        function init() {
+            loadStatus();
+            loadHistory();
+            loadProductStats();
+            setInterval(checkRunning, 5000);
+        }
+
+        // ===== API helpers =====
+        function apiHeaders() {
+            return { 'X-Admin-Key': adminKey, 'Content-Type': 'application/json' };
+        }
+
+        // ===== Scraper =====
         async function loadStatus() {
             try {
                 const res = await fetch('/api/scrape-status');
-                const data = await res.json();
-                if (data.lastScrape) {
-                    document.getElementById('last-run').textContent = timeAgo(data.lastScrape);
-                    document.getElementById('last-status').innerHTML =
-                        `<span class="status-${data.status}">${data.status}</span>`;
-                    document.getElementById('last-found').textContent = data.productsFound || '—';
-                    document.getElementById('last-saved').textContent = data.productsSaved || '—';
+                const d = await res.json();
+                if (d.lastScrape) {
+                    document.getElementById('last-run').textContent = timeAgo(d.lastScrape);
+                    document.getElementById('last-run').title = new Date(d.lastScrape).toLocaleString();
+                    document.getElementById('last-status').innerHTML = `<span class="status-${d.status}">${d.status}</span>`;
+                    document.getElementById('last-found').textContent = d.productsFound || '—';
+                    document.getElementById('last-saved').textContent = d.productsSaved || '—';
                 } else {
                     document.getElementById('last-run').textContent = 'Never';
                 }
@@ -331,52 +754,41 @@
                 const res = await fetch('/api/scrape-logs');
                 const logs = await res.json();
                 const tbody = document.getElementById('log-body');
-
-                if (!logs || logs.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">No scrape history</td></tr>';
+                if (!logs?.length) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">No history</td></tr>';
                     return;
                 }
-
-                tbody.innerHTML = logs.map(log => `
+                tbody.innerHTML = logs.map(l => `
                     <tr>
-                        <td>${formatDate(log.completed_at || log.created_at)}</td>
-                        <td><span class="status-${log.status}">${log.status}</span></td>
-                        <td>${log.products_found || 0}</td>
-                        <td>${log.products_saved || 0}</td>
-                        <td>${log.errors_count || 0}</td>
-                    </tr>
-                `).join('');
-            } catch (e) {
-                console.error('Failed to load logs:', e);
-            }
+                        <td>${fmtDate(l.completed_at || l.created_at)}</td>
+                        <td><span class="status-${l.status}">${l.status}</span></td>
+                        <td>${l.products_found || 0}</td>
+                        <td>${l.products_saved || 0}</td>
+                        <td>${l.errors_count || 0}</td>
+                    </tr>`).join('');
+            } catch (e) { }
         }
 
         async function runScrape() {
             const btn = document.getElementById('btn-scrape');
             const msg = document.getElementById('status-msg');
-
             btn.disabled = true;
             btn.classList.add('running');
-            btn.innerHTML = '⏳ Scraper Running...';
-            msg.textContent = 'Scraper started. This may take 5-10 minutes...';
-
+            btn.innerHTML = '⏳ Scraping...';
+            msg.textContent = 'Scraper started — this may take 1-2 minutes...';
             try {
-                const res = await fetch('/api/admin/scrape', {
-                    method: 'POST',
-                    headers: { 'X-Admin-Key': adminKey },
-                });
-                const data = await res.json();
-
+                const res = await fetch('/api/admin/scrape', { method: 'POST', headers: apiHeaders() });
+                const d = await res.json();
                 if (res.ok) {
-                    msg.textContent = `✅ Scraper started at ${data.startedAt}. Refresh in a few minutes to see results.`;
+                    msg.textContent = '✅ ' + d.message;
                 } else {
-                    msg.textContent = `❌ ${data.error}`;
+                    msg.textContent = '❌ ' + d.error;
                     btn.disabled = false;
                     btn.classList.remove('running');
                     btn.innerHTML = '🔄 Run Scraper Now';
                 }
             } catch (e) {
-                msg.textContent = `❌ Failed to start scraper: ${e.message}`;
+                msg.textContent = '❌ ' + e.message;
                 btn.disabled = false;
                 btn.classList.remove('running');
                 btn.innerHTML = '🔄 Run Scraper Now';
@@ -386,34 +798,106 @@
         async function checkRunning() {
             try {
                 const res = await fetch('/api/admin/scrape-running');
-                const data = await res.json();
+                const d = await res.json();
                 const btn = document.getElementById('btn-scrape');
-
-                if (!data.running && btn.classList.contains('running')) {
+                if (!d.running && btn.classList.contains('running')) {
                     btn.disabled = false;
                     btn.classList.remove('running');
                     btn.innerHTML = '🔄 Run Scraper Now';
-                    document.getElementById('status-msg').textContent = '✅ Scraper finished! Refreshing data...';
+                    document.getElementById('status-msg').textContent = '✅ Scraper finished!';
                     loadStatus();
                     loadHistory();
+                    loadProductStats();
                 }
             } catch (e) { }
         }
 
-        function timeAgo(dateStr) {
-            const diff = Date.now() - new Date(dateStr).getTime();
-            const mins = Math.floor(diff / 60000);
-            if (mins < 1) return 'Just now';
-            if (mins < 60) return `${mins}m ago`;
-            const hours = Math.floor(mins / 60);
-            if (hours < 24) return `${hours}h ago`;
-            const days = Math.floor(hours / 24);
-            return `${days}d ago`;
+        // ===== Product Stats =====
+        async function loadProductStats() {
+            try {
+                const res = await fetch('/api/admin/product-stats?key=' + encodeURIComponent(adminKey));
+                const d = await res.json();
+                document.getElementById('p-total').textContent = d.totalProducts?.toLocaleString() || '—';
+                document.getElementById('p-categories').textContent = d.categories?.length || '—';
+                document.getElementById('p-brands').textContent = d.brands?.length || '—';
+
+                const tbody = document.getElementById('recent-products');
+                if (d.recentProducts?.length) {
+                    tbody.innerHTML = d.recentProducts.map(p => `
+                        <tr>
+                            <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.product_name)}</td>
+                            <td>${esc(p.brand || '—')}</td>
+                            <td style="color:var(--success);font-weight:700">$${p.price?.toFixed(2) || '—'}</td>
+                            <td>${esc(p.category)}</td>
+                            <td>${timeAgo(p.created_at)}</td>
+                        </tr>`).join('');
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">No products</td></tr>';
+                }
+            } catch (e) { }
         }
 
-        function formatDate(dateStr) {
-            if (!dateStr) return '—';
-            return new Date(dateStr).toLocaleString();
+        // ===== Blog Generation =====
+        function generateBlog() {
+            const topic = document.getElementById('blog-topic').value;
+            const customTopic = document.getElementById('custom-topic').value;
+            const type = document.getElementById('blog-type').value;
+            const length = document.getElementById('blog-length').value;
+            const instructions = document.getElementById('blog-instructions').value;
+            const msg = document.getElementById('blog-status');
+
+            if (!topic) {
+                msg.textContent = '⚠️ Please select a topic';
+                return;
+            }
+
+            const finalTopic = topic === 'custom' ? customTopic : topic;
+            if (!finalTopic) {
+                msg.textContent = '⚠️ Please enter a custom topic';
+                return;
+            }
+
+            // Build a prompt for blog generation
+            const blogConfig = {
+                topic: finalTopic,
+                type,
+                length,
+                instructions,
+            };
+
+            msg.innerHTML = `
+                <div style="margin-top:1rem;padding:1rem;background:var(--bg-primary);border-radius:var(--radius-sm);font-size:0.82rem">
+                    <p>📝 <strong>Blog generation config ready!</strong></p>
+                    <p style="margin-top:0.5rem">Topic: <strong>${esc(finalTopic)}</strong></p>
+                    <p>Type: ${type} · Length: ${length}</p>
+                    <p style="margin-top:0.75rem;color:var(--text-muted)">
+                        💡 To generate: run the blog generator locally or connect an AI API.<br>
+                        Copy this config and use it with your preferred AI writing tool:
+                    </p>
+                    <code style="display:block;margin-top:0.5rem;padding:0.5rem;background:var(--bg-card);border-radius:4px;font-size:0.75rem;overflow-x:auto">${JSON.stringify(blogConfig, null, 2)}</code>
+                </div>`;
+        }
+
+        // ===== Helpers =====
+        function timeAgo(d) {
+            const diff = Date.now() - new Date(d).getTime();
+            const m = Math.floor(diff / 60000);
+            if (m < 1) return 'Just now';
+            if (m < 60) return m + 'm ago';
+            const h = Math.floor(m / 60);
+            if (h < 24) return h + 'h ago';
+            return Math.floor(h / 24) + 'd ago';
+        }
+
+        function fmtDate(d) {
+            return d ? new Date(d).toLocaleString() : '—';
+        }
+
+        function esc(s) {
+            if (!s) return '';
+            const d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
         }
     </script>
 </body>
