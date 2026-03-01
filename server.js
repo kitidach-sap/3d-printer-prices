@@ -673,7 +673,7 @@ function maskKey(key) {
 
 // Valid key types we support
 const VALID_KEY_TYPES = [
-    'scraper_api_key', 'gemini_api_key',
+    'scraper_api_key', 'gemini_api_key', 'openai_api_key',
     'x_api_key', 'x_api_secret', 'x_access_token', 'x_access_secret',
 ];
 
@@ -707,6 +707,17 @@ app.post('/api/admin/save-api-key', async (req, res) => {
             });
             if (!testRes.ok) {
                 return res.json({ success: false, error: `Gemini key invalid (HTTP ${testRes.status})` });
+            }
+        }
+
+        // Special validation for OpenAI
+        if (keyType === 'openai_api_key') {
+            const testRes = await fetch('https://api.openai.com/v1/models', {
+                headers: { 'Authorization': `Bearer ${value}` },
+                signal: AbortSignal.timeout(10000),
+            });
+            if (!testRes.ok) {
+                return res.json({ success: false, error: `OpenAI key invalid (HTTP ${testRes.status})` });
             }
         }
 
@@ -795,42 +806,83 @@ app.get('/api/admin/get-schedule/:type', async (req, res) => {
     }
 });
 
-// ===== AI Generation (Gemini) =====
+// ===== AI Generation (Gemini + OpenAI) =====
 
-// Helper: call Gemini API
-async function callGemini(prompt, maxTokens = 8192) {
-    // Load Gemini key from settings
-    let geminiKey = '';
+// Helper: load an API key from settings
+async function loadKey(keyName) {
     try {
-        const { data } = await supabase.from('settings').select('value').eq('key', 'gemini_api_key').single();
-        geminiKey = data?.value || '';
-    } catch (e) { }
-    if (!geminiKey) throw new Error('Gemini API Key not configured — go to Settings tab');
+        const { data } = await supabase.from('settings').select('value').eq('key', keyName).single();
+        return data?.value || '';
+    } catch (e) { return ''; }
+}
 
-    const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
-        {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: { maxOutputTokens: maxTokens, temperature: 0.8 },
-            }),
-            signal: AbortSignal.timeout(60000),
+// Helper: call AI — supports 'gemini', 'openai', or 'auto' (tries both)
+async function callAI(prompt, { maxTokens = 8192, provider = 'auto' } = {}) {
+    const geminiKey = (provider === 'gemini' || provider === 'auto') ? await loadKey('gemini_api_key') : '';
+    const openaiKey = (provider === 'openai' || provider === 'auto') ? await loadKey('openai_api_key') : '';
+
+    // Decide which to use
+    let useProvider = provider;
+    if (provider === 'auto') {
+        useProvider = geminiKey ? 'gemini' : openaiKey ? 'openai' : '';
+    }
+    if (useProvider === 'gemini' && !geminiKey) throw new Error('Gemini API Key not configured — go to Settings');
+    if (useProvider === 'openai' && !openaiKey) throw new Error('OpenAI API Key not configured — go to Settings');
+    if (!useProvider) throw new Error('No AI API Key configured — set Gemini or OpenAI key in Settings');
+
+    if (useProvider === 'gemini') {
+        const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: { maxOutputTokens: maxTokens, temperature: 0.8 },
+                }),
+                signal: AbortSignal.timeout(60000),
+            }
+        );
+        if (!res.ok) {
+            const err = await res.text();
+            // If auto mode and Gemini fails, try OpenAI fallback
+            if (provider === 'auto' && openaiKey) {
+                console.log('Gemini failed, falling back to OpenAI...');
+                return callAI(prompt, { maxTokens, provider: 'openai' });
+            }
+            throw new Error(`Gemini API error (${res.status}): ${err.slice(0, 200)}`);
         }
-    );
+        const json = await res.json();
+        return json.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    }
+
+    // OpenAI
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${openaiKey}`,
+        },
+        body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: [{ role: 'user', content: prompt }],
+            max_tokens: maxTokens,
+            temperature: 0.8,
+        }),
+        signal: AbortSignal.timeout(90000),
+    });
     if (!res.ok) {
         const err = await res.text();
-        throw new Error(`Gemini API error (${res.status}): ${err.slice(0, 200)}`);
+        throw new Error(`OpenAI API error (${res.status}): ${err.slice(0, 200)}`);
     }
     const json = await res.json();
-    return json.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    return json.choices?.[0]?.message?.content || '';
 }
 
 // POST /api/admin/generate-blog — AI generate blog post
 app.post('/api/admin/generate-blog', async (req, res) => {
     if (!verifyAdmin(req, res)) return;
-    const { topic, articleType, length, instructions, autoTopic } = req.body;
+    const { topic, articleType, length, instructions, autoTopic, aiProvider } = req.body;
 
     try {
         // Fetch top products for context
@@ -859,7 +911,7 @@ Suggest ONE compelling blog post topic that would drive organic traffic. Just re
 - "Best Budget 3D Printers Under $300 in 2026"
 - "Creality vs Bambu Lab: Which 3D Printer is Worth Your Money?"
 - "Top 5 PLA Filaments for Beginners (Tested & Ranked)"`;
-            topicText = await callGemini(topicPrompt, 200);
+            topicText = await callAI(topicPrompt, { maxTokens: 200, provider: aiProvider || 'auto' });
             topicText = topicText.replace(/^["'\s]+|["'\s]+$/g, '');
         }
 
@@ -893,7 +945,7 @@ ${productList}
 
 Write the complete article now:`;
 
-        const content = await callGemini(blogPrompt, 8192);
+        const content = await callAI(blogPrompt, { maxTokens: 8192, provider: aiProvider || 'auto' });
         res.json({ success: true, topic: topicText, content, wordCount: content.split(/\s+/).length });
     } catch (e) {
         res.status(500).json({ error: e.message });
@@ -903,7 +955,7 @@ Write the complete article now:`;
 // POST /api/admin/generate-x-post — AI generate X/Twitter post
 app.post('/api/admin/generate-x-post', async (req, res) => {
     if (!verifyAdmin(req, res)) return;
-    const { postType, customPrompt } = req.body;
+    const { postType, customPrompt, aiProvider } = req.body;
 
     try {
         let contextData = '';
@@ -952,7 +1004,7 @@ ${customPrompt ? `## Additional Instructions: ${customPrompt}` : ''}
 ## Format
 Output ONLY the tweet text, nothing else. No quotes around it.`;
 
-        const tweet = await callGemini(xPrompt, 400);
+        const tweet = await callAI(xPrompt, { maxTokens: 400, provider: aiProvider || 'auto' });
         // Clean up — remove quotes, ensure within 280 chars
         let cleanTweet = tweet.replace(/^["'\s\n]+|["'\s\n]+$/g, '').trim();
         if (cleanTweet.length > 280) cleanTweet = cleanTweet.slice(0, 277) + '...';

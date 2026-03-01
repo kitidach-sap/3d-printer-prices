@@ -853,10 +853,20 @@
                         </select>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label>Additional Instructions (optional)</label>
-                    <textarea class="form-textarea" id="blog-instructions"
-                        placeholder="e.g. Focus on printers under $200, include comparison table, mention specific brands..."></textarea>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Additional Instructions (optional)</label>
+                        <textarea class="form-textarea" id="blog-instructions"
+                            placeholder="e.g. Focus on printers under $200, include comparison table, mention specific brands..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>AI Provider</label>
+                        <select class="form-select" id="blog-ai-provider">
+                            <option value="auto">🔄 Auto (Gemini → OpenAI fallback)</option>
+                            <option value="gemini">🤖 Gemini</option>
+                            <option value="openai">🧠 OpenAI (GPT-4o-mini)</option>
+                        </select>
+                    </div>
                 </div>
                 <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
                     <button class="btn btn-success" id="btn-blog" onclick="generateBlog(false)">
@@ -900,6 +910,14 @@
                         <label>Custom Instructions (optional)</label>
                         <input type="text" class="form-input" id="x-custom-prompt"
                             placeholder="e.g. Focus on Creality K1C...">
+                    </div>
+                    <div class="form-group">
+                        <label>AI Provider</label>
+                        <select class="form-select" id="x-ai-provider">
+                            <option value="auto">🔄 Auto</option>
+                            <option value="gemini">🤖 Gemini</option>
+                            <option value="openai">🧠 OpenAI</option>
+                        </select>
                     </div>
                 </div>
                 <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
@@ -1193,6 +1211,28 @@
                     </div>
                 </div>
 
+                <!-- OpenAI API -->
+                <div class="api-key-row"
+                    style="background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.6rem;margin-bottom:0.5rem">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem">
+                        <strong style="font-size:0.78rem">🧠 OpenAI API</strong>
+                        <span class="key-status" id="ks-openai_api_key" style="font-size:0.68rem">—</span>
+                    </div>
+                    <div style="display:flex;gap:0.3rem">
+                        <input type="text" class="form-input api-key-input" data-key="openai_api_key"
+                            placeholder="Paste OpenAI API key (sk-...)"
+                            style="flex:1;font-size:0.75rem;font-family:monospace;padding:0.3rem 0.5rem">
+                        <button class="btn btn-primary"
+                            style="font-size:0.68rem;padding:0.3rem 0.5rem;white-space:nowrap"
+                            onclick="saveApiKey('openai_api_key', this)">💾 Save & Test</button>
+                    </div>
+                    <div class="key-msg" id="msg-openai_api_key" style="font-size:0.68rem;margin-top:0.2rem"></div>
+                    <div style="font-size:0.65rem;color:var(--text-muted);margin-top:0.15rem">
+                        ใช้แทน Gemini ได้ · สร้าง key ที่ <a href="https://platform.openai.com/api-keys" target="_blank"
+                            style="color:var(--primary)">platform.openai.com</a> (ต้องมี credit)
+                    </div>
+                </div>
+
                 <!-- X/Twitter API Keys -->
                 <div
                     style="background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.6rem;margin-bottom:0.5rem">
@@ -1415,8 +1455,21 @@
                 // Update Blog AI status
                 const blogAI = document.getElementById('blog-ai-status');
                 if (blogAI) {
-                    blogAI.textContent = keys.gemini_api_key?.configured ? '✅ Gemini Ready' : '❌ ตั้ง Key ก่อน';
-                    blogAI.style.color = keys.gemini_api_key?.configured ? 'var(--success)' : 'var(--danger)';
+                    const hasGemini = keys.gemini_api_key?.configured;
+                    const hasOpenAI = keys.openai_api_key?.configured;
+                    if (hasGemini && hasOpenAI) {
+                        blogAI.textContent = '✅ Gemini + OpenAI';
+                        blogAI.style.color = 'var(--success)';
+                    } else if (hasGemini) {
+                        blogAI.textContent = '✅ Gemini Ready';
+                        blogAI.style.color = 'var(--success)';
+                    } else if (hasOpenAI) {
+                        blogAI.textContent = '✅ OpenAI Ready';
+                        blogAI.style.color = 'var(--success)';
+                    } else {
+                        blogAI.textContent = '❌ ตั้ง Key ก่อน';
+                        blogAI.style.color = 'var(--danger)';
+                    }
                 }
 
                 // Update X API status
@@ -2096,6 +2149,7 @@
                         articleType: document.getElementById('blog-type').value,
                         length: document.getElementById('blog-length').value,
                         instructions: document.getElementById('blog-instructions').value,
+                        aiProvider: document.getElementById('blog-ai-provider').value,
                     }),
                 });
                 const d = await res.json();
@@ -2142,6 +2196,7 @@
                     body: JSON.stringify({
                         postType: document.getElementById('x-gen-type').value,
                         customPrompt: document.getElementById('x-custom-prompt').value,
+                        aiProvider: document.getElementById('x-ai-provider').value,
                     }),
                 });
                 const d = await res.json();
