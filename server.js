@@ -308,22 +308,30 @@ function verifyAdmin(req, res) {
 
 // Lightweight inline scraper (works on Vercel — no Playwright needed)
 const SCRAPE_SEARCHES = [
-    { query: '3D+printer+FDM', category: '3d_printer', productType: 'fdm' },
-    { query: 'Bambu+Lab+3D+printer', category: '3d_printer', productType: 'fdm' },
-    { query: 'Creality+3D+printer', category: '3d_printer', productType: 'fdm' },
-    { query: 'resin+3D+printer', category: '3d_printer', productType: 'resin_sla' },
-    { query: '3D+printer+filament+PLA', category: 'filament', productType: 'pla' },
-    { query: '3D+printer+filament+PETG', category: 'filament', productType: 'petg' },
-    { query: '3D+printer+filament+ABS', category: 'filament', productType: 'abs' },
-    { query: '3D+printer+filament+TPU+flexible', category: 'filament', productType: 'tpu' },
-    { query: 'UV+resin+for+3D+printer', category: 'resin', productType: 'uv_resin' },
-    { query: '3D+printer+wash+cure+resin', category: 'resin', productType: 'uv_resin' },
-    { query: '3D+printer+accessories+nozzle+bed', category: 'accessories', productType: 'tools' },
-    { query: '3D+printer+tools+kit+scraper', category: 'accessories', productType: 'tools' },
-    { query: '3D+pen', category: '3d_pen', productType: '3d_pen' },
+    { query: '3D+printer+FDM', category: '3d_printer', productType: 'fdm', label: '3D Printer FDM' },
+    { query: 'Bambu+Lab+3D+printer', category: '3d_printer', productType: 'fdm', label: 'Bambu Lab' },
+    { query: 'Creality+3D+printer', category: '3d_printer', productType: 'fdm', label: 'Creality' },
+    { query: 'resin+3D+printer', category: '3d_printer', productType: 'resin_sla', label: 'Resin Printer' },
+    { query: '3D+printer+filament+PLA', category: 'filament', productType: 'pla', label: 'PLA Filament' },
+    { query: '3D+printer+filament+PETG', category: 'filament', productType: 'petg', label: 'PETG Filament' },
+    { query: '3D+printer+filament+ABS', category: 'filament', productType: 'abs', label: 'ABS Filament' },
+    { query: '3D+printer+filament+TPU+flexible', category: 'filament', productType: 'tpu', label: 'TPU Filament' },
+    { query: 'UV+resin+for+3D+printer', category: 'resin', productType: 'uv_resin', label: 'UV Resin' },
+    { query: '3D+printer+wash+cure+resin', category: 'resin', productType: 'uv_resin', label: 'Wash & Cure Resin' },
+    { query: '3D+printer+accessories+nozzle+bed', category: 'accessories', productType: 'tools', label: 'Accessories' },
+    { query: '3D+printer+tools+kit+scraper', category: 'accessories', productType: 'tools', label: 'Tools Kit' },
+    { query: '3D+pen', category: '3d_pen', productType: '3d_pen', label: '3D Pen' },
 ];
 
 const AFFILIATE_TAG = 'kiti09-20';
+
+// Progress tracking
+let scrapeProgress = [];
+function logProgress(type, message, data = {}) {
+    const entry = { time: new Date().toISOString(), type, message, ...data };
+    scrapeProgress.push(entry);
+    console.log(`[Scraper] ${type}: ${message}`, data.error || '');
+}
 
 function detectBrandFromTitle(title) {
     const brands = [
@@ -336,32 +344,57 @@ function detectBrandFromTitle(title) {
 }
 
 async function runLightScrape(filterCategories = null, maxPerQuery = 30) {
-    let totalFound = 0, totalSaved = 0, errorsCount = 0, duplicatesSkipped = 0;
+    let totalFound = 0, totalSaved = 0, errorsCount = 0;
     const startedAt = new Date().toISOString();
+    scrapeProgress = []; // Reset progress
 
     // Filter searches by selected categories (if provided)
     const searches = filterCategories && filterCategories.length > 0
         ? SCRAPE_SEARCHES.filter(s => filterCategories.includes(s.category))
         : SCRAPE_SEARCHES;
 
-    for (const search of searches) {
+    logProgress('start', `Starting scrape: ${searches.length} queries, max ${maxPerQuery}/query`);
+
+    for (let i = 0; i < searches.length; i++) {
+        const search = searches[i];
+        const stepLabel = `[${i + 1}/${searches.length}] ${search.label}`;
+
         try {
+            logProgress('search', `${stepLabel} — Searching Amazon...`, { query: search.query });
+
             const url = `https://www.amazon.com/s?k=${search.query}&tag=${AFFILIATE_TAG}`;
             const res = await fetch(url, {
                 headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                    'Accept': 'text/html',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml',
                     'Accept-Language': 'en-US,en;q=0.9',
                 },
             });
-            if (!res.ok) continue;
+
+            if (!res.ok) {
+                logProgress('error', `${stepLabel} — HTTP ${res.status} (${res.statusText})`, { status: res.status });
+                errorsCount++;
+                continue;
+            }
 
             const html = await res.text();
+
+            // Check for CAPTCHA / bot detection
+            if (html.includes('captcha') || html.includes('automated access') || html.length < 5000) {
+                logProgress('warn', `${stepLabel} — Amazon blocked (CAPTCHA/bot detection). HTML length: ${html.length}`);
+                errorsCount++;
+                continue;
+            }
+
+            logProgress('parse', `${stepLabel} — Got ${html.length.toLocaleString()} chars, parsing products...`);
+
             const products = [];
             const asinPattern = /data-asin="([A-Z0-9]{10})"/g;
             const asins = new Set();
             let m;
             while ((m = asinPattern.exec(html)) !== null) asins.add(m[1]);
+
+            logProgress('parse', `${stepLabel} — Found ${asins.size} ASINs on page`);
 
             for (const asin of asins) {
                 if (products.length >= maxPerQuery) break;
@@ -389,21 +422,37 @@ async function runLightScrape(filterCategories = null, maxPerQuery = 30) {
             }
 
             totalFound += products.length;
+            logProgress('extract', `${stepLabel} — Extracted ${products.length} products with price`);
+
             if (products.length > 0) {
-                const { error, count } = await supabase.from('products').upsert(products, {
+                const { error } = await supabase.from('products').upsert(products, {
                     onConflict: 'amazon_asin', ignoreDuplicates: false,
                 });
-                if (error) { errorsCount += products.length; }
-                else { totalSaved += products.length; }
+                if (error) {
+                    logProgress('error', `${stepLabel} — Supabase error: ${error.message}`, { error: error.message });
+                    errorsCount += products.length;
+                } else {
+                    totalSaved += products.length;
+                    logProgress('save', `${stepLabel} — ✅ Saved ${products.length} products to database`);
+                }
+            } else {
+                logProgress('warn', `${stepLabel} — No products with price found`);
             }
+
             await new Promise(r => setTimeout(r, 1500));
         } catch (e) {
+            logProgress('error', `${stepLabel} — Exception: ${e.message}`, { error: e.message });
             errorsCount++;
         }
     }
 
+    const status = errorsCount === searches.length ? 'failed' : errorsCount > 0 ? 'partial' : 'success';
+    logProgress('done', `Scrape complete: ${totalFound} found, ${totalSaved} saved, ${errorsCount} errors`, {
+        totalFound, totalSaved, errorsCount, status,
+    });
+
     await supabase.from('scrape_logs').insert({
-        status: errorsCount > 0 ? 'partial' : 'success',
+        status,
         products_found: totalFound,
         products_saved: totalSaved,
         errors_count: errorsCount,
@@ -413,6 +462,15 @@ async function runLightScrape(filterCategories = null, maxPerQuery = 30) {
 
     return { totalFound, totalSaved, errorsCount };
 }
+
+// GET /api/admin/scrape-progress — live progress feed
+app.get('/api/admin/scrape-progress', (req, res) => {
+    res.json({
+        running: scraperRunning,
+        progress: scrapeProgress,
+        total: scrapeProgress.length,
+    });
+});
 
 // POST /api/admin/scrape — trigger scraper manually
 app.post('/api/admin/scrape', async (req, res) => {
@@ -432,6 +490,7 @@ app.post('/api/admin/scrape', async (req, res) => {
         const result = await runLightScrape(categories, maxPerQuery);
         console.log('Scraper completed:', result);
     } catch (err) {
+        logProgress('error', `Fatal error: ${err.message}`, { error: err.message });
         console.error('Scraper error:', err.message);
     } finally {
         scraperRunning = false;

@@ -352,6 +352,124 @@
                 grid-template-columns: repeat(2, 1fr);
             }
         }
+
+        /* Live progress log */
+        .progress-panel {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: var(--radius);
+            padding: 0.75rem;
+            max-height: 350px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.72rem;
+            line-height: 1.6;
+        }
+
+        .progress-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .progress-panel::-webkit-scrollbar-thumb {
+            background: #30363d;
+            border-radius: 3px;
+        }
+
+        .log-entry {
+            padding: 0.1rem 0;
+            border-bottom: 1px solid rgba(48, 54, 61, 0.3);
+        }
+
+        .log-time {
+            color: #6e7681;
+            margin-right: 0.4rem;
+        }
+
+        .log-type {
+            display: inline-block;
+            padding: 0 0.3rem;
+            border-radius: 3px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            margin-right: 0.3rem;
+        }
+
+        .log-start {
+            background: #1f6feb33;
+            color: #58a6ff;
+        }
+
+        .log-search {
+            background: #1f6feb22;
+            color: #79c0ff;
+        }
+
+        .log-parse {
+            background: #8b949e22;
+            color: #8b949e;
+        }
+
+        .log-extract {
+            background: #3fb95022;
+            color: #3fb950;
+        }
+
+        .log-save {
+            background: #3fb95033;
+            color: #56d364;
+        }
+
+        .log-warn {
+            background: #d2992233;
+            color: #e3b341;
+        }
+
+        .log-error {
+            background: #f8514933;
+            color: #f85149;
+        }
+
+        .log-done {
+            background: #3fb95044;
+            color: #56d364;
+            font-weight: 700;
+        }
+
+        .log-msg {
+            color: #c9d1d9;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-header h3 {
+            margin-bottom: 0;
+        }
+
+        .blinking-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #3fb950;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+        }
     </style>
 </head>
 
@@ -478,6 +596,21 @@
                 </div>
                 <div id="status-msg"></div>
                 <div id="update-msg" style="margin-top:0.3rem;font-size:0.82rem"></div>
+            </div>
+
+            <!-- LIVE PROGRESS PANEL -->
+            <div class="admin-card" id="progress-card" style="display:none">
+                <div class="progress-header">
+                    <h3>📺 Live Progress</h3>
+                    <div>
+                        <span class="blinking-dot" id="progress-dot"></span>
+                        <span style="font-size:0.72rem;color:var(--text-muted);margin-left:0.3rem" id="progress-count">0
+                            steps</span>
+                    </div>
+                </div>
+                <div class="progress-panel" id="progress-log">
+                    <div style="color:#6e7681">Waiting for scraper to start...</div>
+                </div>
             </div>
 
             <div class="admin-card">
@@ -878,7 +1011,7 @@
             loadHistory();
             loadProductStats();
             loadSchedule();
-            setInterval(checkRunning, 5000);
+            setInterval(checkRunning, 2000);
         }
 
         // ===== API helpers =====
@@ -963,6 +1096,11 @@
             btn.innerHTML = '⏳ Scraping...';
             const catLabel = allChecked ? 'all categories' : checked.join(', ');
             msg.textContent = `Scraping ${catLabel} (max ${maxPerQuery}/query) — this may take 1-2 minutes...`;
+            // Show progress panel
+            document.getElementById('progress-card').style.display = '';
+            document.getElementById('progress-log').innerHTML = '<div style="color:#6e7681">⏳ Connecting to scraper...</div>';
+            lastProgressCount = 0;
+
             try {
                 const res = await fetch('/api/admin/scrape', {
                     method: 'POST',
@@ -971,23 +1109,58 @@
                 });
                 const d = await res.json();
                 if (res.ok) {
-                    msg.textContent = '✅ ' + d.message;
+                    msg.textContent = '✅ ' + d.message + ' — Watch progress below ⬇️';
                 } else {
                     msg.textContent = '❌ ' + d.error;
                     btn.disabled = false;
                     btn.classList.remove('running');
                     btn.innerHTML = '🔄 Scrape New Products';
+                    document.getElementById('progress-card').style.display = 'none';
                 }
             } catch (e) {
                 msg.textContent = '❌ ' + e.message;
                 btn.disabled = false;
                 btn.classList.remove('running');
                 btn.innerHTML = '🔄 Scrape New Products';
+                document.getElementById('progress-card').style.display = 'none';
             }
+        }
+
+        let lastProgressCount = 0;
+
+        function renderProgressLog(entries) {
+            if (!entries?.length) return;
+            const panel = document.getElementById('progress-log');
+            const typeIcons = {
+                start: '🚀', search: '🔍', parse: '📄', extract: '📦',
+                save: '💾', warn: '⚠️', error: '❌', done: '✅',
+            };
+
+            panel.innerHTML = entries.map(e => {
+                const t = new Date(e.time).toLocaleTimeString();
+                const icon = typeIcons[e.type] || '▸';
+                return `<div class="log-entry">
+                    <span class="log-time">${t}</span>
+                    <span class="log-type log-${e.type}">${icon} ${e.type.toUpperCase()}</span>
+                    <span class="log-msg">${esc(e.message)}</span>
+                </div>`;
+            }).join('');
+
+            document.getElementById('progress-count').textContent = entries.length + ' steps';
+            panel.scrollTop = panel.scrollHeight;
         }
 
         async function checkRunning() {
             try {
+                // Poll progress (always — shows latest even after done)
+                const progRes = await fetch('/api/admin/scrape-progress');
+                const progData = await progRes.json();
+                if (progData.progress?.length > lastProgressCount) {
+                    lastProgressCount = progData.progress.length;
+                    renderProgressLog(progData.progress);
+                }
+
+                // Check scraper running
                 const res = await fetch('/api/admin/scrape-running');
                 const d = await res.json();
                 const btn = document.getElementById('btn-scrape');
@@ -996,10 +1169,18 @@
                     btn.classList.remove('running');
                     btn.innerHTML = '🔄 Scrape New Products';
                     document.getElementById('status-msg').textContent = '✅ Scraper finished!';
+                    document.getElementById('progress-dot').style.animation = 'none';
+                    document.getElementById('progress-dot').style.background = '#6e7681';
                     loadStatus();
                     loadHistory();
                     loadProductStats();
                 }
+
+                // Show/hide progress panel
+                if (d.running || progData.progress?.length > 0) {
+                    document.getElementById('progress-card').style.display = '';
+                }
+
                 // Also check price update status
                 const upRes = await fetch('/api/admin/update-prices-running');
                 const upD = await upRes.json();
