@@ -397,7 +397,7 @@ function detectBrandFromTitle(title) {
 }
 
 async function runLightScrape(filterCategories = null, maxPerQuery = 30) {
-    let totalFound = 0, totalSaved = 0, errorsCount = 0;
+    let totalFound = 0, totalSaved = 0, totalSkipped = 0, errorsCount = 0;
     const startedAt = new Date().toISOString();
     scrapeProgress = []; // Reset progress
 
@@ -410,9 +410,30 @@ async function runLightScrape(filterCategories = null, maxPerQuery = 30) {
     logProgress('start', `Starting scrape: ${searches.length} queries, max ${maxPerQuery}/query — Mode: ${mode}`);
 
     if (!SCRAPER_API_KEY) {
-        logProgress('warn', '⚠️ No SCRAPER_API_KEY set — using direct fetch. Amazon may block with 503. Set env var SCRAPER_API_KEY for reliable scraping.');
+        logProgress('warn', '⚠️ No SCRAPER_API_KEY set — using direct fetch. Amazon may block with 503.');
     }
 
+    // === Step 1: Pre-load all existing ASINs from database ===
+    logProgress('parse', '📦 Loading existing ASINs from database...');
+    const existingAsins = new Set();
+    try {
+        let page = 0, pageSize = 1000, hasMore = true;
+        while (hasMore) {
+            const { data, error } = await supabase
+                .from('products')
+                .select('amazon_asin')
+                .range(page * pageSize, (page + 1) * pageSize - 1);
+            if (error) throw error;
+            if (data) data.forEach(r => { if (r.amazon_asin) existingAsins.add(r.amazon_asin); });
+            hasMore = data && data.length === pageSize;
+            page++;
+        }
+        logProgress('parse', `📦 Found ${existingAsins.size} existing products in DB — will skip these`);
+    } catch (e) {
+        logProgress('warn', `⚠️ Could not load existing ASINs: ${e.message} — will use upsert fallback`);
+    }
+
+    // === Step 2: Scrape each query ===
     for (let i = 0; i < searches.length; i++) {
         const search = searches[i];
         const stepLabel = `[${i + 1}/${searches.length}] ${search.label}`;
@@ -420,6 +441,7 @@ async function runLightScrape(filterCategories = null, maxPerQuery = 30) {
         try {
             logProgress('search', `${stepLabel} — Searching Amazon...`, { query: search.query });
 
+            // Try page 1
             const amazonUrl = `https://www.amazon.com/s?k=${search.query}&tag=${AFFILIATE_TAG}`;
             const res = await fetchAmazonPage(amazonUrl, stepLabel);
 
@@ -433,22 +455,29 @@ async function runLightScrape(filterCategories = null, maxPerQuery = 30) {
 
             // Check for CAPTCHA / bot detection
             if (html.includes('captcha') || html.includes('automated access') || html.length < 5000) {
-                logProgress('warn', `${stepLabel} — Amazon blocked (CAPTCHA/bot detection). HTML length: ${html.length}`);
+                logProgress('warn', `${stepLabel} — Amazon blocked (CAPTCHA/bot detection). HTML len: ${html.length}`);
                 errorsCount++;
                 continue;
             }
 
-            logProgress('parse', `${stepLabel} — Got ${html.length.toLocaleString()} chars, parsing products...`);
+            logProgress('parse', `${stepLabel} — Got ${html.length.toLocaleString()} chars, parsing...`);
 
-            const products = [];
+            // Extract all ASINs from page
+            const allAsins = new Set();
             const asinPattern = /data-asin="([A-Z0-9]{10})"/g;
-            const asins = new Set();
             let m;
-            while ((m = asinPattern.exec(html)) !== null) asins.add(m[1]);
+            while ((m = asinPattern.exec(html)) !== null) allAsins.add(m[1]);
 
-            logProgress('parse', `${stepLabel} — Found ${asins.size} ASINs on page`);
+            // Filter out existing ASINs
+            const newAsins = [...allAsins].filter(a => !existingAsins.has(a));
+            const skippedCount = allAsins.size - newAsins.length;
+            totalSkipped += skippedCount;
 
-            for (const asin of asins) {
+            logProgress('parse', `${stepLabel} — Found ${allAsins.size} ASINs, ${newAsins.length} NEW, ${skippedCount} skipped (already in DB)`);
+
+            // Extract product details only for NEW ASINs
+            const products = [];
+            for (const asin of newAsins) {
                 if (products.length >= maxPerQuery) break;
                 const titleRx = new RegExp(`data-asin="${asin}"[\\s\\S]*?<span[^>]*class="a-size-[^"]*a-text-normal"[^>]*>([^<]+)</span>`, 'i');
                 const priceRx = new RegExp(`data-asin="${asin}"[\\s\\S]*?<span class="a-price"[^>]*>[\\s\\S]*?<span[^>]*>\\$([\\d,.]+)</span>`, 'i');
@@ -476,21 +505,23 @@ async function runLightScrape(filterCategories = null, maxPerQuery = 30) {
             }
 
             totalFound += products.length;
-            logProgress('extract', `${stepLabel} — Extracted ${products.length} products with price`);
+            logProgress('extract', `${stepLabel} — Extracted ${products.length} NEW products with price`);
 
             if (products.length > 0) {
-                const { error } = await supabase.from('products').upsert(products, {
-                    onConflict: 'amazon_asin', ignoreDuplicates: false,
-                });
+                const { error } = await supabase.from('products').insert(products);
                 if (error) {
                     logProgress('error', `${stepLabel} — Supabase error: ${error.message}`, { error: error.message });
                     errorsCount += products.length;
                 } else {
                     totalSaved += products.length;
-                    logProgress('save', `${stepLabel} — ✅ Saved ${products.length} products to database`);
+                    // Add to existingAsins so next queries also skip them
+                    products.forEach(p => existingAsins.add(p.amazon_asin));
+                    logProgress('save', `${stepLabel} — ✅ Saved ${products.length} NEW products`);
                 }
+            } else if (newAsins.length === 0) {
+                logProgress('warn', `${stepLabel} — All ${allAsins.size} products already in DB — no new products`);
             } else {
-                logProgress('warn', `${stepLabel} — No products with price found`);
+                logProgress('warn', `${stepLabel} — ${newAsins.length} new ASINs but no price data found`);
             }
 
             // Random delay 2-4s between queries to avoid rate limiting
@@ -503,8 +534,8 @@ async function runLightScrape(filterCategories = null, maxPerQuery = 30) {
     }
 
     const status = errorsCount === searches.length ? 'failed' : errorsCount > 0 ? 'partial' : 'success';
-    logProgress('done', `Scrape complete: ${totalFound} found, ${totalSaved} saved, ${errorsCount} errors`, {
-        totalFound, totalSaved, errorsCount, status,
+    logProgress('done', `Scrape complete: ${totalFound} new found, ${totalSaved} saved, ${totalSkipped} skipped (existing), ${errorsCount} errors`, {
+        totalFound, totalSaved, totalSkipped, errorsCount, status,
     });
 
     await supabase.from('scrape_logs').insert({
