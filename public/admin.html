@@ -566,27 +566,11 @@
                     🛡️ Dedup: <span class="badge badge-active">ASIN Upsert</span> (ไม่ซ้ำ)
                 </p>
                 <div
-                    style="background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.75rem;margin-bottom:0.75rem">
-                    <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
-                        <strong style="font-size:0.82rem">🔑 ScraperAPI Key</strong>
-                        <span id="scraper-mode" style="font-size:0.72rem;color:var(--warning)">Loading...</span>
-                    </div>
-                    <div style="display:flex;gap:0.4rem;margin-bottom:0.4rem">
-                        <input type="text" id="api-key-input" class="form-input"
-                            placeholder="Paste your ScraperAPI key here..."
-                            style="flex:1;font-size:0.78rem;font-family:monospace;padding:0.4rem 0.6rem">
-                        <button class="btn btn-primary" id="btn-test-key" onclick="testApiKey()"
-                            style="font-size:0.75rem;padding:0.4rem 0.8rem;white-space:nowrap">
-                            🧪 Test & Save
-                        </button>
-                    </div>
-                    <div id="api-key-msg" style="font-size:0.72rem;min-height:1rem"></div>
-                    <p style="font-size:0.68rem;color:var(--text-muted);margin-top:0.3rem;margin-bottom:0">
-                        Amazon blocks direct requests (503). สมัครฟรีที่
-                        <a href="https://www.scraperapi.com/signup" target="_blank"
-                            style="color:var(--primary)">scraperapi.com/signup</a>
-                        (5,000 free/mo, ไม่ต้องใส่บัตร) → Copy API Key → วางที่นี่ → กด Test & Save
-                    </p>
+                    style="background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem 0.6rem;margin-bottom:0.75rem;font-size:0.72rem;display:flex;align-items:center;gap:0.4rem">
+                    <span id="scraper-mode" style="color:var(--warning)">Loading...</span>
+                    <span style="color:var(--text-muted)">· จัดการ API Key ได้ที่แท็บ <a href="#"
+                            onclick="document.querySelector('[data-tab=settings]').click()"
+                            style="color:var(--primary)">⚙️ Settings</a></span>
                 </div>
 
                 <div class="form-row" style="margin-bottom:0.75rem">
@@ -979,46 +963,214 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Blog Auto-Generation Schedule -->
+            <div class="admin-card">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
+                    <h3 style="margin:0">📝 Blog Auto-Generation</h3>
+                    <span id="blog-sch-status" class="badge" style="font-size:0.68rem">—</span>
+                </div>
+                <div class="info-grid" style="margin-bottom:0.5rem">
+                    <div class="info-item">
+                        <span class="info-label">AI Provider</span>
+                        <span class="info-value" id="blog-ai-status">—</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Schedule</span>
+                        <span class="info-value" id="blog-sch-cron">Not set</span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Frequency</label>
+                        <select class="form-select" id="blog-freq">
+                            <option value="0 8 * * 1">Weekly (Mon 8 AM)</option>
+                            <option value="0 8 */3 * *">Every 3 Days</option>
+                            <option value="0 8 * * *">Daily</option>
+                            <option value="custom">Custom Cron...</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="blog-custom-cron-group" style="display:none">
+                        <label>Custom Cron</label>
+                        <input type="text" class="form-input" id="blog-custom-cron" placeholder="e.g. 0 9 * * 2,5">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="blog-sch-enabled" style="margin-right:0.3rem">
+                            Enable Auto Blog
+                        </label>
+                    </div>
+                </div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+                    <button class="btn btn-primary" onclick="saveBlogSchedule()">💾 Save Blog Schedule</button>
+                    <button class="btn btn-warning" onclick="document.querySelector('[data-tab=blog]').click()">✍️ Write
+                        Now</button>
+                </div>
+                <div id="blog-sch-msg" style="margin-top:0.3rem;font-size:0.72rem"></div>
+                <p style="font-size:0.68rem;color:var(--text-muted);margin-top:0.5rem;margin-bottom:0">
+                    ⚠️ ต้องตั้ง Gemini API Key ก่อนในแท็บ <a href="#"
+                        onclick="document.querySelector('[data-tab=settings]').click()"
+                        style="color:var(--primary)">Settings</a>
+                </p>
+            </div>
+
+            <!-- X Auto-Post Schedule -->
+            <div class="admin-card">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
+                    <h3 style="margin:0">🐦 X Auto-Post</h3>
+                    <span id="x-sch-status" class="badge" style="font-size:0.68rem">—</span>
+                </div>
+                <div class="info-grid" style="margin-bottom:0.5rem">
+                    <div class="info-item">
+                        <span class="info-label">X API Status</span>
+                        <span class="info-value" id="x-api-status">—</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Schedule</span>
+                        <span class="info-value" id="x-sch-cron">Not set</span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Frequency</label>
+                        <select class="form-select" id="x-freq">
+                            <option value="0 9 * * *">Daily at 9 AM</option>
+                            <option value="0 */12 * * *">Every 12 Hours</option>
+                            <option value="0 9,18 * * *">Twice Daily (9 AM, 6 PM)</option>
+                            <option value="custom">Custom Cron...</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="x-custom-cron-group" style="display:none">
+                        <label>Custom Cron</label>
+                        <input type="text" class="form-input" id="x-custom-cron" placeholder="e.g. 0 */8 * * *">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Post Type</label>
+                        <select class="form-select" id="x-post-type">
+                            <option value="new_products">🆕 New Products</option>
+                            <option value="blog_links">📝 Blog Links</option>
+                            <option value="deals">💰 Price Drops / Deals</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="x-sch-enabled" style="margin-right:0.3rem">
+                            Enable Auto-Post
+                        </label>
+                    </div>
+                </div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+                    <button class="btn btn-primary" onclick="saveXSchedule()">💾 Save X Schedule</button>
+                    <button class="btn btn-warning" onclick="postToXNow()" id="btn-x-post">🐦 Post Now</button>
+                </div>
+                <div id="x-sch-msg" style="margin-top:0.3rem;font-size:0.72rem"></div>
+                <p style="font-size:0.68rem;color:var(--text-muted);margin-top:0.5rem;margin-bottom:0">
+                    ⚠️ ต้องตั้ง X API Keys ทั้ง 4 ตัวก่อนในแท็บ <a href="#"
+                        onclick="document.querySelector('[data-tab=settings]').click()"
+                        style="color:var(--primary)">Settings</a>
+                </p>
+            </div>
         </div>
 
         <!-- ==================== SETTINGS TAB ==================== -->
         <div class="tab-content" id="tab-settings">
             <div class="admin-card">
-                <h3>🔑 Environment Variables</h3>
-                <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:1rem">
-                    Set these in Vercel Dashboard → Settings → Environment Variables
+                <h3>🔑 API Keys</h3>
+                <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:1rem">
+                    จัดการ API keys ทั้งหมดที่นี่ — กรอก Key แล้วกด Save & Test ระบบจะเช็คให้ทันที
                 </p>
-                <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th>Variable</th>
-                            <th>Description</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><code>SUPABASE_URL</code></td>
-                            <td>Supabase project URL</td>
-                            <td class="status-success">✅ Set</td>
-                        </tr>
-                        <tr>
-                            <td><code>SUPABASE_ANON_KEY</code></td>
-                            <td>Supabase anonymous key</td>
-                            <td class="status-success">✅ Set</td>
-                        </tr>
-                        <tr>
-                            <td><code>ADMIN_KEY</code></td>
-                            <td>Admin panel password</td>
-                            <td class="status-success">✅ Set</td>
-                        </tr>
-                        <tr>
-                            <td><code>CRON_SECRET</code></td>
-                            <td>Vercel cron authentication</td>
-                            <td style="color:var(--text-muted)">⚠️ Set in Vercel</td>
-                        </tr>
-                    </tbody>
-                </table>
+
+                <!-- ScraperAPI -->
+                <div class="api-key-row"
+                    style="background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.6rem;margin-bottom:0.5rem">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem">
+                        <strong style="font-size:0.78rem">🔑 ScraperAPI</strong>
+                        <span class="key-status" id="ks-scraper_api_key" style="font-size:0.68rem">—</span>
+                    </div>
+                    <div style="display:flex;gap:0.3rem">
+                        <input type="text" class="form-input api-key-input" data-key="scraper_api_key"
+                            placeholder="Paste ScraperAPI key..."
+                            style="flex:1;font-size:0.75rem;font-family:monospace;padding:0.3rem 0.5rem">
+                        <button class="btn btn-primary"
+                            style="font-size:0.68rem;padding:0.3rem 0.5rem;white-space:nowrap"
+                            onclick="saveApiKey('scraper_api_key', this)">💾 Save & Test</button>
+                    </div>
+                    <div class="key-msg" id="msg-scraper_api_key" style="font-size:0.68rem;margin-top:0.2rem"></div>
+                    <div style="font-size:0.65rem;color:var(--text-muted);margin-top:0.15rem">
+                        ดึงสินค้าจาก Amazon · สมัครฟรีที่ <a href="https://www.scraperapi.com/signup" target="_blank"
+                            style="color:var(--primary)">scraperapi.com</a> (5,000 free/mo)
+                    </div>
+                </div>
+
+                <!-- Gemini API -->
+                <div class="api-key-row"
+                    style="background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.6rem;margin-bottom:0.5rem">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem">
+                        <strong style="font-size:0.78rem">🤖 Gemini API</strong>
+                        <span class="key-status" id="ks-gemini_api_key" style="font-size:0.68rem">—</span>
+                    </div>
+                    <div style="display:flex;gap:0.3rem">
+                        <input type="text" class="form-input api-key-input" data-key="gemini_api_key"
+                            placeholder="Paste Gemini API key..."
+                            style="flex:1;font-size:0.75rem;font-family:monospace;padding:0.3rem 0.5rem">
+                        <button class="btn btn-primary"
+                            style="font-size:0.68rem;padding:0.3rem 0.5rem;white-space:nowrap"
+                            onclick="saveApiKey('gemini_api_key', this)">💾 Save & Test</button>
+                    </div>
+                    <div class="key-msg" id="msg-gemini_api_key" style="font-size:0.68rem;margin-top:0.2rem"></div>
+                    <div style="font-size:0.65rem;color:var(--text-muted);margin-top:0.15rem">
+                        เขียน Blog อัตโนมัติ · สร้าง key ที่ <a href="https://aistudio.google.com/apikey"
+                            target="_blank" style="color:var(--primary)">aistudio.google.com</a> (ฟรี)
+                    </div>
+                </div>
+
+                <!-- X/Twitter API Keys -->
+                <div
+                    style="background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.6rem;margin-bottom:0.5rem">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
+                        <strong style="font-size:0.78rem">🐦 X (Twitter) API</strong>
+                        <span class="key-status" id="ks-x_api_key" style="font-size:0.68rem">—</span>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem;margin-bottom:0.3rem">
+                        <div>
+                            <label style="font-size:0.65rem;color:var(--text-muted)">API Key</label>
+                            <input type="text" class="form-input api-key-input" data-key="x_api_key"
+                                placeholder="API Key"
+                                style="font-size:0.72rem;font-family:monospace;padding:0.25rem 0.4rem;width:100%">
+                        </div>
+                        <div>
+                            <label style="font-size:0.65rem;color:var(--text-muted)">API Secret</label>
+                            <input type="text" class="form-input api-key-input" data-key="x_api_secret"
+                                placeholder="API Secret"
+                                style="font-size:0.72rem;font-family:monospace;padding:0.25rem 0.4rem;width:100%">
+                        </div>
+                        <div>
+                            <label style="font-size:0.65rem;color:var(--text-muted)">Access Token</label>
+                            <input type="text" class="form-input api-key-input" data-key="x_access_token"
+                                placeholder="Access Token"
+                                style="font-size:0.72rem;font-family:monospace;padding:0.25rem 0.4rem;width:100%">
+                        </div>
+                        <div>
+                            <label style="font-size:0.65rem;color:var(--text-muted)">Access Secret</label>
+                            <input type="text" class="form-input api-key-input" data-key="x_access_secret"
+                                placeholder="Access Secret"
+                                style="font-size:0.72rem;font-family:monospace;padding:0.25rem 0.4rem;width:100%">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" style="font-size:0.68rem;padding:0.3rem 0.5rem"
+                        onclick="saveAllXKeys()">💾 Save All X Keys</button>
+                    <div class="key-msg" id="msg-x_api_key" style="font-size:0.68rem;margin-top:0.2rem"></div>
+                    <div style="font-size:0.65rem;color:var(--text-muted);margin-top:0.15rem">
+                        โพสต์ใน X อัตโนมัติ · สร้าง app ที่ <a href="https://developer.x.com/en/portal/dashboard"
+                            target="_blank" style="color:var(--primary)">developer.x.com</a>
+                    </div>
+                </div>
             </div>
 
             <div class="admin-card">
@@ -1078,61 +1230,54 @@
                 e.target.value === 'custom' ? 'block' : 'none';
         });
 
+        // Blog freq toggle
+        document.getElementById('blog-freq').addEventListener('change', (e) => {
+            document.getElementById('blog-custom-cron-group').style.display =
+                e.target.value === 'custom' ? 'block' : 'none';
+        });
+
+        // X freq toggle
+        document.getElementById('x-freq').addEventListener('change', (e) => {
+            document.getElementById('x-custom-cron-group').style.display =
+                e.target.value === 'custom' ? 'block' : 'none';
+        });
+
         // ===== Init =====
         function init() {
             loadStatus();
             loadHistory();
             loadProductStats();
             loadSchedule();
-            loadScraperMode();
+            loadApiKeysStatus();
+            loadBlogSchedule();
+            loadXSchedule();
             setInterval(checkRunning, 2000);
         }
 
-        async function loadScraperMode() {
-            try {
-                const res = await fetch('/api/admin/scraper-mode');
-                const d = await res.json();
-                const el = document.getElementById('scraper-mode');
-                const input = document.getElementById('api-key-input');
-                if (d.hasApiKey) {
-                    el.innerHTML = `✅ Active <span style="font-family:monospace;opacity:0.7">(${d.maskedKey})</span>`;
-                    el.style.color = 'var(--success)';
-                    input.placeholder = d.maskedKey + ' (key saved — paste new to replace)';
-                    document.getElementById('api-key-msg').innerHTML = '<span style="color:var(--success)">🟢 API Key is configured and ready</span>';
-                } else {
-                    el.textContent = '❌ Not configured — Amazon จะ block (503)';
-                    el.style.color = 'var(--danger)';
-                    document.getElementById('api-key-msg').innerHTML = '<span style="color:var(--danger)">⚠️ ต้องใส่ API Key ก่อนถึงจะดึงสินค้าได้</span>';
-                }
-            } catch (e) { }
-        }
+        // ===== Unified API Key Management =====
 
-        async function testApiKey() {
-            const apiKey = document.getElementById('api-key-input').value.trim();
-            const msg = document.getElementById('api-key-msg');
-            const btn = document.getElementById('btn-test-key');
+        async function saveApiKey(keyType, btn) {
+            const input = document.querySelector(`.api-key-input[data-key="${keyType}"]`);
+            const value = input?.value.trim();
+            const msg = document.getElementById(`msg-${keyType}`);
 
-            if (!apiKey) {
-                msg.innerHTML = '<span style="color:var(--warning)">⚠️ กรุณาวาง API Key ก่อน</span>';
-                return;
-            }
+            if (!value) { msg.innerHTML = '<span style="color:var(--warning)">⚠️ กรุณาวาง Key ก่อน</span>'; return; }
 
             btn.disabled = true;
+            const origText = btn.textContent;
             btn.textContent = '⏳ Testing...';
-            msg.innerHTML = '<span style="color:var(--text-muted)">🔄 กำลังทดสอบ API Key กับ ScraperAPI...</span>';
+            msg.innerHTML = '<span style="color:var(--text-muted)">🔄 กำลังทดสอบ...</span>';
 
             try {
-                const res = await fetch('/api/admin/scraper-key', {
-                    method: 'POST',
-                    headers: apiHeaders(),
-                    body: JSON.stringify({ apiKey }),
+                const res = await fetch('/api/admin/save-api-key', {
+                    method: 'POST', headers: apiHeaders(),
+                    body: JSON.stringify({ keyType, value }),
                 });
                 const d = await res.json();
-
-                if (d.valid) {
-                    msg.innerHTML = `<span style="color:var(--success)">✅ API Key ใช้ได้! บันทึกแล้ว — พร้อมดึงสินค้า</span>`;
-                    document.getElementById('api-key-input').value = '';
-                    loadScraperMode(); // Refresh mode display
+                if (d.success) {
+                    msg.innerHTML = `<span style="color:var(--success)">✅ บันทึกแล้ว (${d.masked})</span>`;
+                    input.value = '';
+                    loadApiKeysStatus();
                 } else {
                     msg.innerHTML = `<span style="color:var(--danger)">❌ ${d.error}</span>`;
                 }
@@ -1140,8 +1285,181 @@
                 msg.innerHTML = `<span style="color:var(--danger)">❌ ${e.message}</span>`;
             } finally {
                 btn.disabled = false;
-                btn.textContent = '🧪 Test & Save';
+                btn.textContent = origText;
             }
+        }
+
+        async function saveAllXKeys() {
+            const keys = ['x_api_key', 'x_api_secret', 'x_access_token', 'x_access_secret'];
+            const msg = document.getElementById('msg-x_api_key');
+            let saved = 0, errors = [];
+
+            for (const k of keys) {
+                const input = document.querySelector(`.api-key-input[data-key="${k}"]`);
+                const val = input?.value.trim();
+                if (!val) continue;
+                try {
+                    const res = await fetch('/api/admin/save-api-key', {
+                        method: 'POST', headers: apiHeaders(),
+                        body: JSON.stringify({ keyType: k, value: val }),
+                    });
+                    const d = await res.json();
+                    if (d.success) { saved++; input.value = ''; }
+                    else errors.push(d.error);
+                } catch (e) { errors.push(e.message); }
+            }
+            if (saved > 0) {
+                msg.innerHTML = `<span style="color:var(--success)">✅ บันทึก ${saved} keys แล้ว</span>`;
+                loadApiKeysStatus();
+            }
+            if (errors.length) msg.innerHTML += `<br><span style="color:var(--danger)">❌ ${errors.join(', ')}</span>`;
+        }
+
+        async function loadApiKeysStatus() {
+            try {
+                const res = await fetch('/api/admin/api-keys-status', { headers: apiHeaders() });
+                const keys = await res.json();
+
+                // Update scraper mode in Scraper tab
+                const scraperEl = document.getElementById('scraper-mode');
+                if (keys.scraper_api_key?.configured) {
+                    scraperEl.innerHTML = `✅ Active <span style="font-family:monospace;opacity:0.7">(${keys.scraper_api_key.masked})</span>`;
+                    scraperEl.style.color = 'var(--success)';
+                } else {
+                    scraperEl.textContent = '❌ ยังไม่ตั้งค่า';
+                    scraperEl.style.color = 'var(--danger)';
+                }
+
+                // Update Settings tab key statuses
+                const labels = {
+                    scraper_api_key: '🔑 ScraperAPI',
+                    gemini_api_key: '🤖 Gemini',
+                    x_api_key: '🐦 X API',
+                };
+                for (const [k, info] of Object.entries(keys)) {
+                    const el = document.getElementById(`ks-${k}`);
+                    if (!el) continue;
+                    if (info.configured) {
+                        el.innerHTML = `<span class="badge badge-active">✅ Active</span> <span style="font-family:monospace;opacity:0.6;font-size:0.62rem">${info.masked}</span>`;
+                    } else {
+                        el.innerHTML = '<span class="badge" style="background:var(--danger);color:white">Not set</span>';
+                    }
+                    // Pre-fill input placeholder
+                    const inp = document.querySelector(`.api-key-input[data-key="${k}"]`);
+                    if (inp && info.configured) inp.placeholder = info.masked + ' (paste new to replace)';
+                }
+
+                // Update Blog AI status
+                const blogAI = document.getElementById('blog-ai-status');
+                if (blogAI) {
+                    blogAI.textContent = keys.gemini_api_key?.configured ? '✅ Gemini Ready' : '❌ ตั้ง Key ก่อน';
+                    blogAI.style.color = keys.gemini_api_key?.configured ? 'var(--success)' : 'var(--danger)';
+                }
+
+                // Update X API status
+                const xAPI = document.getElementById('x-api-status');
+                if (xAPI) {
+                    const xKeys = ['x_api_key', 'x_api_secret', 'x_access_token', 'x_access_secret'];
+                    const configured = xKeys.filter(k => keys[k]?.configured).length;
+                    xAPI.textContent = configured === 4 ? '✅ Ready (4/4)' : `⚠️ ${configured}/4 keys`;
+                    xAPI.style.color = configured === 4 ? 'var(--success)' : 'var(--warning)';
+                }
+            } catch (e) { }
+        }
+
+        // ===== Blog Schedule =====
+        async function loadBlogSchedule() {
+            try {
+                const res = await fetch('/api/admin/get-schedule/blog', { headers: apiHeaders() });
+                const d = await res.json();
+                const statusEl = document.getElementById('blog-sch-status');
+                const cronEl = document.getElementById('blog-sch-cron');
+                if (d.enabled) {
+                    statusEl.textContent = '🟢 Enabled';
+                    statusEl.className = 'badge badge-active';
+                    cronEl.textContent = d.cron || 'Not set';
+                } else {
+                    statusEl.textContent = '⏸️ Disabled';
+                    statusEl.className = 'badge';
+                    cronEl.textContent = d.cron || 'Not set';
+                }
+                if (d.cron) {
+                    const sel = document.getElementById('blog-freq');
+                    const opts = [...sel.options].map(o => o.value);
+                    if (opts.includes(d.cron)) sel.value = d.cron;
+                    else { sel.value = 'custom'; document.getElementById('blog-custom-cron').value = d.cron; }
+                }
+                document.getElementById('blog-sch-enabled').checked = d.enabled;
+            } catch (e) { }
+        }
+
+        async function saveBlogSchedule() {
+            const freq = document.getElementById('blog-freq').value;
+            const cron = freq === 'custom' ? document.getElementById('blog-custom-cron').value : freq;
+            const enabled = document.getElementById('blog-sch-enabled').checked;
+            const msg = document.getElementById('blog-sch-msg');
+            try {
+                const res = await fetch('/api/admin/save-schedule', {
+                    method: 'POST', headers: apiHeaders(),
+                    body: JSON.stringify({ scheduleType: 'blog_schedule', cron, enabled }),
+                });
+                const d = await res.json();
+                if (d.success) {
+                    msg.innerHTML = `<span style="color:var(--success)">✅ บันทึกแล้ว — ${enabled ? 'Enabled' : 'Disabled'} (${cron})</span>`;
+                    loadBlogSchedule();
+                } else {
+                    msg.innerHTML = `<span style="color:var(--danger)">❌ ${d.error}</span>`;
+                }
+            } catch (e) { msg.innerHTML = `<span style="color:var(--danger)">❌ ${e.message}</span>`; }
+        }
+
+        // ===== X Schedule =====
+        async function loadXSchedule() {
+            try {
+                const res = await fetch('/api/admin/get-schedule/x', { headers: apiHeaders() });
+                const d = await res.json();
+                const statusEl = document.getElementById('x-sch-status');
+                const cronEl = document.getElementById('x-sch-cron');
+                if (d.enabled) {
+                    statusEl.textContent = '🟢 Enabled';
+                    statusEl.className = 'badge badge-active';
+                } else {
+                    statusEl.textContent = '⏸️ Disabled';
+                    statusEl.className = 'badge';
+                }
+                cronEl.textContent = d.cron || 'Not set';
+                if (d.cron) {
+                    const sel = document.getElementById('x-freq');
+                    const opts = [...sel.options].map(o => o.value);
+                    if (opts.includes(d.cron)) sel.value = d.cron;
+                    else { sel.value = 'custom'; document.getElementById('x-custom-cron').value = d.cron; }
+                }
+                document.getElementById('x-sch-enabled').checked = d.enabled;
+            } catch (e) { }
+        }
+
+        async function saveXSchedule() {
+            const freq = document.getElementById('x-freq').value;
+            const cron = freq === 'custom' ? document.getElementById('x-custom-cron').value : freq;
+            const enabled = document.getElementById('x-sch-enabled').checked;
+            const msg = document.getElementById('x-sch-msg');
+            try {
+                const res = await fetch('/api/admin/save-schedule', {
+                    method: 'POST', headers: apiHeaders(),
+                    body: JSON.stringify({ scheduleType: 'x_schedule', cron, enabled }),
+                });
+                const d = await res.json();
+                if (d.success) {
+                    msg.innerHTML = `<span style="color:var(--success)">✅ บันทึกแล้ว — ${enabled ? 'Enabled' : 'Disabled'} (${cron})</span>`;
+                    loadXSchedule();
+                } else {
+                    msg.innerHTML = `<span style="color:var(--danger)">❌ ${d.error}</span>`;
+                }
+            } catch (e) { msg.innerHTML = `<span style="color:var(--danger)">❌ ${e.message}</span>`; }
+        }
+
+        function postToXNow() {
+            document.getElementById('x-sch-msg').innerHTML = '<span style="color:var(--warning)">🚧 X Auto-Post will be available soon — ต้องตั้ง API Keys ก่อนครับ</span>';
         }
         // ===== Product Management =====
         let pmPage = 1, pmTotalPages = 1, pmSortCol = 'created_at', pmSortOrder = 'desc';

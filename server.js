@@ -662,6 +662,139 @@ app.post('/api/admin/scraper-key', async (req, res) => {
     }
 });
 
+// ===== Unified API Key Management =====
+
+// Helper: mask a key for display
+function maskKey(key) {
+    if (!key) return '';
+    if (key.length <= 12) return key.slice(0, 4) + '••••';
+    return key.slice(0, 8) + '••••••' + key.slice(-4);
+}
+
+// Valid key types we support
+const VALID_KEY_TYPES = [
+    'scraper_api_key', 'gemini_api_key',
+    'x_api_key', 'x_api_secret', 'x_access_token', 'x_access_secret',
+];
+
+// POST /api/admin/save-api-key — save any API key to Supabase settings
+app.post('/api/admin/save-api-key', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
+    const { keyType, value } = req.body;
+
+    if (!VALID_KEY_TYPES.includes(keyType)) {
+        return res.status(400).json({ error: `Invalid key type: ${keyType}` });
+    }
+    if (!value || value.length < 5) {
+        return res.status(400).json({ error: 'Key too short' });
+    }
+
+    try {
+        // Special validation for ScraperAPI
+        if (keyType === 'scraper_api_key') {
+            const testUrl = `http://api.scraperapi.com?api_key=${value}&url=${encodeURIComponent('https://httpbin.org/ip')}`;
+            const testRes = await fetch(testUrl, { signal: AbortSignal.timeout(15000) });
+            if (testRes.status === 401 || testRes.status === 403) {
+                return res.json({ success: false, error: 'ScraperAPI key is invalid or expired' });
+            }
+            SCRAPER_API_KEY = value; // Activate immediately
+        }
+
+        // Special validation for Gemini
+        if (keyType === 'gemini_api_key') {
+            const testRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${value}`, {
+                signal: AbortSignal.timeout(10000),
+            });
+            if (!testRes.ok) {
+                return res.json({ success: false, error: `Gemini key invalid (HTTP ${testRes.status})` });
+            }
+        }
+
+        // Save to Supabase
+        await supabase.from('settings').upsert(
+            { key: keyType, value, updated_at: new Date().toISOString() },
+            { onConflict: 'key' }
+        );
+
+        res.json({ success: true, masked: maskKey(value) });
+    } catch (e) {
+        res.json({ success: false, error: e.message });
+    }
+});
+
+// GET /api/admin/api-keys-status — status of all API keys
+app.get('/api/admin/api-keys-status', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
+    try {
+        const { data } = await supabase.from('settings')
+            .select('key, value, updated_at')
+            .in('key', VALID_KEY_TYPES);
+
+        const keys = {};
+        for (const type of VALID_KEY_TYPES) {
+            const row = data?.find(r => r.key === type);
+            keys[type] = {
+                configured: !!row?.value,
+                masked: row?.value ? maskKey(row.value) : '',
+                updatedAt: row?.updated_at || null,
+            };
+        }
+        // Overlay in-memory ScraperAPI key (could be from .env)
+        if (SCRAPER_API_KEY && !keys.scraper_api_key.configured) {
+            keys.scraper_api_key = { configured: true, masked: maskKey(SCRAPER_API_KEY), updatedAt: null };
+        }
+        res.json(keys);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// DELETE /api/admin/delete-api-key — remove an API key
+app.delete('/api/admin/delete-api-key/:keyType', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
+    const { keyType } = req.params;
+    if (!VALID_KEY_TYPES.includes(keyType)) return res.status(400).json({ error: 'Invalid key type' });
+    try {
+        await supabase.from('settings').delete().eq('key', keyType);
+        if (keyType === 'scraper_api_key') SCRAPER_API_KEY = '';
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// ===== Blog & X Schedule =====
+
+// POST /api/admin/save-schedule — save any schedule config
+app.post('/api/admin/save-schedule', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
+    const { scheduleType, cron, enabled } = req.body;
+    if (!['blog_schedule', 'x_schedule'].includes(scheduleType)) {
+        return res.status(400).json({ error: 'Invalid schedule type' });
+    }
+    try {
+        await supabase.from('settings').upsert(
+            { key: scheduleType, value: JSON.stringify({ cron, enabled }), updated_at: new Date().toISOString() },
+            { onConflict: 'key' }
+        );
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// GET /api/admin/get-schedule/:type
+app.get('/api/admin/get-schedule/:type', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
+    const type = req.params.type + '_schedule';
+    try {
+        const { data } = await supabase.from('settings').select('value').eq('key', type).single();
+        res.json(data?.value ? JSON.parse(data.value) : { cron: '', enabled: false });
+    } catch (e) {
+        res.json({ cron: '', enabled: false });
+    }
+});
+
 // GET /api/admin/scrape-progress — live progress feed
 app.get('/api/admin/scrape-progress', (req, res) => {
     res.json({
