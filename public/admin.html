@@ -1106,14 +1106,15 @@
                 </div>
                 <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
                     <button class="btn btn-primary" onclick="saveBlogSchedule()">💾 Save Blog Schedule</button>
-                    <button class="btn btn-warning" onclick="document.querySelector('[data-tab=blog]').click()">✍️ Write
-                        Now</button>
+                    <button class="btn btn-warning" id="btn-auto-write" onclick="triggerAutoBlog(this)">✍️ Write &amp;
+                        Publish Now</button>
                 </div>
                 <div id="blog-sch-msg" style="margin-top:0.3rem;font-size:0.72rem"></div>
                 <p style="font-size:0.68rem;color:var(--text-muted);margin-top:0.5rem;margin-bottom:0">
-                    ⚠️ ต้องตั้ง Gemini API Key ก่อนในแท็บ <a href="#"
+                    ⚠️ ต้องตั้ง Gemini หรือ OpenAI API Key ก่อนในแท็บ <a href="#"
                         onclick="document.querySelector('[data-tab=settings]').click()"
                         style="color:var(--primary)">Settings</a>
+                    · <span id="blog-ai-status" style="font-weight:600">—</span>
                 </p>
             </div>
 
@@ -2272,6 +2273,30 @@
                 await fetch(`/api/admin/blog/${id}`, { method: 'DELETE', headers: apiHeaders() });
                 loadBlogPosts();
             } catch (e) { alert(e.message); }
+        }
+
+        async function triggerAutoBlog(btn) {
+            const msg = document.getElementById('blog-sch-msg');
+            const origText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = '⏳ AI กำลังเขียน blog...';
+            msg.innerHTML = '<span style="color:var(--text-muted)">🤖 Auto-generating blog post... (~30-60 วินาที)</span>';
+
+            try {
+                const res = await fetch('/api/cron/blog', { headers: apiHeaders() });
+                const d = await res.json();
+                if (d.status === 'success') {
+                    msg.innerHTML = `<span style="color:var(--success)">✅ Published! <strong>${d.title}</strong> (${d.wordCount} words) <a href="${d.url}" target="_blank" style="color:var(--primary)">→ View</a></span>`;
+                    loadBlogPosts();
+                } else {
+                    msg.innerHTML = `<span style="color:var(--danger)">❌ ${d.error || d.reason}</span>`;
+                }
+            } catch (e) {
+                msg.innerHTML = `<span style="color:var(--danger)">❌ ${e.message}</span>`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = origText;
+            }
         }
 
         // ===== X Post AI Generation =====
