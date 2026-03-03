@@ -2283,7 +2283,9 @@
             msg.innerHTML = '<span style="color:var(--text-muted)">🤖 Auto-generating blog post... (~30-60 วินาที)</span>';
 
             try {
-                const res = await fetch('/api/cron/blog', { headers: apiHeaders() });
+                const res = await fetch(`/api/cron/blog?key=${encodeURIComponent(adminKey)}`, {
+                    headers: { 'X-Admin-Key': adminKey }
+                });
                 const d = await res.json();
                 if (d.status === 'success') {
                     msg.innerHTML = `<span style="color:var(--success)">✅ Published! <strong>${d.title}</strong> (${d.wordCount} words) <a href="${d.url}" target="_blank" style="color:var(--primary)">→ View</a></span>`;
