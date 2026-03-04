@@ -15,6 +15,26 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY
 );
 
+// Load ScraperAPI key — try env first, then Supabase settings
+let SCRAPER_API_KEY = process.env.SCRAPER_API_KEY || null;
+
+async function loadScraperApiKey() {
+    if (SCRAPER_API_KEY) return; // Already set from env
+    try {
+        const { data } = await supabase
+            .from('settings')
+            .select('value')
+            .eq('key', 'scraper_api_key')
+            .single();
+        if (data?.value && data.value.length > 10) {
+            SCRAPER_API_KEY = data.value;
+            console.log('✅ Loaded ScraperAPI key from Supabase settings');
+        }
+    } catch (e) {
+        console.log('⚠️ Could not load ScraperAPI key from settings:', e.message);
+    }
+}
+
 const SEARCHES = [
     { query: '3D+printer+FDM', category: '3d_printer', productType: 'fdm' },
     { query: 'resin+3D+printer', category: '3d_printer', productType: 'resin_sla' },
@@ -43,19 +63,33 @@ function detectBrand(title) {
 }
 
 async function scrapeAmazonSearch(search) {
-    const url = `https://www.amazon.com/s?k=${search.query}&tag=${AFFILIATE_TAG}`;
+    const amazonUrl = `https://www.amazon.com/s?k=${search.query}&tag=${AFFILIATE_TAG}`;
 
-    try {
-        const res = await fetch(url, {
+    // Use ScraperAPI proxy if key is available, otherwise direct fetch
+    let fetchUrl;
+    let fetchOptions;
+
+    if (SCRAPER_API_KEY) {
+        fetchUrl = `http://api.scraperapi.com?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(amazonUrl)}&render=false`;
+        fetchOptions = {};
+        console.log(`   🔄 [${search.query}] via ScraperAPI proxy`);
+    } else {
+        fetchUrl = amazonUrl;
+        fetchOptions = {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'Accept': 'text/html,application/xhtml+xml',
                 'Accept-Language': 'en-US,en;q=0.9',
             },
-        });
+        };
+        console.log(`   ⚠️ [${search.query}] No ScraperAPI key — direct fetch (may be blocked)`);
+    }
+
+    try {
+        const res = await fetch(fetchUrl, fetchOptions);
 
         if (!res.ok) {
-            console.log(`   ⚠️ Amazon returned ${res.status} for "${search.query}"`);
+            console.log(`   ⚠️ ${SCRAPER_API_KEY ? 'ScraperAPI' : 'Amazon'} returned ${res.status} for "${search.query}"`);
             return [];
         }
 
@@ -127,6 +161,10 @@ module.exports = async function handler(req, res) {
     let totalFound = 0;
     let totalSaved = 0;
     let errorsCount = 0;
+
+    // Load ScraperAPI key from Supabase settings if not in env
+    await loadScraperApiKey();
+    console.log(`🔑 ScraperAPI: ${SCRAPER_API_KEY ? 'enabled ✅' : 'not set ⚠️ (direct fetch)'}`);
 
     try {
         for (const search of SEARCHES) {
