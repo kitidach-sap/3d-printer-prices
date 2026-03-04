@@ -251,7 +251,7 @@ app.get('/api/scrape-logs', async (req, res) => {
         const { data, error } = await supabase
             .from('scrape_logs')
             .select('*')
-            .order('created_at', { ascending: false })
+            .order('started_at', { ascending: false })
             .limit(20);
 
         if (error) {
@@ -270,7 +270,7 @@ app.get('/api/scrape-status', async (req, res) => {
         const { data, error } = await supabase
             .from('scrape_logs')
             .select('completed_at, status, products_found, products_saved')
-            .order('created_at', { ascending: false })
+            .order('started_at', { ascending: false })
             .limit(1)
             .single();
 
