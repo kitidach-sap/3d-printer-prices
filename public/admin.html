@@ -609,7 +609,11 @@
             <div class="admin-card" id="progress-card" style="display:none">
                 <div class="progress-header">
                     <h3>📺 Live Progress</h3>
-                    <div>
+                    <div style="display:flex;align-items:center;gap:0.5rem">
+                        <button class="btn" style="font-size:0.68rem;padding:0.2rem 0.5rem;opacity:0.85"
+                            onclick="copyLogs('all')" title="Copy all logs">📋 Copy All</button>
+                        <button class="btn btn-danger" style="font-size:0.68rem;padding:0.2rem 0.5rem;opacity:0.85"
+                            onclick="copyLogs('errors')" title="Copy errors only">❌ Copy Errors</button>
                         <span class="blinking-dot" id="progress-dot"></span>
                         <span style="font-size:0.72rem;color:var(--text-muted);margin-left:0.3rem" id="progress-count">0
                             steps</span>
@@ -1869,6 +1873,32 @@
 
             document.getElementById('progress-count').textContent = entries.length + ' steps';
             panel.scrollTop = panel.scrollHeight;
+        }
+
+        function copyLogs(mode) {
+            const panel = document.getElementById('progress-log');
+            const rows = panel.querySelectorAll('.log-line, div[class^="log-"]');
+            let lines = [];
+            // Fallback: read all text rows
+            const allDivs = panel.querySelectorAll('div');
+            allDivs.forEach(div => {
+                const text = div.textContent.trim();
+                if (!text) return;
+                if (mode === 'errors') {
+                    if (div.classList.contains('log-error') || text.includes('ERROR') || text.includes('❌') || text.includes('error')) {
+                        lines.push(text);
+                    }
+                } else {
+                    lines.push(text);
+                }
+            });
+            const txt = lines.join('\n');
+            navigator.clipboard.writeText(txt).then(() => {
+                const btn = event.target;
+                const orig = btn.textContent;
+                btn.textContent = '✅ Copied!';
+                setTimeout(() => btn.textContent = orig, 1500);
+            });
         }
 
         async function checkRunning() {
