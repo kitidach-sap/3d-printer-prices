@@ -541,7 +541,6 @@ async function runLightScrape(filterCategories = null, maxPerQuery = 30) {
                 const reviewMatch = block.match(/(\d[\d,]*)\s*(?:ratings?|reviews?)/i);
 
                 products.push({
-                    asin: asin,
                     amazon_asin: asin,
                     product_name: title,
                     price,
