@@ -244,12 +244,25 @@ async function loadProducts() {
         tbody.innerHTML = data.map(p => `
             <tr>
                 <td class="product-name">
-                    <a href="${affiliateUrl(p.amazon_url)}" target="_blank" rel="noopener nofollow">
-                        ${escapeHtml(p.product_name)}
+                    <a href="${affiliateUrl(p.amazon_url)}" target="_blank" rel="noopener nofollow" class="product-name-link">
+                        <img
+                            src="${p.image_url || ''}"
+                            alt="${escapeHtml(p.product_name)}"
+                            class="product-thumb"
+                            loading="lazy"
+                            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+                        />
+                        <span class="product-thumb-fallback" style="display:${p.image_url ? 'none' : 'flex'}">
+                            ${p.category === 'filament' ? '🧵' : p.category === 'resin' ? '💧' : p.category === '3d_pen' ? '✏️' : p.category === 'accessories' ? '🔧' : '🖨️'}
+                        </span>
+                        <span class="product-title-text">${escapeHtml(p.product_name)}</span>
                     </a>
                 </td>
                 <td>${p.brand ? `<span class="brand-badge">${escapeHtml(p.brand)}</span>` : '—'}</td>
-                <td class="price-cell">$${p.price?.toFixed(2) || '—'}</td>
+                <td class="price-cell">
+                    $${p.price?.toFixed(2) || '—'}
+                    ${p.original_price && p.discount_percent ? `<br><span class="orig-price">$${p.original_price.toFixed(2)}</span> <span class="discount-badge">-${p.discount_percent}%</span>` : ''}
+                </td>
                 <td>${p.build_volume ? escapeHtml(p.build_volume) : '—'}</td>
                 <td class="rating-cell">${formatRating(p.rating, p.review_count)}</td>
                 <td><span class="type-badge">${formatType(p.product_type)}</span></td>

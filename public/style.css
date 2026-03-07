@@ -442,21 +442,50 @@ td {
 }
 
 .product-name {
-  max-width: 350px;
+  max-width: 380px;
   font-weight: 500;
 }
 
-.product-name a {
+.product-name-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   color: var(--text-primary);
-  line-height: 1.4;
+  text-decoration: none;
+}
+
+.product-name-link:hover .product-title-text {
+  color: var(--accent);
+}
+
+.product-thumb {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: var(--surface);
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+
+.product-thumb-fallback {
+  width: 60px;
+  height: 60px;
+  border-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+}
+
+.product-title-text {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-.product-name a:hover {
-  color: var(--accent);
+  line-height: 1.4;
 }
 
 .price-cell {
@@ -464,6 +493,23 @@ td {
   color: var(--success);
   font-size: 0.95rem;
   white-space: nowrap;
+}
+
+.orig-price {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-decoration: line-through;
+  font-weight: 400;
+}
+
+.discount-badge {
+  display: inline-block;
+  background: #ff4444;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
 }
 
 .brand-badge {
