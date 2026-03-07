@@ -396,6 +396,66 @@ function detectBrandFromTitle(title) {
     return brands.find(b => upper.includes(b.toUpperCase())) || null;
 }
 
+// ============================================
+// Fetch full product details from /dp/ASIN
+// ============================================
+async function fetchProductDetails(asin, label = '') {
+    const productUrl = `https://www.amazon.com/dp/${asin}?tag=${AFFILIATE_TAG}`;
+    try {
+        const res = await fetchAmazonPage(productUrl, label);
+        if (!res.ok) return null;
+        const html = await res.text();
+        if (html.includes('captcha') || html.includes('automated access') || html.length < 5000) return null;
+
+        const details = {};
+
+        // Image URL (main product image)
+        const imgMatch = html.match(/id="landingImage"[^>]*src="([^"]+)"/i)
+            || html.match(/id="imgBlkFront"[^>]*src="([^"]+)"/i)
+            || html.match(/"hiRes"\s*:\s*"(https:\/\/m\.media-amazon\.com\/images\/I\/[^"]+)"/i)
+            || html.match(/"large"\s*:\s*"(https:\/\/m\.media-amazon\.com\/images\/I\/[^"]+)"/i);
+        if (imgMatch?.[1] && !imgMatch[1].includes('transparent-pixel')) {
+            details.image_url = imgMatch[1].split('._')[0] + '._AC_SL500_.jpg';
+        }
+
+        // Rating
+        const ratingMatch = html.match(/(\d+\.\d+)\s*out of 5 stars/i);
+        if (ratingMatch?.[1]) details.rating = parseFloat(ratingMatch[1]);
+
+        // Review Count
+        const reviewMatch = html.match(/([\d,]+)\s*(?:global )?ratings?/i);
+        if (reviewMatch?.[1]) details.review_count = parseInt(reviewMatch[1].replace(/,/g, ''));
+
+        // Current Price
+        const priceMatch = html.match(/class="a-price-whole"[^>]*>(\d+[,\d]*)</);
+        if (priceMatch?.[1]) details.price = parseFloat(priceMatch[1].replace(/[,$]/g, ''));
+
+        // Original / Was Price + Discount
+        const origMatch = html.match(/class="a-text-strike"[^>]*>\$?([\d,.]+)/)
+            || html.match(/List Price[^<]*<[^>]+>\$?([\d,.]+)/i);
+        if (origMatch?.[1]) {
+            details.original_price = parseFloat(origMatch[1].replace(/[,$]/g, ''));
+            if (details.original_price && details.price && details.original_price > details.price) {
+                details.discount_percent = Math.round((1 - details.price / details.original_price) * 100);
+            }
+        }
+
+        // Prime
+        details.is_prime = html.includes('a-icon-prime') || html.includes('FREE delivery');
+
+        // Brand from byline (more accurate than title detection)
+        const brandMatch = html.match(/id="bylineInfo"[^>]*>[^<]*(?:by\s+)?<[^>]*>([^<]+)</i)
+            || html.match(/class="contributorNameID"[^>]*>([^<]+)</i);
+        if (brandMatch?.[1] && brandMatch[1].trim().length > 1) {
+            details.brand = brandMatch[1].trim();
+        }
+
+        return details;
+    } catch (e) {
+        return null;
+    }
+}
+
 async function runLightScrape(filterCategories = null, maxPerQuery = 30) {
     let totalFound = 0, totalSaved = 0, totalSkipped = 0, errorsCount = 0;
     const startedAt = new Date().toISOString();
@@ -560,6 +620,27 @@ async function runLightScrape(filterCategories = null, maxPerQuery = 30) {
             totalFound += products.length;
             logProgress('extract', `${stepLabel} — Extracted ${products.length} NEW products with price`);
 
+            // === Step 3: Enrich each product with full details from /dp/ASIN page ===
+            if (products.length > 0) {
+                logProgress('extract', `${stepLabel} — Fetching full details for ${products.length} products...`);
+                for (let pi = 0; pi < products.length; pi++) {
+                    const p = products[pi];
+                    const details = await fetchProductDetails(p.amazon_asin, stepLabel);
+                    if (details) {
+                        if (details.image_url) p.image_url = details.image_url;
+                        if (details.rating !== undefined) p.rating = details.rating;
+                        if (details.review_count !== undefined) p.review_count = details.review_count;
+                        if (details.price !== undefined && details.price > 0) p.price = details.price;
+                        if (details.original_price !== undefined) p.original_price = details.original_price;
+                        if (details.discount_percent !== undefined) p.discount_percent = details.discount_percent;
+                        if (details.brand) p.brand = details.brand;
+                        // Small delay between product page requests
+                        await new Promise(r => setTimeout(r, 800 + Math.random() * 500));
+                    }
+                }
+                logProgress('extract', `${stepLabel} — ✅ Enriched ${products.filter(p => p.image_url).length}/${products.length} products with images`);
+            }
+
             if (products.length > 0) {
                 const { error } = await supabase.from('products').insert(products);
                 if (error) {
@@ -576,6 +657,7 @@ async function runLightScrape(filterCategories = null, maxPerQuery = 30) {
             } else {
                 logProgress('warn', `${stepLabel} — ${newAsins.length} new ASINs but no price data found`);
             }
+
 
             // Random delay 2-4s between queries to avoid rate limiting
             const delay = 2000 + Math.floor(Math.random() * 2000);
