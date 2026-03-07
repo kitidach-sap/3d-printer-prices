@@ -1269,7 +1269,7 @@ app.post('/api/admin/scrape', async (req, res) => {
     }
 });
 
-// POST /api/admin/update-prices — re-check prices of existing products
+// POST /api/admin/update-prices — re-check prices + enrich existing products with full details
 let priceUpdateRunning = false;
 app.post('/api/admin/update-prices', async (req, res) => {
     if (!verifyAdmin(req, res)) return;
@@ -1279,7 +1279,7 @@ app.post('/api/admin/update-prices', async (req, res) => {
     res.json({ message: 'Price update started' });
 
     try {
-        // Fetch all products with real ASINs
+        // Fetch all real products (not manually added)
         const { data: products } = await supabase
             .from('products')
             .select('id, amazon_asin, price')
@@ -1290,58 +1290,43 @@ app.post('/api/admin/update-prices', async (req, res) => {
 
         let updated = 0, unavailable = 0, errors = 0;
 
-        // Process in batches of 5
-        for (let i = 0; i < products.length; i += 5) {
-            const batch = products.slice(i, i + 5);
+        // Process 3 at a time to avoid rate limiting
+        const BATCH = 3;
+        for (let i = 0; i < products.length; i += BATCH) {
+            const batch = products.slice(i, i + BATCH);
             const promises = batch.map(async (product) => {
                 try {
-                    const url = `https://www.amazon.com/dp/${product.amazon_asin}?tag=${AFFILIATE_TAG}`;
-                    const resp = await fetch(url, {
-                        headers: {
-                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                            'Accept': 'text/html',
-                            'Accept-Language': 'en-US,en;q=0.9',
-                        },
-                        redirect: 'follow',
-                    });
+                    const details = await fetchProductDetails(product.amazon_asin, `[Update ${i + 1}]`);
 
-                    if (!resp.ok) {
-                        // Product might be unavailable
-                        await supabase.from('products').update({ is_available: false }).eq('id', product.id);
+                    if (!details) {
+                        // Could not fetch — mark unavailable
+                        await supabase.from('products').update({ is_available: false, updated_at: new Date().toISOString() }).eq('id', product.id);
                         unavailable++;
                         return;
                     }
 
-                    const html = await resp.text();
+                    // Build update payload — only include fields that were actually fetched
+                    const updatePayload = {
+                        is_available: true,
+                        updated_at: new Date().toISOString(),
+                    };
+                    if (details.price > 0) updatePayload.price = details.price;
+                    if (details.original_price > 0) updatePayload.original_price = details.original_price;
+                    if (details.discount_percent !== undefined) updatePayload.discount_percent = details.discount_percent;
+                    if (details.rating !== undefined) updatePayload.rating = details.rating;
+                    if (details.review_count !== undefined) updatePayload.review_count = details.review_count;
+                    if (details.image_url) updatePayload.image_url = details.image_url;
+                    if (details.brand) updatePayload.brand = details.brand;
 
-                    // Check if product is unavailable
-                    if (html.includes('Currently unavailable') || html.includes('This item is no longer available')) {
-                        await supabase.from('products').update({ is_available: false }).eq('id', product.id);
-                        unavailable++;
-                        return;
-                    }
-
-                    // Extract current price
-                    const priceMatch = html.match(/"priceAmount":([\d.]+)/)
-                        || html.match(/<span class="a-price"[^>]*>[\s\S]*?<span[^>]*>\$([\d,.]+)<\/span>/i);
-
-                    if (priceMatch) {
-                        const newPrice = parseFloat(priceMatch[1].replace(/,/g, ''));
-                        if (newPrice > 0 && newPrice !== product.price) {
-                            await supabase.from('products').update({
-                                price: newPrice,
-                                is_available: true,
-                            }).eq('id', product.id);
-                            updated++;
-                        }
-                    }
+                    await supabase.from('products').update(updatePayload).eq('id', product.id);
+                    updated++;
                 } catch (e) {
                     errors++;
                 }
             });
 
             await Promise.all(promises);
-            await new Promise(r => setTimeout(r, 2000)); // Rate limit
+            await new Promise(r => setTimeout(r, 1500)); // Rate limit between batches
         }
 
         console.log(`Price update done: ${updated} updated, ${unavailable} unavailable, ${errors} errors`);
@@ -1351,6 +1336,7 @@ app.post('/api/admin/update-prices', async (req, res) => {
         priceUpdateRunning = false;
     }
 });
+
 
 // GET /api/admin/update-prices-running
 app.get('/api/admin/update-prices-running', (req, res) => {
