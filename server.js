@@ -1282,14 +1282,33 @@ app.post('/api/admin/update-prices', async (req, res) => {
     res.json({ message: 'Price update started' });
 
     try {
-        // Fetch all real products (not manually added)
-        const { data: products } = await supabase
-            .from('products')
+        // Prioritize products without image_url first (most need enrichment)
+        // Limit to 20 per run to stay within Vercel's 10s function timeout
+        const LIMIT = 20;
+        let query = supabase.from('products')
             .select('id, amazon_asin, price')
-            .not('amazon_asin', 'like', 'MANUAL%')
-            .limit(500);
+            .not('amazon_asin', 'like', 'MANUAL%');
 
-        const total = products?.length || 0;
+        // First try products without images
+        const { data: noImageProducts } = await query
+            .is('image_url', null)
+            .limit(LIMIT);
+
+        // If we have enough no-image products use those, else fallback to oldest updated
+        let products;
+        if (noImageProducts && noImageProducts.length >= 5) {
+            products = noImageProducts;
+        } else {
+            const { data: oldProducts } = await supabase
+                .from('products')
+                .select('id, amazon_asin, price')
+                .not('amazon_asin', 'like', 'MANUAL%')
+                .order('updated_at', { ascending: true })
+                .limit(LIMIT);
+            products = oldProducts || [];
+        }
+
+        const total = products.length;
         if (!total) { priceUpdateRunning = false; return; }
 
         let updated = 0, unavailable = 0, errors = 0;
@@ -1335,7 +1354,14 @@ app.post('/api/admin/update-prices', async (req, res) => {
 
         const completedAt = new Date().toISOString();
         const status = errors === total ? 'failed' : (errors > 0 || unavailable > 0) ? 'partial' : 'success';
-        priceUpdateResult = { updated, unavailable, errors, total, status };
+
+        // Count remaining products without image
+        const { count: remaining } = await supabase.from('products')
+            .select('id', { count: 'exact', head: true })
+            .not('amazon_asin', 'like', 'MANUAL%')
+            .is('image_url', null);
+
+        priceUpdateResult = { updated, unavailable, errors, total, status, remaining: remaining || 0 };
 
         // Log to scrape_logs
         await supabase.from('scrape_logs').insert({
@@ -1345,9 +1371,9 @@ app.post('/api/admin/update-prices', async (req, res) => {
             errors_count: errors,
             started_at: startedAt,
             completed_at: completedAt,
-            notes: `[Price Update] ${updated} updated, ${unavailable} unavailable, ${errors} errors`,
+            notes: `[Price Update] ${updated} updated, ${unavailable} unavailable, ${errors} errors. ${remaining || 0} still need images.`,
         });
-        console.log(`Price update done: ${updated} updated, ${unavailable} unavailable, ${errors} errors`);
+        console.log(`Price update done: ${updated} updated, ${unavailable} unavailable, ${errors} errors. ${remaining || 0} remaining without image.`);
     } catch (err) {
         console.error('Price update error:', err.message);
         priceUpdateResult = { error: err.message };

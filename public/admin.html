@@ -1943,8 +1943,11 @@
                     const r = upD.result;
                     if (r && !r.error) {
                         const statusIcon = r.status === 'success' ? '✅' : r.status === 'partial' ? '⚠️' : '❌';
+                        const remainingMsg = r.remaining > 0
+                            ? ` — <b>${r.remaining} still need images</b>, กด Update อีกครั้งครับ`
+                            : ' — 🎉 ทุกสินค้ามีรูปแล้ว!';
                         document.getElementById('update-msg').innerHTML =
-                            `${statusIcon} <b>Update done:</b> ${r.updated} updated, ${r.unavailable} unavailable, ${r.errors} errors / ${r.total} total`;
+                            `${statusIcon} <b>Done (${r.total} products):</b> ${r.updated} updated, ${r.unavailable} unavailable, ${r.errors} errors${remainingMsg}`;
                     } else if (r?.error) {
                         document.getElementById('update-msg').textContent = '❌ Error: ' + r.error;
                     } else {
