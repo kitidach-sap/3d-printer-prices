@@ -1940,8 +1940,18 @@
                     upBtn.disabled = false;
                     upBtn.classList.remove('running');
                     upBtn.innerHTML = '💰 Update Prices';
-                    document.getElementById('update-msg').textContent = '✅ Price update finished!';
+                    const r = upD.result;
+                    if (r && !r.error) {
+                        const statusIcon = r.status === 'success' ? '✅' : r.status === 'partial' ? '⚠️' : '❌';
+                        document.getElementById('update-msg').innerHTML =
+                            `${statusIcon} <b>Update done:</b> ${r.updated} updated, ${r.unavailable} unavailable, ${r.errors} errors / ${r.total} total`;
+                    } else if (r?.error) {
+                        document.getElementById('update-msg').textContent = '❌ Error: ' + r.error;
+                    } else {
+                        document.getElementById('update-msg').textContent = '✅ Price update finished!';
+                    }
                     loadProductStats();
+                    if (typeof loadScrapeHistory === 'function') loadScrapeHistory();
                 }
             } catch (e) { }
         }

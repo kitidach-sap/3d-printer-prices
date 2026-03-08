@@ -1271,11 +1271,14 @@ app.post('/api/admin/scrape', async (req, res) => {
 
 // POST /api/admin/update-prices — re-check prices + enrich existing products with full details
 let priceUpdateRunning = false;
+let priceUpdateResult = null;
 app.post('/api/admin/update-prices', async (req, res) => {
     if (!verifyAdmin(req, res)) return;
     if (priceUpdateRunning) return res.status(409).json({ error: 'Price update is already running' });
 
     priceUpdateRunning = true;
+    priceUpdateResult = null;
+    const startedAt = new Date().toISOString();
     res.json({ message: 'Price update started' });
 
     try {
@@ -1286,7 +1289,8 @@ app.post('/api/admin/update-prices', async (req, res) => {
             .not('amazon_asin', 'like', 'MANUAL%')
             .limit(500);
 
-        if (!products?.length) { priceUpdateRunning = false; return; }
+        const total = products?.length || 0;
+        if (!total) { priceUpdateRunning = false; return; }
 
         let updated = 0, unavailable = 0, errors = 0;
 
@@ -1329,9 +1333,24 @@ app.post('/api/admin/update-prices', async (req, res) => {
             await new Promise(r => setTimeout(r, 1500)); // Rate limit between batches
         }
 
+        const completedAt = new Date().toISOString();
+        const status = errors === total ? 'failed' : (errors > 0 || unavailable > 0) ? 'partial' : 'success';
+        priceUpdateResult = { updated, unavailable, errors, total, status };
+
+        // Log to scrape_logs
+        await supabase.from('scrape_logs').insert({
+            status,
+            products_found: total,
+            products_saved: updated,
+            errors_count: errors,
+            started_at: startedAt,
+            completed_at: completedAt,
+            notes: `[Price Update] ${updated} updated, ${unavailable} unavailable, ${errors} errors`,
+        });
         console.log(`Price update done: ${updated} updated, ${unavailable} unavailable, ${errors} errors`);
     } catch (err) {
         console.error('Price update error:', err.message);
+        priceUpdateResult = { error: err.message };
     } finally {
         priceUpdateRunning = false;
     }
@@ -1340,7 +1359,7 @@ app.post('/api/admin/update-prices', async (req, res) => {
 
 // GET /api/admin/update-prices-running
 app.get('/api/admin/update-prices-running', (req, res) => {
-    res.json({ running: priceUpdateRunning });
+    res.json({ running: priceUpdateRunning, result: priceUpdateResult });
 });
 
 // GET /api/admin/scrape-running — check if scraper is active
