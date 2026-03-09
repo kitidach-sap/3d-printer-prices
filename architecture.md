@@ -44,6 +44,12 @@ The core catalog of items.
 - `is_available` (boolean)
 - `updated_at` (timestamptz)
 
+**AI Enrichment Columns (Added for PCPartPicker-style platform):**
+- `printer_type` (text) - *e.g., FDM, Resin, Accessory, Filament*
+- `labels` (text array or jsonb) - *e.g., ["Best for Beginners", "High Speed"]*
+- `beginner_score` (integer) - *1-10 rating*
+- `specs_json` (jsonb) - *Structured key-value specs*
+
 ### `scrape_logs`
 Tracks the history and status of scraping and price update runs.
 - `id` (uuid)
