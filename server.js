@@ -1658,7 +1658,8 @@ app.get('/{*path}', (req, res, next) => {
 });
 
 // X Auto-Post Endpoints
-app.get('/api/admin/system/x-post-status', requireAdmin, async (req, res) => {
+app.get('/api/admin/system/x-post-status', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
     try {
         const { data, error } = await supabase
             .from('settings')
@@ -1670,7 +1671,8 @@ app.get('/api/admin/system/x-post-status', requireAdmin, async (req, res) => {
 });
 
 // START NEW AI PRODUCT ENRICHMENT SCRIPT
-app.post('/api/admin/enrich-products', requireAdmin, async (req, res) => {
+app.post('/api/admin/enrich-products', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
     try {
         console.log("Starting batched AI product enrichment...");
 
@@ -1712,8 +1714,15 @@ CRITICAL: Return ONLY valid JSON, no markdown formatting (\`\`\`json) outside of
         let rawResponse = '';
 
         try {
+            // Get settings helper
+            const getSupabaseSetting = async (key) => {
+                try {
+                    const { data } = await supabase.from('settings').select('value').eq('key', key).single();
+                    return data?.value || '';
+                } catch (e) { return ''; }
+            };
+
             // 1. Try Gemini
-            const { getSupabaseSetting } = require('./api/cron/blog.js'); // Reuse helper 
             const geminiKey = await getSupabaseSetting('gemini_api_key');
             if (geminiKey) {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
@@ -1809,7 +1818,8 @@ CRITICAL: Return ONLY valid JSON, no markdown formatting (\`\`\`json) outside of
 });
 // END NEW AI PRODUCT ENRICHMENT SCRIPT
 
-app.post('/api/admin/system/x-post-status', requireAdmin, async (req, res) => {
+app.post('/api/admin/system/x-post-status', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
     try {
         const { enabled } = req.body;
         const { error } = await supabase
@@ -1822,7 +1832,8 @@ app.post('/api/admin/system/x-post-status', requireAdmin, async (req, res) => {
     }
 });
 
-app.get('/api/admin/system/x-post-history', requireAdmin, async (req, res) => {
+app.get('/api/admin/system/x-post-history', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
     try {
         const { data, error } = await supabase
             .from('x_posts')
