@@ -255,7 +255,14 @@ async function loadProducts() {
                         <span class="product-thumb-fallback" style="display:${p.image_url ? 'none' : 'flex'}">
                             ${p.category === 'filament' ? '🧵' : p.category === 'resin' ? '💧' : p.category === '3d_pen' ? '✏️' : p.category === 'accessories' ? '🔧' : '🖨️'}
                         </span>
-                        <span class="product-title-text">${escapeHtml(p.product_name)}</span>
+                        <div style="display:flex; flex-direction:column; gap:0.25rem;">
+                            <span class="product-title-text">${escapeHtml(p.product_name)}</span>
+                            ${p.labels && p.labels.length > 0 ? `
+                            <div class="ai-badges">
+                                ${p.labels.map(l => `<span class="${l.toLowerCase().includes('beginner') ? 'badge-beginner' : 'badge-feature'}">${escapeHtml(l)}</span>`).join('')}
+                            </div>
+                            ` : ''}
+                        </div>
                     </a>
                 </td>
                 <td>${p.brand ? `<span class="brand-badge">${escapeHtml(p.brand)}</span>` : '—'}</td>
@@ -264,8 +271,11 @@ async function loadProducts() {
                     ${p.original_price && p.discount_percent ? `<br><span class="orig-price">$${p.original_price.toFixed(2)}</span> <span class="discount-badge">-${p.discount_percent}%</span>` : ''}
                 </td>
                 <td>${p.build_volume ? escapeHtml(p.build_volume) : '—'}</td>
-                <td class="rating-cell">${formatRating(p.rating, p.review_count)}</td>
-                <td><span class="type-badge">${formatType(p.product_type)}</span></td>
+                <td class="rating-cell">
+                    ${formatRating(p.rating, p.review_count)}
+                    ${p.beginner_score ? `<br><span class="beginner-score">Beg. Score: ${p.beginner_score}/10</span>` : ''}
+                </td>
+                <td><span class="type-badge">${escapeHtml(p.printer_type || formatType(p.product_type))}</span></td>
                 <td><span class="condition-${p.condition}">${p.condition === 'new' ? '✨ New' : '♻️ Used'}</span></td>
             </tr>
         `).join('');
