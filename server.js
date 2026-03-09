@@ -1407,7 +1407,7 @@ app.get('/api/admin/products', async (req, res) => {
 
     try {
         let query = supabase.from('products')
-            .select('id, product_name, brand, price, category, product_type, amazon_asin, amazon_url, rating, review_count, is_available, created_at, updated_at', { count: 'exact' });
+            .select('id, product_name, brand, price, category, product_type, amazon_asin, amazon_url, rating, review_count, is_available, created_at, updated_at, printer_type, labels, beginner_score', { count: 'exact' });
 
         if (search) query = query.ilike('product_name', `%${search}%`);
         if (category) query = query.eq('category', category);
@@ -1680,7 +1680,7 @@ app.post('/api/admin/enrich-products', async (req, res) => {
         const { data: productsToEnrich, error } = await supabase
             .from('products')
             .select('*')
-            .is('printer_type', null)
+            .or('printer_type.is.null,printer_type.eq.Unknown')
             .limit(10); // Process 10 at a time to avoid timeouts
 
         if (error) {
@@ -1795,7 +1795,7 @@ CRITICAL: Return ONLY valid JSON, no markdown formatting (\`\`\`json) outside of
             }
 
             // Re-check count
-            const { count: remainingCount } = await supabase.from('products').select('*', { count: 'exact', head: true }).is('printer_type', null);
+            const { count: remainingCount } = await supabase.from('products').select('*', { count: 'exact', head: true }).or('printer_type.is.null,printer_type.eq.Unknown');
 
             res.json({
                 success: true,
