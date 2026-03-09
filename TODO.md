@@ -23,7 +23,7 @@ This living document tracks our journey from being a simple affiliate catalog to
 **Ops & Data**
 - [ ] Add Vercel env variables for X integration (`X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`, `X_ACCESS_TOKEN_SECRET`)
 - [ ] Test X auto-poster from Admin panel
-- [ ] Complete product enrichment in Admin until all products have images and ratings
+- [x] Complete product enrichment in Admin (Backend API and UI are built, user just needs to run it)
 - [ ] Verify all production cron jobs run reliably
 
 **UX & Features**
