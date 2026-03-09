@@ -510,6 +510,7 @@
             <button class="admin-tab" data-tab="products">📦 Products</button>
             <button class="admin-tab" data-tab="blog">📝 Blog</button>
             <button class="admin-tab" data-tab="schedule">⏰ Schedule</button>
+            <button class="admin-tab" data-tab="xpost">🐦 X Auto-Post</button>
             <button class="admin-tab" data-tab="settings">⚙️ Settings</button>
         </div>
 
@@ -1183,6 +1184,57 @@
             </div>
         </div>
 
+        <!-- ==================== X AUTO-POST TAB ==================== -->
+        <div class="tab-content" id="tab-xpost">
+            <div class="admin-card">
+                <h3>🐦 X (Twitter) Auto-Post</h3>
+                <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem">
+                    Automatically generate tweets about top-rated products using GPT and post them to X every 3 hours.
+                </p>
+
+                <div class="setting-item"
+                    style="display:flex;justify-content:space-between;align-items:center;background:var(--bg-primary);padding:1rem;border-radius:6px;border:1px solid var(--border)">
+                    <div>
+                        <strong>🤖 Enable X Auto-Posting</strong>
+                        <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem">Requires X API Keys in
+                            .env and OpenAI/Gemini Key in Settings.</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="x-post-toggle" onchange="toggleXPost()">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+
+                <div style="margin-top:1rem">
+                    <button class="btn btn-primary" id="btn-force-xpost" onclick="forceXPost()">
+                        🚀 Post to X Now (Test Run)
+                    </button>
+                    <span id="xpost-msg" style="margin-left:0.5rem;font-size:0.85rem"></span>
+                </div>
+            </div>
+
+            <div class="admin-card mt-4">
+                <h3>📜 Recent Posts (Logs)</h3>
+                <div style="overflow-x:auto;">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Product / Error</th>
+                                <th>View Tweet</th>
+                            </tr>
+                        </thead>
+                        <tbody id="xpost-history-body">
+                            <tr>
+                                <td colspan="4" style="text-align:center;color:var(--text-muted)">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <!-- ==================== SETTINGS TAB ==================== -->
         <div class="tab-content" id="tab-settings">
             <div class="admin-card">
@@ -1342,6 +1394,10 @@
                 document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
                 // Auto-load products when switching to products tab
                 if (tab.dataset.tab === 'products') pmLoadProducts(pmPage);
+                if (tab.dataset.tab === 'xpost') {
+                    loadXPostSettings();
+                    loadXPostHistory();
+                }
             });
         });
 
@@ -1379,6 +1435,8 @@
             loadBlogSchedule();
             loadXSchedule();
             loadBlogPosts();
+            loadXPostSettings(); // Load X Post settings on init
+            loadXPostHistory(); // Load X Post history on init
             setInterval(checkRunning, 2000);
         }
 
@@ -2060,6 +2118,102 @@
             } finally {
                 btn.disabled = false;
                 btn.textContent = '➕ Add Product';
+            }
+        }
+
+        // ===== X Auto-Post =====
+        let xPostEnabled = false;
+        async function loadXPostSettings() {
+            try {
+                const res = await fetch('/api/admin/system/x-post-status?key=' + encodeURIComponent(adminKey));
+                const d = await res.json();
+                xPostEnabled = d.enabled;
+                document.getElementById('x-post-toggle').checked = xPostEnabled;
+            } catch (e) {
+                console.error('Failed to load X post settings');
+            }
+        }
+
+        async function toggleXPost() {
+            const checked = document.getElementById('x-post-toggle').checked;
+            try {
+                const res = await fetch('/api/admin/system/x-post-status', {
+                    method: 'POST',
+                    headers: apiHeaders(),
+                    body: JSON.stringify({ enabled: checked })
+                });
+                if (!res.ok) {
+                    alert('Failed to save settings');
+                    document.getElementById('x-post-toggle').checked = xPostEnabled;
+                } else {
+                    xPostEnabled = checked;
+                }
+            } catch (e) {
+                alert('Connection error');
+                document.getElementById('x-post-toggle').checked = xPostEnabled;
+            }
+        }
+
+        async function forceXPost() {
+            const btn = document.getElementById('btn-force-xpost');
+            const msg = document.getElementById('xpost-msg');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Generating & Posting...';
+            msg.textContent = '';
+
+            try {
+                const res = await fetch('/api/cron/twitter', {
+                    method: 'GET',
+                    headers: { 'x-admin-key': adminKey }
+                });
+                const data = await res.json();
+
+                if (res.ok && data.status === 'success') {
+                    msg.innerHTML = `✅ Posted about <strong>${data.product}</strong>! <a href="https://twitter.com/user/status/${data.tweetId}" target="_blank">View Tweet</a>`;
+                } else if (res.ok && data.status === 'skipped') {
+                    msg.textContent = `⚠️ Skipped: ${data.reason}`;
+                } else {
+                    msg.textContent = `❌ Failed: ${data.error || 'Unknown error'}`;
+                }
+            } catch (e) {
+                msg.textContent = `❌ Network Error: ${e.message}`;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '🚀 Post to X Now (Test Run)';
+                loadXPostHistory();
+            }
+        }
+
+        async function loadXPostHistory() {
+            try {
+                const res = await fetch('/api/admin/system/x-post-history?key=' + encodeURIComponent(adminKey));
+                const d = await res.json();
+                const tbody = document.getElementById('xpost-history-body');
+
+                if (!d.posts || d.posts.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted)">No posts recorded yet</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = d.posts.map(p => {
+                    const statusColors = { posted: 'var(--success)', failed: 'var(--danger)', pending: 'var(--accent)' };
+                    const link = p.status === 'posted' && p.tweet_id
+                        ? `<a href="https://twitter.com/user/status/${p.tweet_id}" target="_blank">View Tweet</a>`
+                        : '—';
+
+                    return `
+                    <tr>
+                        <td style="white-space:nowrap">${new Date(p.created_at).toLocaleString()}</td>
+                        <td style="color:${statusColors[p.status] || 'white'};font-weight:bold">${p.status.toUpperCase()}</td>
+                        <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.error_message || p.product_name || p.content}">
+                            ${p.status === 'failed' ? `❌ ${p.error_message}` : `📦 ${p.product_name || p.content}`}
+                        </td>
+                        <td>${link}</td>
+                    </tr>
+                    `;
+                }).join('');
+            } catch (e) {
+                document.getElementById('xpost-history-body').innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--danger)">Failed to load history</td></tr>';
             }
         }
 

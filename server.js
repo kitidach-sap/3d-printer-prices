@@ -1657,6 +1657,48 @@ app.get('/{*path}', (req, res, next) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// X Auto-Post Endpoints
+app.get('/api/admin/system/x-post-status', requireAdmin, async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('settings')
+            .select('value')
+            .eq('key', 'x_post_enabled')
+            .single();
+        if (error && error.code !== 'PGRST116') throw error;
+        res.json({ enabled: data ? (data.value === 'true' || data.value === true) : false });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/admin/system/x-post-status', requireAdmin, async (req, res) => {
+    try {
+        const { enabled } = req.body;
+        const { error } = await supabase
+            .from('settings')
+            .upsert({ key: 'x_post_enabled', value: enabled ? 'true' : 'false' }, { onConflict: 'key' });
+        if (error) throw error;
+        res.json({ success: true, enabled });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/admin/system/x-post-history', requireAdmin, async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('x_posts')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(20);
+        if (error) throw error;
+        res.json({ posts: data });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Start server
 // Start server (only when running locally, not on Vercel)
 if (process.env.VERCEL !== '1') {

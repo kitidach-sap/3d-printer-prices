@@ -12,6 +12,10 @@
         {
             "src": "api/cron/blog.js",
             "use": "@vercel/node"
+        },
+        {
+            "src": "api/cron/twitter.js",
+            "use": "@vercel/node"
         }
     ],
     "routes": [
@@ -22,6 +26,10 @@
         {
             "src": "/api/cron/blog",
             "dest": "api/cron/blog.js"
+        },
+        {
+            "src": "/api/cron/twitter",
+            "dest": "api/cron/twitter.js"
         },
         {
             "src": "/(.*)",
@@ -36,6 +44,10 @@
         {
             "path": "/api/cron/blog",
             "schedule": "0 8 * * 1"
+        },
+        {
+            "path": "/api/cron/twitter",
+            "schedule": "0 */3 * * *"
         }
     ]
 }
