@@ -1663,14 +1663,151 @@ app.get('/api/admin/system/x-post-status', requireAdmin, async (req, res) => {
         const { data, error } = await supabase
             .from('settings')
             .select('value')
-            .eq('key', 'x_post_enabled')
-            .single();
-        if (error && error.code !== 'PGRST116') throw error;
         res.json({ enabled: data ? (data.value === 'true' || data.value === true) : false });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
+
+// START NEW AI PRODUCT ENRICHMENT SCRIPT
+app.post('/api/admin/enrich-products', requireAdmin, async (req, res) => {
+    try {
+        console.log("Starting batched AI product enrichment...");
+
+        // Fetch products missing basic AI enrichment
+        const { data: productsToEnrich, error } = await supabase
+            .from('products')
+            .select('*')
+            .is('printer_type', null)
+            .limit(10); // Process 10 at a time to avoid timeouts
+
+        if (error) {
+            console.error("Error fetching products:", error);
+            return res.status(500).json({ error: error.message });
+        }
+
+        if (!productsToEnrich || productsToEnrich.length === 0) {
+            return res.json({ success: true, message: "All products are enriched!", count: 0, activeEnrichment: false });
+        }
+
+        const enrichedResults = [];
+
+        // Build the prompt request for all chunked items
+        const promptsList = productsToEnrich.map(p => `ID: ${p.amazon_asin}\nProduct Name: ${p.product_name}\nCategory: ${p.category}\n---`).join('\n');
+
+        const systemPrompt = `You are a 3D printing e-commerce data specialist.
+Your task is to analyze the following product names and return a JSON object containing the structured data for EACH item.
+
+Analyze the product names to determine:
+1. "printer_type": Must be either "FDM", "Resin", "Accessory", "Scanner", "Filament" or "Other". (Only "FDM" and "Resin" are printers).
+2. "labels": An array of 1-3 string badges suitable for a UI tag. Valid examples: "Best for Beginners", "High Speed", "Large Build Volume", "Budget Pick", "Multi-Color", "Ultra Detail". 
+3. "beginner_score": Int from 1 to 10. (e.g. Bambu Lab A1 = 9, Ender 3 = 6, complex Resin printers = 4). If accessory/filament, return 0.
+4. "specs_json": A key-value object of extracted specs (e.g., {"Speed": "500mm/s", "Connectivity": "WiFi"}).
+
+Return the response as a valid JSON Array, where each object has:
+{ "amazon_asin": "string", "printer_type": "string", "labels": [], "beginner_score": number, "specs_json": {} }
+
+CRITICAL: Return ONLY valid JSON, no markdown formatting (\`\`\`json) outside of the array.`;
+
+        let rawResponse = '';
+
+        try {
+            // 1. Try Gemini
+            const { getSupabaseSetting } = require('./api/cron/blog.js'); // Reuse helper 
+            const geminiKey = await getSupabaseSetting('gemini_api_key');
+            if (geminiKey) {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: systemPrompt + '\n\n' + promptsList }] }],
+                        generationConfig: {
+                            responseMimeType: "application/json"
+                        }
+                    })
+                });
+                const data = await response.json();
+                if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
+                    rawResponse = data.candidates[0].content.parts[0].text;
+                }
+            } else {
+                // 2. Try OpenAI
+                const openAiKey = await getSupabaseSetting('openai_api_key');
+                if (openAiKey) {
+                    const OpenAI = require('openai');
+                    const openai = new OpenAI({ apiKey: openAiKey });
+                    const completion = await openai.chat.completions.create({
+                        model: "gpt-4o-mini",
+                        messages: [
+                            { role: "system", content: systemPrompt },
+                            { role: "user", content: promptsList }
+                        ],
+                        response_format: { type: "json_object" } // Using object or array mapping
+                    });
+                    rawResponse = completion.choices[0].message.content;
+                } else {
+                    throw new Error("No Gemini or OpenAI key found in DB settings.");
+                }
+            }
+
+            // Parse response
+            let parsedData = [];
+            try {
+                // remove any potential markdown
+                let cleanStr = rawResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+                // if OpenAI returns an object wrapping the array, handling needed.
+                const jsonDoc = JSON.parse(cleanStr);
+                parsedData = Array.isArray(jsonDoc) ? jsonDoc : (jsonDoc.products || jsonDoc.items || Object.values(jsonDoc)[0]);
+
+                if (!Array.isArray(parsedData)) throw new Error("Parsed data is not an array");
+
+            } catch (e) {
+                console.error("Failed to parse AI response:", rawResponse);
+                throw new Error("Invalid JSON from AI generation");
+            }
+
+            // Update DB
+            for (let structuredInfo of parsedData) {
+                if (!structuredInfo.amazon_asin) continue;
+
+                const { error: updateErr } = await supabase
+                    .from('products')
+                    .update({
+                        printer_type: structuredInfo.printer_type || 'Unknown',
+                        labels: structuredInfo.labels || [],
+                        beginner_score: structuredInfo.beginner_score || 0,
+                        specs_json: structuredInfo.specs_json || {}
+                    })
+                    .eq('amazon_asin', structuredInfo.amazon_asin);
+
+                if (!updateErr) {
+                    enrichedResults.push(structuredInfo.amazon_asin);
+                }
+            }
+
+            // Re-check count
+            const { count: remainingCount } = await supabase.from('products').select('*', { count: 'exact', head: true }).is('printer_type', null);
+
+            res.json({
+                success: true,
+                message: `Enriched ${enrichedResults.length} products.`,
+                count: enrichedResults.length,
+                activeEnrichment: remainingCount > 0,
+                remainingCount: remainingCount
+            });
+
+        } catch (genError) {
+            console.error("AI Generation Error:", genError);
+            res.status(500).json({ error: "Failed to generate structured data from AI: " + genError.message });
+        }
+
+
+    } catch (err) {
+        console.error("Enrichment Route Error:", err);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+// END NEW AI PRODUCT ENRICHMENT SCRIPT
 
 app.post('/api/admin/system/x-post-status', requireAdmin, async (req, res) => {
     try {

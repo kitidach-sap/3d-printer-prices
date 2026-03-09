@@ -737,7 +737,20 @@
                 <div
                     style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.75rem">
                     <h3 style="margin:0">📦 Product Management</h3>
-                    <span style="font-size:0.75rem;color:var(--text-muted)" id="pm-count">— products</span>
+                    <div style="display:flex;align-items:center;gap:0.5rem">
+                        <button class="btn btn-primary" id="btn-enrich" style="font-size:0.75rem;padding:0.35rem 0.6rem"
+                            onclick="enrichProducts()">
+                            🤖 Enrich Data (AI)
+                        </button>
+                        <span style="font-size:0.75rem;color:var(--text-muted)" id="pm-count">— products</span>
+                    </div>
+                </div>
+
+                <div id="enrich-msg"
+                    style="margin-bottom:0.75rem;font-size:0.8rem;color:var(--text-muted);display:none">
+                    <span class="blinking-dot"
+                        style="background:var(--accent);display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px"></span>
+                    Enriching products with AI... (<span id="enrich-remaining">0</span> remaining)
                 </div>
 
                 <!-- Search & Filter Bar -->
@@ -1716,12 +1729,21 @@
                             <div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${(p.product_name || '').replace(/"/g, '&quot;')}">
                                 ${p.amazon_url ? `<a href="${p.amazon_url}" target="_blank" style="color:var(--primary);text-decoration:none">${p.product_name || '—'}</a>` : (p.product_name || '—')}
                             </div>
-                            <div style="font-size:0.65rem;color:var(--text-muted)">${p.amazon_asin || ''}</div>
+                            <div style="font-size:0.65rem;color:var(--text-muted);display:flex;gap:4px;margin-top:2px">
+                                <span>${p.amazon_asin || ''}</span>
+                                ${p.printer_type ? `<span style="background:var(--accent-glow);color:var(--accent);padding:0 4px;border-radius:4px">${p.printer_type}</span>` : '<span style="background:var(--danger);color:white;padding:0 4px;border-radius:4px;opacity:0.7">No AI Data</span>'}
+                            </div>
                         </td>
                         <td>${p.brand || '—'}</td>
                         <td style="color:var(--primary);font-weight:600">$${Number(p.price).toFixed(2)}</td>
-                        <td><span class="badge badge-active" style="font-size:0.65rem">${p.category || '—'}</span></td>
-                        <td>${p.rating ? `⭐ ${p.rating}` : '—'}</td>
+                        <td>
+                            <span class="badge badge-active" style="font-size:0.65rem;margin-bottom:2px;display:inline-block">${p.category || '—'}</span><br>
+                            ${p.labels ? p.labels.map(l => `<span style="font-size:0.6rem;background:var(--bg-card);border:1px solid var(--border);padding:0 4px;border-radius:2px;display:inline-block;margin-top:2px">${l}</span>`).join(' ') : ''}
+                        </td>
+                        <td>
+                            ${p.rating ? `⭐ ${p.rating}` : '—'}
+                            ${p.beginner_score ? `<br><span style="font-size:0.65rem;color:var(--text-muted)">Beg. Score: <strong>${p.beginner_score}/10</strong></span>` : ''}
+                        </td>
                         <td style="font-size:0.68rem;color:var(--text-muted)">${pmTimeAgo(p.created_at)}</td>
                         <td>
                             <button class="btn btn-danger" style="font-size:0.65rem;padding:0.15rem 0.4rem" onclick="pmDeleteProduct('${p.id}', this)">🗑️</button>
@@ -1730,6 +1752,45 @@
                 `).join('');
             } catch (e) {
                 document.getElementById('pm-body').innerHTML = `<tr><td colspan="8" style="color:var(--danger)">${e.message}</td></tr>`;
+            }
+        }
+
+        async function enrichProducts() {
+            const btn = document.getElementById('btn-enrich');
+            const msgBox = document.getElementById('enrich-msg');
+            const remainText = document.getElementById('enrich-remaining');
+
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Processing...';
+            msgBox.style.display = 'block';
+
+            try {
+                const res = await fetch('/api/admin/enrich-products', { method: 'POST', headers: apiHeaders() });
+                const data = await res.json();
+
+                if (data.success) {
+                    remainText.textContent = data.remainingCount;
+                    pmLoadProducts(pmPage); // Refresh table
+
+                    if (data.activeEnrichment) {
+                        // Automatically fire again if there's more to process
+                        setTimeout(enrichProducts, 1000);
+                    } else {
+                        btn.disabled = false;
+                        btn.innerHTML = '🤖 Enriched (Done)';
+                        msgBox.innerHTML = '<span style="color:var(--success)">✅ All products enriched!</span>';
+                        setTimeout(() => {
+                            msgBox.style.display = 'none';
+                            btn.innerHTML = '🤖 Enrich Data (AI)';
+                        }, 5000);
+                    }
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (e) {
+                msgBox.innerHTML = `<span style="color:var(--danger)">❌ Error: ${e.message}</span>`;
+                btn.disabled = false;
+                btn.innerHTML = '🤖 Retry Enrich';
             }
         }
 
