@@ -68,7 +68,7 @@ function renderComparison(products) {
             <a href="${p.amazon_url}" target="_blank" class="btn btn-primary" style="text-decoration:none; display:inline-block; margin-bottom: 0.5rem; width:100%; box-sizing:border-box;">View on Amazon</a><br>
             <button class="compare-remove" onclick="removeCompareItem('${p.id}')">Remove</button>
         `},
-        { label: 'Type', key: 'category', render: (p) => `<span style="text-transform:uppercase; font-size:0.9rem; font-weight:600; color:var(--accent);">${escapeHtml(p.printer_type || (p.product_type ? p.product_type.replace(/_/g, ' ') : '—'))}</span>` },
+        { label: 'Type', key: 'category', render: (p) => `<span style="text-transform:uppercase; font-size:0.9rem; font-weight:600; color:var(--accent);">${escapeHtml(p.category === '3d_printer' ? (p.printer_type && p.printer_type !== 'Unknown' ? p.printer_type : 'FDM / Resin') : (p.category ? p.category.replace('_', ' ') : p.product_type || '—'))}</span>` },
         { label: 'Rating', key: 'rating', render: (p) => `⭐ ${p.rating || 'N/A'} <span style="font-size:0.8rem;color:var(--text-muted);">(${p.review_count || 0} revs)</span>` },
         { label: 'Build Volume', key: 'build_volume', render: (p) => p.build_volume ? `📏 ${escapeHtml(p.build_volume)}` : '—' },
         { label: 'Beginner Score', key: 'beginner_score', render: (p) => p.beginner_score ? `<b style="font-size:1.2rem;color:var(--success);">${p.beginner_score}/10</b>` : '—' },

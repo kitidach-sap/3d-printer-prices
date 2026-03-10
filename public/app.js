@@ -285,7 +285,11 @@ async function loadProducts() {
                     ${formatRating(p.rating, p.review_count)}
                     ${p.beginner_score ? `<br><span class="beginner-score">Beg. Score: ${p.beginner_score}/10</span>` : ''}
                 </td>
-                <td><span class="type-badge">${escapeHtml(p.printer_type || formatType(p.product_type))}</span></td>
+                <td><span class="type-badge">${escapeHtml(
+                    p.category === '3d_printer' 
+                        ? (p.printer_type && p.printer_type !== 'Unknown' ? p.printer_type : 'FDM / Resin')
+                        : (p.category ? p.category.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase()) : formatType(p.product_type))
+                )}</span></td>
                 <td><span class="condition-${p.condition}">${p.condition === 'new' ? '✨ New' : '♻️ Used'}</span></td>
             </tr>
         `).join('');
