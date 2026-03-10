@@ -41,8 +41,8 @@ This living document tracks our journey from being a simple affiliate catalog to
 ## 🚀 Next (Feature Roadmap)
 
 **Features**
-- [ ] Build true cost calculator: Estimate total ownership cost using printer price, filament/resin cost, power consumption, failed prints, and maintenance.
-- [ ] Build beginner setup builder / checklist: Show what else the buyer needs besides the printer.
+- [x] Build true cost calculator: Estimate total ownership cost using printer price, filament/resin cost, power consumption, failed prints, and maintenance.
+- [x] Build beginner setup builder / checklist: Show what else the buyer needs besides the printer.
 
 **SEO & Data**
 - [ ] Generate model-vs-model landing pages (e.g., "Bambu Lab A1 vs Elegoo Neptune 3").

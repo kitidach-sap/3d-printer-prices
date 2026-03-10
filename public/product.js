@@ -42,6 +42,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const product = result.data[0];
         renderProduct(product);
+        renderChecklist(product);
         injectJsonLd(product);
         fetchAlternatives(product);
         
@@ -132,6 +133,62 @@ function renderProduct(p) {
         specTable += '</div>';
         document.getElementById('pd-specs-table').innerHTML = specTable;
     }
+}
+
+// -----------------------------------------
+// Beginner Checklist
+// -----------------------------------------
+function renderChecklist(p) {
+    if (!p.printer_type || p.printer_type === 'Unknown' || p.category !== '3d_printer') return;
+
+    document.getElementById('checklist-section').style.display = 'grid';
+    document.getElementById('cl-printer-type').textContent = p.printer_type;
+
+    const essentialsMenu = document.getElementById('cl-essentials');
+    const consumablesMenu = document.getElementById('cl-consumables');
+
+    let essentials = [];
+    let consumables = [];
+
+    if (p.printer_type === 'Resin') {
+        essentials = [
+            { name: "Wash & Cure Station", link: "https://www.amazon.com/s?k=wash+and+cure+station+resin" },
+            { name: "Silicone Slap Mat", link: "https://www.amazon.com/s?k=silicone+slap+mat+3d+printing" },
+            { name: "UV Safety Glasses", link: "https://www.amazon.com/s?k=uv+safety+glasses" }
+        ];
+        consumables = [
+            { name: "Quality 3D Printing Resin", link: "https://www.amazon.com/s?k=3d+printer+resin" },
+            { name: "99% Isopropyl Alcohol (IPA)", link: "https://www.amazon.com/s?k=99+isopropyl+alcohol+gallon" },
+            { name: "Nitrile Disposable Gloves", link: "https://www.amazon.com/s?k=nitrile+gloves+thick" },
+            { name: "Paper Towels / Microfiber", link: "https://www.amazon.com/s?k=shop+towels+heavy+duty" }
+        ];
+    } else {
+        // FDM
+        essentials = [
+            { name: "Filament Dryer Box", link: "https://www.amazon.com/s?k=3d+printer+filament+dryer" },
+            { name: "Flush Cutters & Deburring Tool", link: "https://www.amazon.com/s?k=flush+cutters+deburring+tool+3d+print" },
+            { name: "Digital Calipers", link: "https://www.amazon.com/s?k=digital+calipers" }
+        ];
+        consumables = [
+            { name: "PLA / PETG Filament Rolls", link: "https://www.amazon.com/s?k=pla+filament+1.75mm" },
+            { name: "Brass Nozzle Replacements", link: "https://www.amazon.com/s?k=3d+printer+brass+nozzle+0.4" },
+            { name: "Bed Adhesion Glue (Optional)", link: "https://www.amazon.com/s?k=3d+printer+glue+stick" }
+        ];
+    }
+
+    const renderItems = (items) => {
+        return items.map(item => `
+            <li style="margin-bottom: 0.75rem;">
+                <a href="${affiliateUrl(item.link)}" target="_blank" style="color: var(--text-primary); text-decoration: none; display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: var(--bg-primary); border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                    <span>${escapeHtml(item.name)}</span>
+                    <span style="color: var(--accent); font-size: 0.8rem;">View on Amazon ↗</span>
+                </a>
+            </li>
+        `).join('');
+    };
+
+    essentialsMenu.innerHTML = renderItems(essentials);
+    consumablesMenu.innerHTML = renderItems(consumables);
 }
 
 // -----------------------------------------
