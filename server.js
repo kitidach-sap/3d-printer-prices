@@ -154,6 +154,8 @@ app.get('/api/products', async (req, res) => {
             offset = 0,
             locale = 'us',
             search,
+            beginner_only,
+            printer_type
         } = req.query;
 
         let query = supabase
@@ -161,6 +163,10 @@ app.get('/api/products', async (req, res) => {
             .select('*', { count: 'exact' });
 
         // Filters
+        if (req.query.ids) {
+            const idsList = req.query.ids.split(',');
+            query = query.in('id', idsList);
+        }
         if (category) {
             const categories = category.split(',');
             query = query.in('category', categories);
@@ -189,9 +195,15 @@ app.get('/api/products', async (req, res) => {
         if (search) {
             query = query.ilike('product_name', `%${search}%`);
         }
+        if (beginner_only === 'true') {
+            query = query.gte('beginner_score', 8);
+        }
+        if (printer_type) {
+            query = query.eq('printer_type', printer_type);
+        }
 
         // Sorting
-        const validSortFields = ['price', 'product_name', 'brand', 'created_at', 'rating', 'review_count'];
+        const validSortFields = ['price', 'product_name', 'brand', 'created_at', 'rating', 'review_count', 'beginner_score'];
         const sortField = validSortFields.includes(sort_by) ? sort_by : 'price';
         const ascending = sort_order !== 'desc';
         query = query.order(sortField, { ascending });

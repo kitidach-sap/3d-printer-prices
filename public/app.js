@@ -13,6 +13,9 @@ let currentPage = 0;
 let totalProducts = 0;
 let activeFilters = { category: '3d_printer' };  // Show printers first by default
 
+// Compare feature state
+let compareList = [];
+
 // ============================================
 // URL Parameter Handling
 // ============================================
@@ -244,7 +247,7 @@ async function loadProducts() {
         tbody.innerHTML = data.map(p => `
             <tr>
                 <td class="product-name">
-                    <a href="${affiliateUrl(p.amazon_url)}" target="_blank" rel="noopener nofollow" class="product-name-link">
+                    <a href="/product.html?id=${p.id}" class="product-name-link">
                         <img
                             src="${p.image_url || ''}"
                             alt="${escapeHtml(p.product_name)}"
@@ -264,6 +267,12 @@ async function loadProducts() {
                             ` : ''}
                         </div>
                     </a>
+                    <div style="margin-top:0.5rem; margin-left: calc(60px + 1rem); /* align with text */">
+                        <label class="compare-checkbox-label" style="display:inline-flex; align-items:center; gap:0.3rem; font-size:0.75rem; color:var(--text-muted); cursor:pointer; font-weight: 500;">
+                            <input type="checkbox" onchange="toggleCompare('${p.id}', this.dataset.name, this.dataset.image, ${p.price || 0}, this.dataset.url)" data-name="${escapeHtml(p.product_name)}" data-image="${p.image_url || ''}" data-url="${p.amazon_url}" ${compareList.some(c => c.id === p.id) ? 'checked' : ''}>
+                            ➕ Compare
+                        </label>
+                    </div>
                 </td>
                 <td>${p.brand ? `<span class="brand-badge">${escapeHtml(p.brand)}</span>` : '—'}</td>
                 <td class="price-cell">
@@ -459,4 +468,187 @@ function updateCheckboxFilter(name) {
     }
     currentPage = 0;
     loadProducts();
+}
+
+// ============================================
+// Quiz Logic
+// ============================================
+const quizBtn = document.getElementById('take-quiz-btn');
+const quizModal = document.getElementById('quiz-modal');
+const closeQuizBtn = document.getElementById('close-quiz');
+const quizSteps = document.querySelectorAll('.quiz-step');
+const progressBar = document.getElementById('quiz-progress-bar');
+let currentStep = 1;
+let quizAnswers = {};
+
+if (quizBtn && quizModal) {
+    quizBtn.addEventListener('click', () => {
+        quizModal.style.display = 'flex';
+        currentStep = 1;
+        quizAnswers = {};
+        updateQuizUI();
+    });
+
+    closeQuizBtn.addEventListener('click', () => {
+        quizModal.style.display = 'none';
+    });
+
+    // Handle clicks outside modal content
+    quizModal.addEventListener('click', (e) => {
+        if (e.target === quizModal) quizModal.style.display = 'none';
+    });
+
+    // Handle option clicks
+    document.querySelectorAll('.quiz-option').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const answer = e.target.dataset.answer;
+            
+            // Store answer based on current step
+            if (currentStep === 1) quizAnswers.budget = answer;
+            if (currentStep === 2) quizAnswers.experience = answer;
+            if (currentStep === 3) quizAnswers.useCase = answer;
+
+            currentStep++;
+            updateQuizUI();
+
+            // If finished (reached step 4 loader)
+            if (currentStep === 4) {
+                setTimeout(() => processQuizResults(), 1200);
+            }
+        });
+    });
+}
+
+function updateQuizUI() {
+    quizSteps.forEach((step, idx) => {
+        step.style.display = (idx + 1 === currentStep) ? 'block' : 'none';
+    });
+    // Update progress bar
+    if (progressBar) {
+        const progress = Math.min((currentStep / 3) * 100, 100);
+        progressBar.style.width = `${progress}%`;
+    }
+}
+
+function processQuizResults() {
+    activeFilters = { category: '3d_printer' }; // Reset and focus on printers
+    
+    // 1. Budget
+    if (quizAnswers.budget === 'budget_low') {
+        activeFilters.max_price = 250;
+    } else if (quizAnswers.budget === 'budget_mid') {
+        activeFilters.min_price = 200;
+        activeFilters.max_price = 600;
+    } else if (quizAnswers.budget === 'budget_high') {
+        activeFilters.min_price = 600;
+    }
+
+    // 2. Experience
+    if (quizAnswers.experience === 'exp_beginner') {
+        activeFilters.beginner_only = 'true';
+    }
+
+    // 3. Use Case
+    if (quizAnswers.useCase === 'use_cosplay') {
+        activeFilters.printer_type = 'FDM';
+    } else if (quizAnswers.useCase === 'use_miniatures') {
+        activeFilters.printer_type = 'Resin';
+    } else if (quizAnswers.useCase === 'use_functional') {
+        activeFilters.printer_type = 'FDM';
+    }
+
+    // Apply filters and reload
+    currentPage = 0;
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) searchInput.value = '';
+    syncSidebarCheckboxes(); // Clear UI checkboxes
+    
+    // Deselect use-case chips in sidebar
+    document.querySelectorAll('.use-case-chip').forEach(c => c.classList.remove('active'));
+
+    loadProducts();
+
+    // Close modal and scroll wrapper
+    quizModal.style.display = 'none';
+    const contentArea = document.querySelector('.content');
+    if (contentArea) {
+        contentArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+// ============================================
+// Compare Tool Logic
+// ============================================
+function toggleCompare(id, name, image, price, url) {
+    const existingIdx = compareList.findIndex(c => c.id === id);
+    if (existingIdx >= 0) {
+        compareList.splice(existingIdx, 1);
+    } else {
+        if (compareList.length >= 3) {
+            alert('You can only compare up to 3 printers at a time.');
+            const cb = document.querySelector(`input[onchange*="${id}"]`);
+            if (cb) cb.checked = false;
+            return;
+        }
+        compareList.push({ id, name, image, price, url });
+    }
+    renderCompareTray();
+}
+
+function removeCompare(id) {
+    compareList = compareList.filter(c => c.id !== id);
+    const cb = document.querySelector(`input[onchange*="${id}"]`);
+    if (cb) cb.checked = false;
+    renderCompareTray();
+}
+
+function renderCompareTray() {
+    let tray = document.getElementById('compare-tray');
+    if (!tray) {
+        tray = document.createElement('div');
+        tray.id = 'compare-tray';
+        tray.className = 'compare-tray';
+        document.body.appendChild(tray);
+    }
+
+    if (compareList.length === 0) {
+        tray.classList.remove('active');
+        return;
+    }
+    tray.classList.add('active');
+
+    tray.innerHTML = `
+        <div class="compare-tray-content">
+            <div class="compare-items">
+                ${compareList.map(item => `
+                    <div class="compare-item">
+                        <img src="${item.image}" alt="Thumb" onerror="this.style.display='none'">
+                        <div class="compare-item-details">
+                            <span class="compare-item-name">${item.name}</span>
+                            <span class="compare-item-price">$${item.price.toFixed(2)}</span>
+                        </div>
+                        <button class="compare-item-remove" onclick="removeCompare('${item.id}')">&times;</button>
+                    </div>
+                `).join('')}
+                ${Array(3 - compareList.length).fill('<div class="compare-placeholder">Add another</div>').join('')}
+            </div>
+            <div class="compare-actions">
+                <button class="btn btn-primary" style="padding: 0.5rem 1rem;" onclick="openCompareModal()" ${compareList.length < 2 ? 'disabled' : ''}>
+                    Compare ${compareList.length} Items
+                </button>
+                <button class="btn btn-outline" style="margin-left:0.5rem; padding: 0.5rem 1rem;" onclick="clearCompare()">Clear</button>
+            </div>
+        </div>
+    `;
+}
+
+function clearCompare() {
+    compareList = [];
+    document.querySelectorAll('.compare-checkbox').forEach(cb => cb.checked = false);
+    renderCompareTray();
+}
+
+function openCompareModal() {
+    const ids = compareList.map(c => c.id).join(',');
+    window.open(`/compare.html?ids=${ids}`, '_blank');
 }

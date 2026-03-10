@@ -27,10 +27,10 @@ This living document tracks our journey from being a simple affiliate catalog to
 - [ ] Verify all production cron jobs run reliably
 
 **UX & Features**
-- [ ] Rewrite homepage hero copy to communicate decision value, not just price comparison.
-- [ ] Add rule-based verdict badges to product cards (e.g., `Best for Beginners`, `Budget Pick`, `High Speed`, `Good for ABS`, `Large Build Volume`, `Resin Detail`).
-- [ ] Build basic compare feature: Allow users to select 2-3 products and compare them side by side.
-- [ ] Build simple recommendation quiz: Ask about budget, use case, materials, experience, noise tolerance, and speed preference.
+- [x] Rewrite homepage hero copy to communicate decision value, not just price comparison.
+- [x] Add rule-based verdict badges to product cards (e.g., `Best for Beginners`, `Budget Pick`, `High Speed`, `Good for ABS`, `Large Build Volume`, `Resin Detail`).
+- [x] Build basic compare feature: Allow users to select 2-3 products and compare them side by side.
+- [x] Build simple recommendation quiz: Ask about budget, use case, materials, experience, noise tolerance, and speed preference.
 
 **SEO & Data Model**
 - [ ] Add structured product summary blocks on every product page (Who it is for, Main strengths/weaknesses, Recommended materials, Best alternatives).

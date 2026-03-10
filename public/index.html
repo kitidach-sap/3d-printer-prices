@@ -63,10 +63,11 @@
         <span class="logo-icon">🖨️</span>
         <div>
           <h1>3D Printer Prices</h1>
-          <p class="tagline">Compare Amazon deals on 3D printers & accessories</p>
+          <p class="tagline">Find the perfect 3D printer for your needs & budget</p>
         </div>
       </div>
-      <div class="header-actions">
+      <div class="header-actions" style="display:flex; align-items:center;">
+        <button id="take-quiz-btn" class="quiz-btn">🎯 Find My Printer</button>
         <a href="/blog/" class="nav-link" style="font-size:0.82rem;margin-right:0.5rem">📝 Blog</a>
         <button id="theme-toggle" class="btn-icon" aria-label="Toggle theme">🌙</button>
       </div>
@@ -216,6 +217,56 @@
       </div>
     </section>
   </main>
+
+  <!-- Quiz Modal -->
+  <div id="quiz-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-content quiz-modal">
+      <button class="modal-close" id="close-quiz">&times;</button>
+      <div class="quiz-header">
+        <h2>🎯 Find My Perfect Printer</h2>
+        <p>Answer 3 quick questions to get personalized recommendations.</p>
+        <div class="quiz-progress"><div class="quiz-progress-bar" id="quiz-progress-bar" style="width:33%"></div></div>
+      </div>
+      
+      <div class="quiz-body" id="quiz-body">
+        <!-- Question 1: Budget -->
+        <div class="quiz-step active" id="quiz-step-1">
+          <h3>1. What is your budget?</h3>
+          <div class="quiz-options">
+            <button class="quiz-option" data-answer="budget_low">Budget (Under $200)</button>
+            <button class="quiz-option" data-answer="budget_mid">Mid-range ($200 - $500)</button>
+            <button class="quiz-option" data-answer="budget_high">Premium ($500+)</button>
+          </div>
+        </div>
+
+        <!-- Question 2: Experience -->
+        <div class="quiz-step" id="quiz-step-2" style="display:none;">
+          <h3>2. What is your experience level?</h3>
+          <div class="quiz-options">
+            <button class="quiz-option" data-answer="exp_beginner">Total Beginner</button>
+            <button class="quiz-option" data-answer="exp_hobbyist">Hobbyist</button>
+            <button class="quiz-option" data-answer="exp_expert">Expert / Pro</button>
+          </div>
+        </div>
+
+        <!-- Question 3: Use Case -->
+        <div class="quiz-step" id="quiz-step-3" style="display:none;">
+          <h3>3. What do you want to print mostly?</h3>
+          <div class="quiz-options">
+            <button class="quiz-option" data-answer="use_cosplay">Cosplay & Large Props (FDM)</button>
+            <button class="quiz-option" data-answer="use_miniatures">Miniatures & High Detail (Resin)</button>
+            <button class="quiz-option" data-answer="use_functional">Functional Parts & Tools (FDM)</button>
+          </div>
+        </div>
+
+        <!-- Processing State -->
+        <div class="quiz-step" id="quiz-step-4" style="display:none; text-align:center;">
+          <h3>🤖 AI is finding your perfect match...</h3>
+          <div class="loader" style="margin:20px auto;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Ad: Bottom Banner (Leaderboard) -->
   <div class="ad-container ad-banner">

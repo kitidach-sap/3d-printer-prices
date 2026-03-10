@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loading Product... - 3D Printer Prices</title>
+  
+  <!-- SEO Meta Tags & JSON-LD will be injected by product.js -->
+  <meta name="description" content="Detailed specs and prices for 3D printers.">
+  
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Product Page Specific Styles */
+    .product-page-container {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+    .product-header-section {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 2rem;
+      box-shadow: var(--shadow);
+      margin-bottom: 2rem;
+    }
+    @media(min-width: 768px) {
+      .product-header-section {
+        grid-template-columns: 400px 1fr;
+      }
+    }
+    .product-image-container {
+      background: var(--bg-primary);
+      border-radius: var(--radius-sm);
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .product-main-image {
+      max-width: 100%;
+      height: auto;
+      object-fit: contain;
+      max-height: 400px;
+    }
+    .product-info-container {
+      display: flex;
+      flex-direction: column;
+    }
+    .product-brand {
+      font-size: 1rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .product-title {
+      font-size: 2rem;
+      margin: 0.5rem 0 1rem 0;
+      color: var(--text-primary);
+    }
+    .product-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .product-price-block {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .current-price {
+      font-size: 2.5rem;
+      color: var(--success);
+      font-weight: 700;
+    }
+    .product-actions {
+      margin-top: auto;
+    }
+    .btn-buy-large {
+      display: block;
+      width: 100%;
+      text-align: center;
+      padding: 1rem;
+      font-size: 1.1rem;
+      text-decoration: none;
+    }
+    
+    /* Structured Summary Section */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+    @media(min-width: 768px) {
+      .summary-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    .summary-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1.5rem;
+    }
+    .summary-card h3 {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .summary-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .summary-list li {
+      margin-bottom: 0.5rem;
+      padding-left: 1.5rem;
+      position: relative;
+    }
+    .summary-list li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: var(--success);
+      font-weight: bold;
+    }
+    .summary-list.weaknesses li::before {
+      content: '✗';
+      color: var(--danger);
+    }
+    
+    /* Alternatives Section */
+    .alternatives-section {
+      margin-top: 4rem;
+    }
+    .alternatives-section h2 {
+      margin-bottom: 1.5rem;
+      font-size: 1.5rem;
+    }
+    .alternatives-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 1.5rem;
+    }
+  </style>
+</head>
+<body data-theme="dark">
+  <header class="header">
+    <div class="header-content">
+      <div class="logo">
+        <span class="logo-icon">🖨️</span>
+        <div>
+          <a href="/" style="text-decoration:none; color:inherit;">
+            <h1>3D Printer Prices</h1>
+          </a>
+          <p class="tagline">Find the perfect 3D printer for your needs</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <a href="/" class="btn btn-outline" style="text-decoration:none;">&larr; Back to Catalog</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="product-page-container">
+    <div id="loader-wrapper" style="text-align:center; padding: 4rem;">
+      <div class="loader" style="margin:0 auto;"></div>
+      <p style="margin-top:1rem; color:var(--text-muted);">Loading product details...</p>
+    </div>
+    
+    <div id="product-content" style="display:none;">
+      <!-- Hero Product Section -->
+      <section class="product-header-section">
+        <div class="product-image-container">
+          <img id="pd-image" class="product-main-image" src="" alt="Product Image">
+        </div>
+        
+        <div class="product-info-container">
+          <div id="pd-brand" class="product-brand"></div>
+          <h1 id="pd-title" class="product-title">Loading...</h1>
+          
+          <div id="pd-badges" class="product-badges"></div>
+          
+          <div class="rating-cell" style="margin-bottom: 1rem; font-size: 1.1rem;">
+             ⭐ <span id="pd-rating"></span> (<span id="pd-reviews"></span> reviews)
+          </div>
+          
+          <div class="product-price-block">
+            <span id="pd-price" class="current-price"></span>
+            <span id="pd-orig-price" class="orig-price" style="font-size:1.2rem; align-self:center;"></span>
+          </div>
+          
+          <div class="product-actions" style="margin-top:1rem;">
+            <a id="pd-buy-btn" href="#" target="_blank" class="btn btn-primary btn-buy-large">
+              View on Amazon
+            </a>
+            <p style="text-align:center; font-size:0.8rem; color:var(--text-muted); margin-top:0.75rem;">
+              Prices are updated daily. Purchases made through our links may earn us an affiliate commission.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- AI Structured Summary Blocks -->
+      <section id="summary-section" class="summary-grid" style="display:none;">
+        <div class="summary-card">
+          <h3>🎯 Who is this for?</h3>
+          <p id="pd-who-for" style="color:var(--text-muted); line-height:1.6;"></p>
+        </div>
+        
+        <div class="summary-card">
+          <h3>🏆 Key Strengths</h3>
+          <ul id="pd-strengths" class="summary-list"></ul>
+        </div>
+
+        <div class="summary-card">
+          <h3>⚠️ Potential Drawbacks</h3>
+          <ul id="pd-weaknesses" class="summary-list weaknesses"></ul>
+        </div>
+        
+        <div class="summary-card">
+          <h3>📋 Full Specifications</h3>
+          <div id="pd-specs-table" style="font-size:0.9rem; margin-top:0.5rem;"></div>
+        </div>
+      </section>
+
+      <!-- Best Alternatives -->
+      <section id="alternatives-section" class="alternatives-section" style="display:none;">
+        <h2>Similar Alternatives</h2>
+        <div id="alternatives-grid" class="alternatives-grid"></div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Theme script consistency -->
+  <script>
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.body.setAttribute('data-theme', savedTheme);
+  </script>
+  <script src="product.js"></script>
+</body>
+</html>
