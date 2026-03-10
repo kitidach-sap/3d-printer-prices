@@ -1716,10 +1716,13 @@ Analyze the product names to determine:
 1. "printer_type": Must be either "FDM", "Resin", "Accessory", "Scanner", "Filament" or "Other". (Only "FDM" and "Resin" are printers).
 2. "labels": An array of 1-3 string badges suitable for a UI tag. Valid examples: "Best for Beginners", "High Speed", "Large Build Volume", "Budget Pick", "Multi-Color", "Ultra Detail". 
 3. "beginner_score": Int from 1 to 10. (e.g. Bambu Lab A1 = 9, Ender 3 = 6, complex Resin printers = 4). If accessory/filament, return 0.
-4. "specs_json": A key-value object of extracted specs (e.g., {"Speed": "500mm/s", "Connectivity": "WiFi"}).
+4. "speed_score": Int from 1 to 10 based on typical printing speed for its category. (e.g. CoreXY = 9-10, traditional bedslingers = 5-7).
+5. "maintenance_score": Int from 1 to 10 based on reliability and ease of maintenance. (10 = practically zero maintenance, 1 = constant tinkering required).
+6. "material_support": Array of strings representing supported materials (e.g. ["PLA", "PETG", "TPU"]).
+7. "specs_json": A key-value object of extracted specs (e.g., {"Speed": "500mm/s", "Connectivity": "WiFi"}).
 
 Return the response as a valid JSON Array, where each object has:
-{ "amazon_asin": "string", "printer_type": "string", "labels": [], "beginner_score": number, "specs_json": {} }
+{ "amazon_asin": "string", "printer_type": "string", "labels": [], "beginner_score": number, "speed_score": number, "maintenance_score": number, "material_support": [], "specs_json": {} }
 
 CRITICAL: Return ONLY valid JSON, no markdown formatting (\`\`\`json) outside of the array.`;
 
@@ -1797,6 +1800,9 @@ CRITICAL: Return ONLY valid JSON, no markdown formatting (\`\`\`json) outside of
                         printer_type: structuredInfo.printer_type || 'Unknown',
                         labels: structuredInfo.labels || [],
                         beginner_score: structuredInfo.beginner_score || 0,
+                        speed_score: structuredInfo.speed_score || null,
+                        maintenance_score: structuredInfo.maintenance_score || null,
+                        material_support: structuredInfo.material_support || [],
                         specs_json: structuredInfo.specs_json || {}
                     })
                     .eq('amazon_asin', structuredInfo.amazon_asin);

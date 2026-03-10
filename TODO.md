@@ -33,8 +33,8 @@ This living document tracks our journey from being a simple affiliate catalog to
 - [x] Build simple recommendation quiz: Ask about budget, use case, materials, experience, noise tolerance, and speed preference.
 
 **SEO & Data Model**
-- [ ] Add structured product summary blocks on every product page (Who it is for, Main strengths/weaknesses, Recommended materials, Best alternatives).
-- [ ] Define canonical taxonomy for products (`printer_type`, `fdm_or_resin`, `beginner_score`, `speed_score`, `maintenance_score`, `material_support`, etc.).
+- [x] Add structured product summary blocks on every product page (Who it is for, Main strengths/weaknesses, Recommended materials, Best alternatives).
+- [x] Define canonical taxonomy for products (`printer_type`, `fdm_or_resin`, `beginner_score`, `speed_score`, `maintenance_score`, `material_support`, etc.).
 
 ---
 
