@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Best 3D Printers - 3D Printer Prices</title>
+    <meta name="description" id="page-desc" content="Discover the best 3D printers for your specific needs, ranked by data.">
+    
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .best-hero {
+            background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-primary) 100%);
+            padding: 4rem 1rem;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .best-hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+        
+        .best-hero p {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .ranking-container {
+            max-width: 1000px;
+            margin: 3rem auto;
+            padding: 0 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+        
+        .rank-card {
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        @media(min-width: 768px) {
+            .rank-card {
+                flex-direction: row;
+            }
+        }
+        
+        .rank-badge {
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: var(--accent);
+            color: #000;
+            font-weight: 800;
+            font-size: 1.5rem;
+            padding: 0.5rem 1rem;
+            border-bottom-right-radius: var(--radius);
+            z-index: 2;
+        }
+        
+        .rank-image-col {
+            flex: 0 0 300px;
+            background: var(--bg-primary);
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        @media(min-width: 768px) {
+            .rank-image-col {
+                border-bottom: none;
+                border-right: 1px solid var(--border);
+            }
+        }
+        
+        .rank-image-col img {
+            max-width: 100%;
+            max-height: 250px;
+            object-fit: contain;
+        }
+        
+        .rank-details-col {
+            flex: 1;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .rank-title {
+            font-size: 1.75rem;
+            margin-top: 0;
+            margin-bottom: 0.5rem;
+        }
+        
+        .rank-title a {
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+        .rank-title a:hover {
+            color: var(--accent);
+        }
+        
+        .rank-price {
+            font-size: 2rem;
+            color: var(--success);
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+        
+        .rank-specs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            background: var(--bg-primary);
+            padding: 1rem;
+            border-radius: var(--radius-sm);
+        }
+        
+        .rank-spec-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .rank-spec-item span:first-child {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+        
+        .rank-spec-item span:last-child {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        
+        .rank-pros {
+            margin-bottom: 2rem;
+            color: var(--text-secondary);
+        }
+        
+        .rank-pros ul {
+            padding-left: 1.5rem;
+            margin: 0.5rem 0 0 0;
+        }
+        
+        .rank-pros li {
+            margin-bottom: 0.25rem;
+        }
+        
+        .rank-actions {
+            margin-top: auto;
+            display: flex;
+            gap: 1rem;
+        }
+        
+        @media(max-width: 768px) {
+            .rank-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body data-theme="dark">
+
+  <header class="header">
+    <div class="header-content">
+      <div class="logo">
+        <span class="logo-icon">🏆</span>
+        <div>
+          <a href="/" style="text-decoration:none; color:inherit;">
+            <h1>3D Printer Prices</h1>
+          </a>
+          <p class="tagline">Data-Driven Recommendations</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <a href="/" class="btn btn-outline" style="text-decoration:none;">&larr; Show All Printers</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="best-hero">
+      <h1 id="hero-title">Best 3D Printers for [Use Case]</h1>
+      <p id="hero-desc">We analyzed prices, ratings, and features across the market to find the top recommendations for this category.</p>
+  </section>
+
+  <main class="ranking-container">
+    <div id="loader-wrapper" style="text-align:center; padding: 4rem;">
+      <div class="loader" style="margin:0 auto;"></div>
+      <p style="margin-top:1rem; color:var(--text-muted);">Calculating rankings...</p>
+    </div>
+    
+    <div id="rankings-content" style="display:none; display: flex; flex-direction: column; gap: 2rem;">
+        <!-- Dynamically populated by best.js -->
+    </div>
+    
+    <div id="empty-state" style="display:none; text-align:center; padding: 4rem;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">No products found for this category.</h2>
+        <a href="/" class="btn btn-primary" style="text-decoration:none; display:inline-block; padding: 1rem 2rem;">Browse All Printers</a>
+    </div>
+  </main>
+
+  <script src="best.js"></script>
+</body>
+</html>

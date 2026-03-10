@@ -14,7 +14,7 @@ let totalProducts = 0;
 let activeFilters = { category: '3d_printer' };  // Show printers first by default
 
 // Compare feature state
-let compareList = [];
+let compareList = JSON.parse(localStorage.getItem('compareList')) || [];
 
 // ============================================
 // URL Parameter Handling
@@ -92,6 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
     setupTheme();
     syncUiFromFilters();
+    renderCompareTray();
 });
 
 // ============================================
@@ -592,11 +593,13 @@ function toggleCompare(id, name, image, price, url) {
         }
         compareList.push({ id, name, image, price, url });
     }
+    localStorage.setItem('compareList', JSON.stringify(compareList));
     renderCompareTray();
 }
 
 function removeCompare(id) {
     compareList = compareList.filter(c => c.id !== id);
+    localStorage.setItem('compareList', JSON.stringify(compareList));
     const cb = document.querySelector(`input[onchange*="${id}"]`);
     if (cb) cb.checked = false;
     renderCompareTray();
@@ -644,6 +647,7 @@ function renderCompareTray() {
 
 function clearCompare() {
     compareList = [];
+    localStorage.removeItem('compareList');
     document.querySelectorAll('.compare-checkbox').forEach(cb => cb.checked = false);
     renderCompareTray();
 }

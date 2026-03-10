@@ -1,123 +1,133 @@
-document.addEventListener('DOMContentLoaded', async () => {
+const API_BASE = '/api';
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Enable same dark theme loading
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.body.setAttribute('data-theme', savedTheme);
+
     const params = new URLSearchParams(window.location.search);
-    const ids = params.get('ids');
+    const idsString = params.get('ids');
     
-    if (!ids) {
-        document.getElementById('compare-results').innerHTML = '<p style="text-align:center;">No products selected for comparison.</p>';
-        document.getElementById('compare-loader').style.display = 'none';
+    if (!idsString) {
+        showEmpty();
         return;
     }
-
-    try {
-        const res = await fetch(`/api/products?ids=${ids}`);
-        const result = await res.json();
-        
-        if (!result.data || result.data.length === 0) {
-            throw new Error('Products not found.');
-        }
-
-        renderComparison(result.data);
-    } catch (err) {
-        console.error(err);
-        document.getElementById('compare-results').innerHTML = `<p style="text-align:center; color:red;">Error loading comparison data.</p>`;
-    } finally {
-        document.getElementById('compare-loader').style.display = 'none';
+    
+    const ids = idsString.split(',').filter(id => id.trim() !== '');
+    if (ids.length === 0) {
+        showEmpty();
+        return;
     }
+    
+    fetchComparisonData(ids);
 });
 
-function affiliateUrl(url) {
-    const AMAZON_AFFILIATE_TAG = 'kiti09-20';
-    if (!url) return '#';
+function showEmpty() {
+    document.getElementById('loader-wrapper').style.display = 'none';
+    document.getElementById('compare-content').style.display = 'none';
+    document.getElementById('empty-state').style.display = 'block';
+}
+
+async function fetchComparisonData(ids) {
     try {
-        const u = new URL(url);
-        u.searchParams.set('tag', AMAZON_AFFILIATE_TAG);
-        return u.toString();
-    } catch {
-        return url + (url.includes('?') ? '&' : '?') + 'tag=' + AMAZON_AFFILIATE_TAG;
+        // Fetch each product individually so we can guarantee we get all
+        const fetchPromises = ids.map(id => fetch(`${API_BASE}/products?id=${id}`).then(r => r.json()));
+        const results = await Promise.all(fetchPromises);
+        
+        let products = results.map(r => r.data && r.data.length > 0 ? r.data[0] : null).filter(p => p !== null);
+        
+        if (products.length === 0) {
+            showEmpty();
+            return;
+        }
+        
+        renderComparison(products);
+        
+    } catch (err) {
+        console.error('Error fetching comparison details:', err);
+        showEmpty();
     }
 }
 
 function renderComparison(products) {
-    // Collect all spec keys from all products
-    const allSpecs = new Set();
-    products.forEach(p => {
-        if (p.specs_json) {
-            Object.keys(p.specs_json).forEach(k => allSpecs.add(k));
+    document.getElementById('loader-wrapper').style.display = 'none';
+    document.getElementById('compare-content').style.display = 'block';
+    
+    const table = document.getElementById('compare-table');
+    
+    const rows = [
+        { label: '', key: 'header', render: (p) => `
+            <img src="${p.image_url}" class="compare-img" onerror="this.style.display='none'">
+            <div class="compare-title"><a href="/product.html?id=${p.id}" target="_blank" style="color:inherit; text-decoration:none;">${escapeHtml(p.product_name)}</a></div>
+            <div class="compare-price">$${p.price?.toFixed(2) || '---'}</div>
+            <a href="${p.amazon_url}" target="_blank" class="btn btn-primary" style="text-decoration:none; display:inline-block; margin-bottom: 0.5rem; width:100%; box-sizing:border-box;">View on Amazon</a><br>
+            <button class="compare-remove" onclick="removeCompareItem('${p.id}')">Remove</button>
+        `},
+        { label: 'Type', key: 'category', render: (p) => `<span style="text-transform:uppercase; font-size:0.9rem; font-weight:600; color:var(--accent);">${escapeHtml(p.printer_type || '—')}</span>` },
+        { label: 'Rating', key: 'rating', render: (p) => `⭐ ${p.rating || 'N/A'} <span style="font-size:0.8rem;color:var(--text-muted);">(${p.review_count || 0} revs)</span>` },
+        { label: 'Build Volume', key: 'build_volume', render: (p) => p.build_volume ? `📏 ${escapeHtml(p.build_volume)}` : '—' },
+        { label: 'Beginner Score', key: 'beginner_score', render: (p) => p.beginner_score ? `<b style="font-size:1.2rem;color:var(--success);">${p.beginner_score}/10</b>` : '—' },
+        { label: 'Who is it for?', key: 'who_for', render: (p) => p.ai_who_for ? `<p style="line-height:1.5">${escapeHtml(p.ai_who_for)}</p>` : '—' },
+        { label: 'Key Strengths', key: 'strengths', render: (p) => formatList(p.ai_strengths, '✓', 'yes') },
+        { label: 'Drawbacks', key: 'weaknesses', render: (p) => formatList(p.ai_weaknesses, '✗', 'no') },
+        { label: 'Supported Materials', key: 'materials', render: (p) => formatList(p.ai_materials, '•', 'bullet') }
+    ];
+    
+    let html = '';
+    
+    rows.forEach(row => {
+        let trClass = row.key === 'header' ? 'class="compare-header-row"' : '';
+        html += `<tr ${trClass}>`;
+        if (row.key !== 'header') {
+            html += `<th>${row.label}</th>`;
+        } else {
+            html += `<th></th>`;
         }
+        products.forEach(p => {
+            html += `<td>${row.render(p)}</td>`;
+        });
+        html += `</tr>`;
     });
     
-    const specKeys = Array.from(allSpecs).sort();
+    table.innerHTML = html;
+}
 
-    const tableHTML = `
-        <table class="compare-table">
-            <thead>
-                <tr>
-                    ${products.map(p => `
-                        <th>
-                            <img src="${p.image_url}" class="compare-header-img" onerror="this.style.display='none'">
-                            <h3>${p.product_name}</h3>
-                            <div style="font-size: 1.2rem; color: var(--success); margin-top:0.5rem;">
-                                $${p.price?.toFixed(2) || 'N/A'}
-                            </div>
-                            <!-- Assuming affiliateUrl logic is handled correctly manually or we reproduce it -->
-                            <a href="${affiliateUrl(p.amazon_url)}" target="_blank" class="btn btn-primary" style="display:block; margin-top:1rem; text-decoration:none; padding:10px;">Buy on Amazon</a>
-                        </th>
-                    `).join('')}
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Basic Info -->
-                <tr>
-                    ${products.map(p => `
-                        <td>
-                            <span class="spec-label">Brand</span>
-                            ${p.brand || '—'}
-                        </td>
-                    `).join('')}
-                </tr>
-                <tr>
-                    ${products.map(p => `
-                        <td>
-                            <span class="spec-label">Rating</span>
-                            ⭐ ${p.rating ? p.rating.toFixed(1) : '—'} (${p.review_count || 0} reviews)
-                        </td>
-                    `).join('')}
-                </tr>
-                <tr>
-                    ${products.map(p => `
-                        <td>
-                            <span class="spec-label">Type</span>
-                            ${p.printer_type || p.product_type || '—'}
-                        </td>
-                    `).join('')}
-                </tr>
-                <tr>
-                    ${products.map(p => `
-                        <td>
-                            <span class="spec-label">AI Beginner Score</span>
-                            <span style="color:var(--accent); font-weight:bold;">${p.beginner_score ? p.beginner_score + '/10' : '—'}</span>
-                        </td>
-                    `).join('')}
-                </tr>
+function removeCompareItem(id) {
+    // 1. Remove from localStorage compareList
+    let compareList = JSON.parse(localStorage.getItem('compareList')) || [];
+    compareList = compareList.filter(c => c.id !== id);
+    localStorage.setItem('compareList', JSON.stringify(compareList));
+    
+    // 2. Adjust current URL query and reload
+    const params = new URLSearchParams(window.location.search);
+    let ids = params.get('ids') ? params.get('ids').split(',') : [];
+    ids = ids.filter(i => i !== id);
+    
+    if (ids.length > 0) {
+        window.location.href = `/compare.html?ids=${ids.join(',')}`;
+    } else {
+        window.location.href = `/compare.html`; // will trigger empty state
+    }
+}
 
-                <!-- Specs JSON Loop -->
-                ${specKeys.length > 0 ? `
-                    <tr><td colspan="${products.length}" style="background:var(--bg-primary); font-weight:bold; padding:0.5rem 1rem; text-align:left;">Detailed Specs</td></tr>
-                    ${specKeys.map(key => `
-                        <tr>
-                            ${products.map(p => `
-                                <td>
-                                    <span class="spec-label">${key}</span>
-                                    ${p.specs_json && p.specs_json[key] ? p.specs_json[key] : '—'}
-                                </td>
-                            `).join('')}
-                        </tr>
-                    `).join('')}
-                ` : ''}
+// Helpers
+function escapeHtml(unsafe) {
+    if (!unsafe) return '';
+    return String(unsafe)
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
+         .replace(/'/g, "&#039;");
+}
 
-            </tbody>
-        </table>
-    `;
-
-    document.getElementById('compare-results').innerHTML = tableHTML;
+function formatList(arrStr, bullet, formatClass) {
+    if (!arrStr) return '—';
+    try {
+        const arr = JSON.parse(arrStr);
+        if (!arr || !arr.length) return '—';
+        return '<ul class="feature-list">' + arr.map(item => `<li><span class="feature-${formatClass}">${bullet}</span> <span>${escapeHtml(item)}</span></li>`).join('') + '</ul>';
+    } catch {
+        return escapeHtml(arrStr);
+    }
 }

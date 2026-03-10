@@ -45,13 +45,13 @@ This living document tracks our journey from being a simple affiliate catalog to
 - [x] Build beginner setup builder / checklist: Show what else the buyer needs besides the printer.
 
 **SEO & Data**
-- [ ] Generate model-vs-model landing pages (e.g., "Bambu Lab A1 vs Elegoo Neptune 3").
+- [x] Generate model-vs-model landing pages (`compare.html`)
 - [ ] Create database schema for accessories and starter kits (`filaments`, `resins`, `tools`, `replacement parts`, `safety gear`, `enclosures`).
 - [ ] Define recommendation engine rules (budget bands, experience level mapping, use-case mapping, material compatibility scoring).
-- [ ] Create use-case pages (e.g., "Best 3D printer for beginners", "Best 3D printer for cosplay").
+- [x] Create use-case pages (`best.html?type=beginners` etc).
 
 **UX & Trust**
-- [ ] Add saved compare list: Persist selected products via `localStorage` first.
+- [x] Add saved compare list: Persist selected products via `localStorage` first.
 - [ ] Add methodology and scoring explanation pages (How products are ranked, How beginner score is calculated).
 
 ---
