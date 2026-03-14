@@ -2430,8 +2430,12 @@ app.get('/api/products/:id/recommended-gear', async (req, res) => {
                 (a.printer_type || '').match(/nozzle.*clean|clean.*nozzle|brush/i));
             if (nozzleBrush) optionals.push({ ...nozzleBrush, role: 'tool', label: 'Nozzle Cleaning Kit', is_required: false });
 
+            // Catch-all optionals (filter out resin-specific items for FDM)
+            const resinNamePattern = /resin|uv\s|cure|sla/i;
             (accessories || []).filter(a => 
                 ![scraper?.id, toolKit?.id, nozzle?.id, nozzleBrush?.id].includes(a.id)
+                && !resinNamePattern.test(a.display_name || a.product_name || '')
+                && !resinNamePattern.test(a.printer_type || '')
             ).slice(0, 2)
                 .forEach(a => optionals.push({ ...a, role: 'accessory', label: a.display_name || a.product_name, is_required: false }));
         }
