@@ -2154,7 +2154,7 @@ app.get('/api/compatibility-data', async (req, res) => {
         // Fetch all filaments/resins with material_type
         const { data: materials, error: matErr } = await supabase
             .from('products')
-            .select('id, product_name, display_name, brand, price, image_url, rating, review_count, amazon_asin, affiliate_url, category, material_type, printer_type')
+            .select('id, product_name, display_name, brand, price, image_url, rating, review_count, amazon_asin, amazon_url, category, material_type, printer_type')
             .in('category', ['filament', 'resin'])
             .not('material_type', 'is', null)
             .order('rating', { ascending: false, nullsFirst: false });
@@ -2164,7 +2164,7 @@ app.get('/api/compatibility-data', async (req, res) => {
         // Fetch all printers
         const { data: printers, error: prnErr } = await supabase
             .from('products')
-            .select('id, product_name, display_name, brand, price, image_url, rating, review_count, amazon_asin, affiliate_url, category, printer_type')
+            .select('id, product_name, display_name, brand, price, image_url, rating, review_count, amazon_asin, amazon_url, category, printer_type')
             .eq('category', '3d_printer')
             .order('rating', { ascending: false, nullsFirst: false });
 
@@ -2215,7 +2215,7 @@ app.get('/api/starter-kits/:slug', async (req, res) => {
         // Get items with product details
         const { data: items, error: itemErr } = await supabase
             .from('starter_kit_items')
-            .select('*, products(id, product_name, display_name, brand, price, image_url, rating, review_count, amazon_asin, affiliate_url)')
+            .select('*, products(id, product_name, display_name, brand, price, image_url, rating, review_count, amazon_asin, amazon_url)')
             .eq('kit_id', kit.id)
             .order('sort_order', { ascending: true });
 
@@ -2231,7 +2231,7 @@ app.get('/api/starter-kits/:slug', async (req, res) => {
                 resolved_name: item.products?.display_name || item.products?.product_name || item.custom_name || item.label,
                 resolved_price: price,
                 resolved_image: item.products?.image_url || null,
-                resolved_url: item.products?.affiliate_url || item.custom_url || null,
+                resolved_url: item.products?.amazon_url || item.custom_url || null,
             };
         });
 

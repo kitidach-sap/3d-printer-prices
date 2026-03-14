@@ -378,7 +378,7 @@
         const price = p.price ? `$${p.price.toFixed(2)}` : '';
         const rating = p.rating ? `⭐ ${p.rating}` : '';
         const brand = p.brand || '';
-        const url = p.affiliate_url || `/product.html?asin=${p.amazon_asin}`;
+        const url = p.amazon_url || `/product.html?asin=${p.amazon_asin}`;
         return `
           <a href="${url}" class="compat-product" target="_blank" rel="noopener">
             ${img ? `<img src="${img}" alt="${name}" loading="lazy">` : '<div style="width:48px;height:48px;background:var(--border);border-radius:6px;flex-shrink:0"></div>'}
