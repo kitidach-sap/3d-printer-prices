@@ -1857,6 +1857,24 @@ CRITICAL: Return ONLY valid JSON array, no markdown.`;
                     // If display_name_source is 'manual' or 'detail' → SKIP
                 }
 
+                // Auto-detect material_type for filaments/resins (for compatibility explorer)
+                const rawName = (product.product_name || '').toUpperCase();
+                if ((product.category === 'filament' || product.category === 'resin') && !product.material_type) {
+                    const matRules = [
+                        ['PLA', /\bPLA\b/], ['PETG', /\bPETG\b/], ['ABS', /\bABS\b/],
+                        ['TPU', /\bTPU\b/], ['Nylon', /\bNYLON\b/], ['ASA', /\bASA\b/],
+                        ['Silk', /\bSILK\b/], ['Wood', /\bWOOD\b/],
+                        ['Carbon Fiber', /\bCARBON\s*FIBER\b|\bCF\b/],
+                        ['PC', /\bPOLYCARBONATE\b/],
+                    ];
+                    for (const [mat, regex] of matRules) {
+                        if (regex.test(rawName)) { updateObj.material_type = mat; break; }
+                    }
+                    if (!updateObj.material_type && product.category === 'resin') {
+                        updateObj.material_type = 'Resin';
+                    }
+                }
+
                 const { error: updateErr } = await supabase
                     .from('products')
                     .update(updateObj)

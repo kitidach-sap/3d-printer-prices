@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Filament Compatibility Explorer — 3D Printer Prices</title>
+  <meta name="description"
+    content="Find which filaments and resins work with your 3D printer. Browse by material (PLA, ABS, PETG, TPU) or by printer brand.">
+  <link rel="canonical" href="https://3d-printer-prices.com/compatibility.html">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Filament Compatibility Explorer — 3D Printer Prices">
+  <meta property="og:description" content="Find compatible filaments for your 3D printer. PLA, ABS, PETG, TPU, Nylon and more.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+
+  <style>
+    .compat-hero {
+      text-align: center;
+      padding: 3rem 1.5rem 1.5rem;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    .compat-hero h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, #10b981, #06b6d4);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .compat-hero p { color: var(--text-secondary); font-size: 1rem; line-height: 1.6; }
+
+    .compat-container { max-width: 1000px; margin: 0 auto; padding: 0 1.5rem 3rem; }
+
+    /* Mode Tabs */
+    .mode-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+    }
+    .mode-tab {
+      padding: 0.6rem 1.5rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    .mode-tab:hover { border-color: var(--accent); color: var(--text-primary); }
+    .mode-tab.active {
+      background: rgba(16,185,129,0.15);
+      border-color: #10b981;
+      color: #10b981;
+    }
+
+    /* Material Grid */
+    .material-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.8rem;
+      margin-bottom: 2rem;
+    }
+    .material-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .material-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+    .material-card.active { background: rgba(16,185,129,0.1); border-color: #10b981; }
+    .material-card .emoji { font-size: 1.8rem; display: block; margin-bottom: 0.3rem; }
+    .material-card .name { font-weight: 700; font-size: 0.95rem; }
+    .material-card .count { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem; }
+    .material-card .diff {
+      font-size: 0.7rem; margin-top: 0.3rem; padding: 0.15rem 0.4rem;
+      border-radius: 4px; display: inline-block;
+    }
+    .diff-easy { background: rgba(16,185,129,0.15); color: #10b981; }
+    .diff-moderate { background: rgba(234,179,8,0.15); color: #eab308; }
+    .diff-hard { background: rgba(239,68,68,0.15); color: #ef4444; }
+
+    /* Info Panel */
+    .material-info {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      display: none;
+    }
+    .material-info.visible { display: block; }
+    .material-info h2 { font-size: 1.2rem; margin-bottom: 0.8rem; }
+    .material-info .specs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.6rem;
+      margin-bottom: 1rem;
+    }
+    .spec-item {
+      background: rgba(255,255,255,0.03);
+      border-radius: 6px;
+      padding: 0.6rem;
+    }
+    .spec-item .label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
+    .spec-item .value { font-weight: 700; font-size: 0.9rem; margin-top: 0.15rem; }
+
+    /* Product List */
+    .product-list { display: flex; flex-direction: column; gap: 0.6rem; }
+    .compat-product {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.6rem 0.8rem;
+      transition: all 0.2s;
+      text-decoration: none;
+      color: var(--text-primary);
+    }
+    .compat-product:hover { border-color: var(--accent); transform: translateX(4px); }
+    .compat-product img {
+      width: 48px; height: 48px;
+      object-fit: contain;
+      border-radius: 6px;
+      background: #fff;
+      flex-shrink: 0;
+    }
+    .compat-product .info { flex: 1; min-width: 0; }
+    .compat-product .title {
+      font-size: 0.82rem; font-weight: 600;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .compat-product .meta { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.15rem; }
+    .compat-product .price { font-weight: 700; font-size: 0.9rem; color: #10b981; white-space: nowrap; }
+
+    .results-count { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.8rem; }
+
+    /* Printer mode: printer selector */
+    .printer-search {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .printer-search input {
+      flex: 1;
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+      color: var(--text-primary);
+      font-size: 0.9rem;
+    }
+    .printer-search input:focus { border-color: var(--accent); outline: none; }
+
+    /* Compatibility table */
+    .compat-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    .compat-table th, .compat-table td {
+      padding: 0.6rem 0.8rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.82rem;
+    }
+    .compat-table th { color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; }
+    .compat-table .notes { font-size: 0.75rem; color: var(--text-muted); }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-muted);
+    }
+    .empty-state .big { font-size: 2rem; margin-bottom: 0.5rem; }
+
+    @media (max-width: 600px) {
+      .compat-hero h1 { font-size: 1.4rem; }
+      .material-grid { grid-template-columns: repeat(3, 1fr); }
+      .mode-tabs { flex-direction: column; align-items: stretch; }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="header">
+    <div class="header-content">
+      <a href="/" style="text-decoration:none;color:inherit">
+        <div class="logo">
+          <span class="logo-icon">🖨️</span>
+          <div>
+            <h1 style="font-size:1.2rem;margin:0">3D Printer Prices</h1>
+            <p class="tagline" style="margin:0;font-size:0.75rem">Find the perfect 3D printer for your needs & budget</p>
+          </div>
+        </div>
+      </a>
+      <div class="header-actions" style="display:flex; align-items:center;">
+        <a href="/" class="nav-link" style="font-size:0.82rem;margin-right:0.5rem">🏠 Home</a>
+        <a href="/calculator.html" class="nav-link" style="font-size:0.82rem;margin-right:0.5rem">🧮 Calculator</a>
+        <a href="/blog/" class="nav-link" style="font-size:0.82rem;margin-right:0.5rem">📝 Blog</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="compat-hero">
+    <h1>🔬 Filament Compatibility Explorer</h1>
+    <p>Find which materials work with your printer, or browse filaments by type. All data is dynamically updated as new products arrive.</p>
+  </section>
+
+  <div class="compat-container">
+    <!-- Mode Tabs -->
+    <div class="mode-tabs">
+      <button class="mode-tab active" data-mode="material" id="tab-material">🧵 Browse by Material</button>
+      <button class="mode-tab" data-mode="printer" id="tab-printer">🖨️ Browse by Printer</button>
+    </div>
+
+    <!-- Material Mode -->
+    <div id="mode-material">
+      <div class="material-grid" id="material-grid"></div>
+      <div class="material-info" id="material-info"></div>
+      <div class="results-count" id="results-count"></div>
+      <div class="product-list" id="filament-list"></div>
+    </div>
+
+    <!-- Printer Mode -->
+    <div id="mode-printer" style="display:none">
+      <div class="printer-search">
+        <input type="text" id="printer-search" placeholder="🔍 Search for a printer (e.g. Creality K1, Bambu Lab, Elegoo)...">
+      </div>
+      <div id="printer-results"></div>
+      <div id="printer-compat" style="margin-top:1.5rem"></div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <p>Data sourced from Amazon. Updated periodically via automated scraping. Prices in USD.</p>
+    <p class="footer-links">
+      <a href="/">Home</a> · <a href="/blog/">Blog</a> · <a href="/methodology.html">Methodology</a> · <a href="/privacy.html">Privacy Policy</a> · <a href="/terms.html">Terms of Service</a>
+    </p>
+  </footer>
+
+  <script>
+    const MATERIAL_META = {
+      'PLA':          { emoji: '🟢', diff: 'easy', temp: '190-220°C', bed: '50-60°C', desc: 'Most popular, easy to print, biodegradable. Great for beginners and prototypes.' },
+      'PETG':         { emoji: '🔵', diff: 'easy', temp: '220-250°C', bed: '70-80°C', desc: 'Strong, flexible, food-safe. Good all-around material for functional parts.' },
+      'ABS':          { emoji: '🔴', diff: 'moderate', temp: '230-260°C', bed: '100-110°C', desc: 'Strong and heat-resistant, but needs enclosure. Emits fumes.' },
+      'TPU':          { emoji: '🟡', diff: 'moderate', temp: '220-250°C', bed: '50-60°C', desc: 'Flexible/rubber-like. Great for phone cases, gaskets, wheels.' },
+      'Nylon':        { emoji: '⚪', diff: 'hard', temp: '240-270°C', bed: '70-100°C', desc: 'Very strong and durable but absorbs moisture. Needs dry storage.' },
+      'ASA':          { emoji: '🟠', diff: 'moderate', temp: '240-260°C', bed: '90-110°C', desc: 'UV-resistant ABS alternative. Great for outdoor parts.' },
+      'Silk':         { emoji: '✨', diff: 'easy', temp: '190-220°C', bed: '50-60°C', desc: 'PLA variant with shiny silk finish. Decorative parts and gifts.' },
+      'Wood':         { emoji: '🪵', diff: 'moderate', temp: '190-220°C', bed: '50-60°C', desc: 'PLA + wood fiber blend. Looks and feels like real wood.' },
+      'Carbon Fiber': { emoji: '⚫', diff: 'hard', temp: '230-260°C', bed: '80-100°C', desc: 'Very strong and stiff. Needs hardened steel nozzle.' },
+      'PC':           { emoji: '💎', diff: 'hard', temp: '260-310°C', bed: '110-130°C', desc: 'Polycarbonate — extremely strong and heat-resistant. Expert material.' },
+      'Resin':        { emoji: '💧', diff: 'easy', temp: 'N/A (UV)', bed: 'N/A', desc: 'Liquid photopolymer cured by UV light. Incredible detail for miniatures.' },
+    };
+
+    // Default compatibility rules: FDM printers can use these by default
+    const FDM_DEFAULT_COMPAT = [
+      { material: 'PLA', difficulty: 'easy', needs_enclosure: false, notes: 'Works out of the box on all FDM printers' },
+      { material: 'PETG', difficulty: 'easy', needs_enclosure: false, notes: 'Most FDM printers handle PETG well' },
+      { material: 'TPU', difficulty: 'moderate', needs_enclosure: false, notes: 'Requires direct drive or slow bowden feed (~20mm/s)' },
+      { material: 'ABS', difficulty: 'moderate', needs_enclosure: true, notes: 'Needs enclosure for best results, good ventilation required' },
+      { material: 'Silk', difficulty: 'easy', needs_enclosure: false, notes: 'Prints just like PLA, beautiful finish' },
+    ];
+
+    const RESIN_DEFAULT_COMPAT = [
+      { material: 'Resin', difficulty: 'easy', needs_enclosure: false, notes: 'Standard/ABS-like/water-washable resins all work' },
+    ];
+
+    let allProducts = [];
+    let allPrinters = [];
+    let selectedMaterial = null;
+
+    async function init() {
+      // Fetch all products with material_type
+      const res = await fetch('/api/products?limit=500');
+      const data = await res.json();
+      allProducts = data.products || data || [];
+
+      // Separate printers and filaments
+      allPrinters = allProducts.filter(p => p.category === '3d_printer');
+
+      buildMaterialGrid();
+    }
+
+    function buildMaterialGrid() {
+      const grid = document.getElementById('material-grid');
+
+      // Count products per material
+      const counts = {};
+      allProducts.forEach(p => {
+        if (p.material_type) {
+          counts[p.material_type] = (counts[p.material_type] || 0) + 1;
+        }
+      });
+
+      // Build cards for all known materials (even if no products yet)
+      grid.innerHTML = Object.entries(MATERIAL_META).map(([mat, meta]) => {
+        const count = counts[mat] || 0;
+        const diffClass = `diff-${meta.diff}`;
+        return `
+          <div class="material-card" data-material="${mat}" onclick="selectMaterial('${mat}')">
+            <span class="emoji">${meta.emoji}</span>
+            <div class="name">${mat}</div>
+            <div class="count">${count} product${count !== 1 ? 's' : ''}</div>
+            <span class="diff ${diffClass}">${meta.diff}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectMaterial(mat) {
+      selectedMaterial = mat;
+      const meta = MATERIAL_META[mat] || {};
+
+      // Highlight card
+      document.querySelectorAll('.material-card').forEach(c => c.classList.remove('active'));
+      document.querySelector(`.material-card[data-material="${mat}"]`)?.classList.add('active');
+
+      // Show info panel
+      const infoPanel = document.getElementById('material-info');
+      infoPanel.classList.add('visible');
+      infoPanel.innerHTML = `
+        <h2>${meta.emoji || '🧵'} ${mat}</h2>
+        <p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem">${meta.desc || ''}</p>
+        <div class="specs-grid">
+          <div class="spec-item">
+            <div class="label">Nozzle Temp</div>
+            <div class="value">${meta.temp || '—'}</div>
+          </div>
+          <div class="spec-item">
+            <div class="label">Bed Temp</div>
+            <div class="value">${meta.bed || '—'}</div>
+          </div>
+          <div class="spec-item">
+            <div class="label">Difficulty</div>
+            <div class="value"><span class="diff diff-${meta.diff}">${meta.diff || '—'}</span></div>
+          </div>
+          <div class="spec-item">
+            <div class="label">Best For</div>
+            <div class="value">${getBestFor(mat)}</div>
+          </div>
+        </div>
+      `;
+
+      // Filter products
+      const filaments = allProducts.filter(p => p.material_type === mat);
+      const list = document.getElementById('filament-list');
+      const resultsCount = document.getElementById('results-count');
+
+      if (filaments.length === 0) {
+        resultsCount.textContent = '';
+        list.innerHTML = `<div class="empty-state"><div class="big">📭</div><p>No ${mat} products found yet. New products are added daily!</p></div>`;
+        return;
+      }
+
+      resultsCount.textContent = `${filaments.length} ${mat} product${filaments.length !== 1 ? 's' : ''} found`;
+
+      list.innerHTML = filaments.map(p => {
+        const name = p.display_name || p.product_name;
+        const img = p.image_url || '';
+        const price = p.price ? `$${p.price.toFixed(2)}` : '';
+        const rating = p.rating ? `⭐ ${p.rating}` : '';
+        const brand = p.brand || '';
+        const url = p.affiliate_url || `/product.html?asin=${p.amazon_asin}`;
+        return `
+          <a href="${url}" class="compat-product" target="_blank" rel="noopener">
+            ${img ? `<img src="${img}" alt="${name}" loading="lazy">` : '<div style="width:48px;height:48px;background:var(--border);border-radius:6px;flex-shrink:0"></div>'}
+            <div class="info">
+              <div class="title">${escHtml(name)}</div>
+              <div class="meta">${brand}${brand && rating ? ' · ' : ''}${rating}</div>
+            </div>
+            ${price ? `<div class="price">${price}</div>` : ''}
+          </a>
+        `;
+      }).join('');
+    }
+
+    function getBestFor(mat) {
+      const map = {
+        'PLA': 'Prototypes, Décor',
+        'PETG': 'Functional Parts',
+        'ABS': 'Enclosures, Housings',
+        'TPU': 'Phone Cases, Gaskets',
+        'Nylon': 'Gears, Hinges',
+        'ASA': 'Outdoor Parts',
+        'Silk': 'Vases, Gifts',
+        'Wood': 'Decorative Pieces',
+        'Carbon Fiber': 'Drone Frames, Jigs',
+        'PC': 'Industrial, Heat',
+        'Resin': 'Miniatures, Jewelry',
+      };
+      return map[mat] || '—';
+    }
+
+    // Printer mode
+    let searchTimeout;
+    function initPrinterSearch() {
+      const input = document.getElementById('printer-search');
+      input.addEventListener('input', () => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => searchPrinters(input.value), 300);
+      });
+    }
+
+    function searchPrinters(query) {
+      const results = document.getElementById('printer-results');
+      if (!query || query.length < 2) {
+        results.innerHTML = '';
+        return;
+      }
+
+      const q = query.toLowerCase();
+      const matched = allPrinters.filter(p => {
+        const name = (p.display_name || p.product_name || '').toLowerCase();
+        const brand = (p.brand || '').toLowerCase();
+        return name.includes(q) || brand.includes(q);
+      }).slice(0, 10);
+
+      if (matched.length === 0) {
+        results.innerHTML = `<div class="empty-state"><div class="big">🔍</div><p>No printers found for "${escHtml(query)}"</p></div>`;
+        return;
+      }
+
+      results.innerHTML = `<div class="product-list">${matched.map(p => {
+        const name = p.display_name || p.product_name;
+        const img = p.image_url || '';
+        const type = p.printer_type || 'Unknown';
+        return `
+          <div class="compat-product" style="cursor:pointer" onclick="showPrinterCompat('${p.id}', '${escHtml(name).replace(/'/g, "\\'")}', '${type}')">
+            ${img ? `<img src="${img}" alt="${name}" loading="lazy">` : '<div style="width:48px;height:48px;background:var(--border);border-radius:6px;flex-shrink:0"></div>'}
+            <div class="info">
+              <div class="title">${escHtml(name)}</div>
+              <div class="meta">${p.brand || ''} · ${type}</div>
+            </div>
+            <div class="price" style="color:var(--text-muted);font-size:0.75rem">→ View Materials</div>
+          </div>
+        `;
+      }).join('')}</div>`;
+    }
+
+    async function showPrinterCompat(id, name, type) {
+      const panel = document.getElementById('printer-compat');
+
+      // Try DB compatibility first
+      let compat = [];
+      try {
+        const res = await fetch(`/api/products/${id}/compatibility`);
+        compat = await res.json();
+      } catch (e) { /* fallback */ }
+
+      // If no DB entries, use defaults based on printer type
+      if (!compat || compat.length === 0) {
+        const isFDM = type === 'FDM' || type === 'Unknown';
+        const isResin = type === 'Resin' || type === 'Resin/SLA';
+        compat = isResin ? RESIN_DEFAULT_COMPAT : FDM_DEFAULT_COMPAT;
+      }
+
+      panel.innerHTML = `
+        <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:1.5rem">
+          <h2 style="font-size:1.1rem;margin-bottom:0.3rem">🖨️ ${name}</h2>
+          <p style="color:var(--text-muted);font-size:0.8rem;margin-bottom:1rem">${compat.length === FDM_DEFAULT_COMPAT.length || compat.length === RESIN_DEFAULT_COMPAT.length ? '⚡ Showing default compatibility (verified data will appear as it\'s added)' : '✅ Verified compatibility data'}</p>
+          <table class="compat-table">
+            <thead>
+              <tr>
+                <th>Material</th>
+                <th>Difficulty</th>
+                <th>Enclosure?</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${compat.map(c => {
+                const meta = MATERIAL_META[c.material] || {};
+                const diffClass = `diff-${c.difficulty || 'easy'}`;
+                return `
+                  <tr>
+                    <td><strong>${meta.emoji || '🧵'} ${c.material}</strong></td>
+                    <td><span class="diff ${diffClass}">${c.difficulty || 'easy'}</span></td>
+                    <td>${c.needs_enclosure ? '⚠️ Yes' : '✅ No'}</td>
+                    <td class="notes">${c.notes || c.upgrade_notes || '—'}</td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    // Tab switching
+    document.querySelectorAll('.mode-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const mode = tab.dataset.mode;
+        document.getElementById('mode-material').style.display = mode === 'material' ? '' : 'none';
+        document.getElementById('mode-printer').style.display = mode === 'printer' ? '' : 'none';
+      });
+    });
+
+    function escHtml(str) {
+      const d = document.createElement('div');
+      d.textContent = str || '';
+      return d.innerHTML;
+    }
+
+    // Theme
+    const saved = localStorage.getItem('theme');
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+
+    // Init
+    initPrinterSearch();
+    init();
+  </script>
+</body>
+</html>
