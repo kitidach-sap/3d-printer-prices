@@ -1698,7 +1698,7 @@ app.post('/api/admin/enrich-products', async (req, res) => {
             .select('*')
             .or('printer_type.is.null,printer_type.eq.Unknown')
             .order('created_at', { ascending: false })
-            .limit(10);
+            .limit(3); // Small batch to fit Vercel timeout
 
         if (error) {
             console.error("Error fetching products:", error);
