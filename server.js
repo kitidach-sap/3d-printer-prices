@@ -2447,6 +2447,194 @@ app.get('/api/products/:id/recommended-gear', async (req, res) => {
 });
 
 // ============================================
+// RECOMMENDATION ENGINE
+// ============================================
+
+// Budget bands mapping
+const BUDGET_BANDS = {
+    'under-100':  { min: 0,    max: 100,  label: 'Budget' },
+    '100-300':    { min: 100,  max: 300,  label: 'Entry-Level' },
+    '300-500':    { min: 300,  max: 500,  label: 'Mid-Range' },
+    '500-1000':   { min: 500,  max: 1000, label: 'Premium' },
+    '1000-plus':  { min: 1000, max: 99999, label: 'Professional' }
+};
+
+// Experience level → what properties matter
+const EXPERIENCE_WEIGHTS = {
+    'beginner':     { beginner_score: 3.0, rating: 2.0, review_count: 1.5 },
+    'intermediate': { rating: 2.0, speed_score: 1.5, material_support: 1.5 },
+    'advanced':     { speed_score: 2.0, material_support: 2.0, maintenance_score: 1.0 },
+    'professional': { speed_score: 1.5, material_support: 2.5, rating: 1.5 }
+};
+
+// Use case → keywords to match in tags
+const USE_CASE_MAP = {
+    'prototyping':  ['FDM', 'Beginner-Friendly', 'High-Speed'],
+    'miniatures':   ['Resin', 'SLA'],
+    'functional':   ['FDM', 'PETG', 'ABS', 'Nylon', 'Direct Drive'],
+    'cosplay':      ['FDM', 'Large Format', 'PLA'],
+    'education':    ['FDM', 'Beginner-Friendly', 'Enclosed', 'Compact'],
+    'business':     ['High-Speed', 'Enclosed', 'Professional', 'Multi-Color'],
+    'hobby':        ['FDM', 'Beginner-Friendly', 'Budget'],
+    'jewelry':      ['Resin', 'SLA'],
+    'dental':       ['Resin', 'SLA', 'Professional']
+};
+
+app.get('/api/recommendations', async (req, res) => {
+    try {
+        const { budget, experience, use_case, materials, printer_type, limit: lim } = req.query;
+        const resultLimit = Math.min(parseInt(lim) || 10, 30);
+
+        // 1. Fetch candidate products
+        let query = supabase.from('products')
+            .select('id, product_name, display_name, brand, price, image_url, rating, review_count, amazon_asin, amazon_url, category, printer_type, material_type, tags, beginner_score, speed_score, maintenance_score, labels')
+            .not('price', 'is', null)
+            .order('rating', { ascending: false, nullsFirst: false });
+
+        // Filter by category
+        if (printer_type === 'FDM' || printer_type === 'Resin') {
+            query = query.eq('category', '3d_printer').eq('printer_type', printer_type);
+        } else if (req.query.category) {
+            query = query.eq('category', req.query.category);
+        } else {
+            query = query.eq('category', '3d_printer');
+        }
+
+        // Budget filter (allow ±20% wiggle room)
+        const band = BUDGET_BANDS[budget];
+        if (band) {
+            query = query.gte('price', band.min * 0.8).lte('price', band.max * 1.2);
+        }
+
+        query = query.limit(50); // Get a pool of candidates
+        const { data: candidates, error } = await query;
+        if (error) throw error;
+
+        if (!candidates || candidates.length === 0) {
+            return res.json({ recommendations: [], query: req.query, message: 'No products match your criteria. Try adjusting your budget or filters.' });
+        }
+
+        // 2. Score each candidate
+        const scored = candidates.map(product => {
+            let score = 0;
+            const reasons = [];
+            const tags = product.tags || {};
+
+            // --- Price fit (30% weight) ---
+            if (band) {
+                const midPoint = (band.min + band.max) / 2;
+                const priceDiff = Math.abs(product.price - midPoint) / midPoint;
+                const priceScore = Math.max(0, 1 - priceDiff) * 30;
+                score += priceScore;
+                if (priceScore > 20) reasons.push(`Great value in your ${band.label} budget`);
+            } else {
+                score += 15; // neutral
+            }
+
+            // --- Rating (25% weight) ---
+            if (product.rating) {
+                const ratingScore = (product.rating / 5) * 25;
+                score += ratingScore;
+                if (product.rating >= 4.5) reasons.push(`Top rated (${product.rating}⭐)`);
+            }
+
+            // --- Experience match (20% weight) ---
+            const expWeights = EXPERIENCE_WEIGHTS[experience];
+            if (expWeights) {
+                let expScore = 0;
+                let maxPossible = 0;
+                if (expWeights.beginner_score && product.beginner_score) {
+                    expScore += (product.beginner_score / 10) * expWeights.beginner_score;
+                    maxPossible += expWeights.beginner_score;
+                    if (product.beginner_score >= 8) reasons.push('Beginner-friendly');
+                }
+                if (expWeights.speed_score && product.speed_score) {
+                    expScore += (product.speed_score / 10) * expWeights.speed_score;
+                    maxPossible += expWeights.speed_score;
+                    if (product.speed_score >= 8) reasons.push('High-speed printing');
+                }
+                if (expWeights.rating && product.rating) {
+                    expScore += (product.rating / 5) * expWeights.rating;
+                    maxPossible += expWeights.rating;
+                }
+                if (expWeights.review_count && product.review_count) {
+                    const revScore = Math.min(product.review_count / 2000, 1);
+                    expScore += revScore * expWeights.review_count;
+                    maxPossible += expWeights.review_count;
+                    if (product.review_count >= 1000) reasons.push('Community-proven');
+                }
+                score += maxPossible > 0 ? (expScore / maxPossible) * 20 : 10;
+            } else {
+                score += 10;
+            }
+
+            // --- Use case match (15% weight) ---
+            const useCaseKeywords = USE_CASE_MAP[use_case] || [];
+            if (useCaseKeywords.length > 0) {
+                const allTagValues = Object.values(tags).flat();
+                const matches = useCaseKeywords.filter(kw => allTagValues.includes(kw));
+                const useCaseScore = (matches.length / useCaseKeywords.length) * 15;
+                score += useCaseScore;
+                if (matches.length > 0) reasons.push(`Matches ${use_case}: ${matches.join(', ')}`);
+            } else {
+                score += 7;
+            }
+
+            // --- Material preference match (bonus) ---
+            if (materials) {
+                const wantedMaterials = materials.split(',');
+                const supportedMaterials = tags.material || [];
+                const matTech = tags.technology || [];
+                const matMatches = wantedMaterials.filter(m => 
+                    supportedMaterials.includes(m) || matTech.includes(m)
+                );
+                if (matMatches.length > 0) {
+                    score += 5;
+                    reasons.push(`Supports ${matMatches.join(', ')}`);
+                }
+            }
+
+            // --- Popularity bonus (10% weight) ---
+            if (product.review_count) {
+                const popScore = Math.min(product.review_count / 5000, 1) * 10;
+                score += popScore;
+            }
+
+            return {
+                ...product,
+                recommendation_score: Math.round(score * 10) / 10,
+                reasons: reasons.length > 0 ? reasons : ['Solid overall choice']
+            };
+        });
+
+        // 3. Sort by score, return top N
+        scored.sort((a, b) => b.recommendation_score - a.recommendation_score);
+        const topPicks = scored.slice(0, resultLimit);
+
+        // 4. Add badges
+        if (topPicks.length > 0) topPicks[0].badge = '🏆 Top Pick';
+        if (topPicks.length > 1) topPicks[1].badge = '🥈 Runner Up';
+        const bestValue = topPicks.reduce((a, b) => 
+            (a.price && b.price && a.recommendation_score / a.price > b.recommendation_score / b.price) ? a : b, topPicks[0]);
+        if (bestValue && bestValue !== topPicks[0]) bestValue.badge = bestValue.badge || '💰 Best Value';
+
+        res.json({
+            recommendations: topPicks,
+            query: { budget, experience, use_case, materials, printer_type },
+            scoring: {
+                price_fit: '30%',
+                rating: '25%',
+                experience_match: '20%',
+                use_case_match: '15%',
+                popularity: '10%'
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ============================================
 // STARTER KITS API
 // ============================================
 

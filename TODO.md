@@ -46,20 +46,22 @@ This living document tracks our journey from being a simple affiliate catalog to
 
 **SEO & Data**
 - [x] Generate model-vs-model landing pages (`compare.html`)
-- [ ] Create database schema for accessories and starter kits (`filaments`, `resins`, `tools`, `replacement parts`, `safety gear`, `enclosures`).
-- [ ] Define recommendation engine rules (budget bands, experience level mapping, use-case mapping, material compatibility scoring).
+- [x] Create database schema for accessories and starter kits (tables: `starter_kits`, `starter_kit_items`, `material_compatibility`).
+- [x] Product tagging system: 10 dimensions (technology, product_type, material, price_range, brand, rating_tier, use_case, accessory_type, deal, popularity). Auto-tags new products.
+- [x] Define recommendation engine rules (`/api/recommendations`): 5-factor scoring — price fit 30%, rating 25%, experience 20%, use-case 15%, popularity 10%. Supports 5 budget bands, 4 experience levels, 9 use cases.
 - [x] Create use-case pages (`best.html?type=beginners` etc).
 
 **UX & Trust**
 - [x] Add saved compare list: Persist selected products via `localStorage` first.
-- [ ] Add methodology and scoring explanation pages (How products are ranked, How beginner score is calculated).
+- [x] Add methodology and scoring explanation pages (`methodology.html`).
+- [x] Recommended gear per printer: Dynamic API (`/api/products/:id/recommended-gear`) with essential + optional items.
 
 ---
 
 ## 🏰 Later (Building the Moat)
 
 **Compatibility & Ecosystem**
-- [ ] Build filament compatibility explorer: Map printers to supported materials, difficulty level, required settings, and upgrade requirements.
+- [x] Build filament compatibility explorer (`compatibility.html`): Browse by Material (11 types) or Browse by Printer.
 - [ ] Build upgrade compatibility database: Track hotends, nozzles, beds, extruders, firmware notes, and compatible upgrade paths by printer model.
 - [ ] Build printer-material-upgrade knowledge graph (This is the PCPartPicker compatibility engine equivalent).
 
