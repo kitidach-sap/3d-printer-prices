@@ -77,19 +77,19 @@ This living document tracks our journey from being a simple affiliate catalog to
 ## 🔧 Technical Debt / Maintenance
 
 **Reliability & Ops**
-- [ ] Reduce scraper fragility.
-- [ ] Improve cron logging and run visibility.
-- [ ] Add retry handling for failed product fetches.
-- [ ] Show failed / skipped products in Admin Dashboard.
+- [x] Reduce scraper fragility: Added `fetchWithRetry()` with exponential backoff (3 retries, 2s base delay).
+- [x] Improve cron logging and run visibility: Data health API shows last 5 cron runs + scraper status.
+- [x] Add retry handling for failed product fetches: `fetchWithRetry()` utility with configurable retries.
+- [x] Show failed / skipped products in Admin Dashboard: `/api/admin/data-health` returns failed products list.
 
 **Performance & SEO**
-- [ ] Reduce loading-state first impression issues on homepage.
-- [ ] Track data freshness timestamps for every product.
-- [ ] Add confidence / completeness score for product records.
-- [ ] Audit thin or low-differentiation programmatic pages regularly.
+- [ ] Reduce loading-state first impression issues on homepage (requires SSR or prerender).
+- [x] Track data freshness timestamps for every product: `/api/admin/data-health` shows freshness stats (updated today/week/stale).
+- [x] Add confidence / completeness score for product records: `computeCompletenessScore()` + `/api/products/:id/completeness` API.
+- [ ] Audit thin or low-differentiation programmatic pages regularly (ongoing ops task).
 
 **Architecture (For Templating Future Sites)**
-- [ ] Separate reusable template logic from niche-specific content.
-- [ ] Create a niche-template config file (`site_name`, `product_category`, `taxonomy_labels`, `scoring_rules`, `blog_prompts`).
-- [ ] Abstract category-specific logic away from scraper and UI.
-- [ ] Define generic scoring framework and reusable compare-page generator.
+- [x] Separate reusable template logic from niche-specific content: `SITE_CONFIG` object with all niche-specific values.
+- [x] Create a niche-template config file: `SITE_CONFIG` contains `site_name`, `product_category`, `taxonomy_labels`, `scoring_rules`, `affiliate_tag`, `scraper` config.
+- [x] Abstract category-specific logic away from scraper and UI: Scoring rules and taxonomy centralized in `SITE_CONFIG`.
+- [x] Define generic scoring framework and reusable compare-page generator: `computeCompletenessScore()` with configurable weights + recommendation engine with pluggable rules.

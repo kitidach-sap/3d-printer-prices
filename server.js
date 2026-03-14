@@ -13,6 +13,64 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY
 );
 
+// ============================================
+// SITE CONFIG (Template Abstraction)
+// ============================================
+const SITE_CONFIG = {
+    site_name: '3D Printer Prices',
+    site_tagline: 'Find the perfect 3D printer for your needs',
+    product_category: '3d_printer',
+    taxonomy_labels: {
+        printer_type: ['FDM', 'Resin', 'Resin/SLA'],
+        categories: ['3d_printer', 'filament', 'resin', 'accessories', '3d_pen'],
+        experience_levels: ['beginner', 'intermediate', 'advanced', 'professional'],
+        use_cases: ['prototyping', 'miniatures', 'functional', 'cosplay', 'education', 'business', 'hobby', 'jewelry', 'dental']
+    },
+    scoring_rules: {
+        beginner_score_max: 10,
+        speed_score_max: 10,
+        completeness_weights: { display_name: 10, brand: 10, price: 15, image_url: 10, rating: 10, review_count: 5, printer_type: 10, specs_json: 15, beginner_score: 5, labels: 5, tags: 5 }
+    },
+    affiliate_tag: 'kiti09-20',
+    scraper: { max_retries: 3, retry_delay_ms: 2000, batch_size: 3 }
+};
+
+// ============================================
+// UTILITY: Completeness Score
+// ============================================
+function computeCompletenessScore(product) {
+    const weights = SITE_CONFIG.scoring_rules.completeness_weights;
+    let score = 0;
+    let maxScore = 0;
+
+    for (const [field, weight] of Object.entries(weights)) {
+        maxScore += weight;
+        const val = product[field];
+        if (val !== null && val !== undefined && val !== '' && val !== 'Unknown') {
+            if (typeof val === 'object' && Object.keys(val).length === 0) continue;
+            if (Array.isArray(val) && val.length === 0) continue;
+            score += weight;
+        }
+    }
+    return Math.round((score / maxScore) * 100);
+}
+
+// ============================================
+// UTILITY: Retry with backoff
+// ============================================
+async function fetchWithRetry(url, options = {}, retries = SITE_CONFIG.scraper.max_retries) {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+            const res = await fetch(url, { ...options, signal: AbortSignal.timeout(30000) });
+            if (res.ok || attempt === retries) return res;
+            console.warn(`Retry ${attempt}/${retries} for ${url} (status: ${res.status})`);
+        } catch (err) {
+            console.warn(`Retry ${attempt}/${retries} for ${url}: ${err.message}`);
+            if (attempt === retries) throw err;
+        }
+        await new Promise(r => setTimeout(r, SITE_CONFIG.scraper.retry_delay_ms * attempt));
+    }
+}
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -2922,6 +2980,100 @@ app.get('/api/admin/system/x-post-history', async (req, res) => {
     }
 });
 
+
+// ============================================
+// DATA HEALTH & FRESHNESS API
+// ============================================
+app.get('/api/admin/data-health', async (req, res) => {
+    try {
+        // 1. Get all products
+        const { data: products, error } = await supabase.from('products')
+            .select('id, product_name, display_name, brand, price, image_url, rating, review_count, printer_type, specs_json, beginner_score, labels, tags, category, scraped_at, updated_at, detail_scraped_at, last_enriched_at, detail_scrape_status');
+        if (error) throw error;
+
+        const now = new Date();
+        const oneDayAgo = new Date(now - 24 * 60 * 60 * 1000);
+        const oneWeekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
+        const oneMonthAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
+
+        // 2. Calculate completeness scores
+        const scores = products.map(p => ({ id: p.id, name: p.display_name || p.product_name, score: computeCompletenessScore(p), category: p.category }));
+        scores.sort((a, b) => a.score - b.score);
+
+        const avgScore = Math.round(scores.reduce((s, p) => s + p.score, 0) / scores.length);
+        const incomplete = scores.filter(s => s.score < 50);
+        const partial = scores.filter(s => s.score >= 50 && s.score < 80);
+        const complete = scores.filter(s => s.score >= 80);
+
+        // 3. Data freshness
+        const freshToday = products.filter(p => p.updated_at && new Date(p.updated_at) > oneDayAgo).length;
+        const freshWeek = products.filter(p => p.updated_at && new Date(p.updated_at) > oneWeekAgo).length;
+        const stale = products.filter(p => !p.updated_at || new Date(p.updated_at) < oneMonthAgo).length;
+
+        // 4. Scraper status
+        const pendingScrape = products.filter(p => p.detail_scrape_status === 'pending').length;
+        const failedScrape = products.filter(p => p.detail_scrape_status === 'failed').length;
+        const notEnriched = products.filter(p => !p.last_enriched_at).length;
+        const noPrices = products.filter(p => !p.price).length;
+
+        // 5. Cron log - most recent
+        const { data: recentLogs } = await supabase.from('scrape_logs')
+            .select('*').order('started_at', { ascending: false }).limit(5);
+
+        res.json({
+            overview: {
+                total_products: products.length,
+                average_completeness: avgScore + '%',
+                complete: complete.length,
+                partial: partial.length,
+                incomplete: incomplete.length
+            },
+            freshness: {
+                updated_today: freshToday,
+                updated_this_week: freshWeek,
+                stale_30d: stale,
+                no_price: noPrices
+            },
+            scraper: {
+                pending: pendingScrape,
+                failed: failedScrape,
+                not_enriched: notEnriched,
+                failed_products: products.filter(p => p.detail_scrape_status === 'failed').map(p => ({
+                    id: p.id, name: p.display_name || p.product_name
+                })).slice(0, 10)
+            },
+            needs_attention: incomplete.slice(0, 15),
+            recent_cron_logs: recentLogs || [],
+            site_config: SITE_CONFIG
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Completeness score for a single product
+app.get('/api/products/:id/completeness', async (req, res) => {
+    try {
+        const { data, error } = await supabase.from('products')
+            .select('*').eq('id', req.params.id).single();
+        if (error) throw error;
+
+        const score = computeCompletenessScore(data);
+        const weights = SITE_CONFIG.scoring_rules.completeness_weights;
+        const breakdown = {};
+        for (const [field, weight] of Object.entries(weights)) {
+            const val = data[field];
+            const filled = val !== null && val !== undefined && val !== '' && val !== 'Unknown' 
+                && !(typeof val === 'object' && Object.keys(val).length === 0)
+                && !(Array.isArray(val) && val.length === 0);
+            breakdown[field] = { weight, filled, value: filled ? (typeof val === 'object' ? 'set' : val) : null };
+        }
+
+        res.json({ score, breakdown, max: 100 });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
 // ============================================
 // COMMUNITY & RETENTION APIs
