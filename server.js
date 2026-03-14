@@ -2128,6 +2128,138 @@ app.post('/api/admin/fetch-details', async (req, res) => {
     }
 });
 
+// ============================================
+// STARTER KITS API
+// ============================================
+
+// List all published starter kits
+app.get('/api/starter-kits', async (req, res) => {
+    try {
+        const { use_case, printer_type } = req.query;
+        let query = supabase.from('starter_kits')
+            .select('*')
+            .eq('is_published', true)
+            .order('estimated_total', { ascending: true });
+
+        if (use_case) query = query.eq('use_case', use_case);
+        if (printer_type) query = query.eq('printer_type', printer_type);
+
+        const { data, error } = await query;
+        if (error) throw error;
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get single starter kit with items + product details
+app.get('/api/starter-kits/:slug', async (req, res) => {
+    try {
+        const { data: kit, error: kitErr } = await supabase
+            .from('starter_kits')
+            .select('*')
+            .eq('slug', req.params.slug)
+            .eq('is_published', true)
+            .single();
+
+        if (kitErr || !kit) return res.status(404).json({ error: 'Kit not found' });
+
+        // Get items with product details
+        const { data: items, error: itemErr } = await supabase
+            .from('starter_kit_items')
+            .select('*, products(id, product_name, display_name, brand, price, image_url, rating, review_count, amazon_asin, affiliate_url)')
+            .eq('kit_id', kit.id)
+            .order('sort_order', { ascending: true });
+
+        if (itemErr) throw itemErr;
+
+        // Calculate total from actual prices
+        let total = 0;
+        const enrichedItems = (items || []).map(item => {
+            const price = item.products?.price || item.custom_price || 0;
+            total += price;
+            return {
+                ...item,
+                resolved_name: item.products?.display_name || item.products?.product_name || item.custom_name || item.label,
+                resolved_price: price,
+                resolved_image: item.products?.image_url || null,
+                resolved_url: item.products?.affiliate_url || item.custom_url || null,
+            };
+        });
+
+        res.json({ ...kit, items: enrichedItems, calculated_total: total });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get material compatibility for a product
+app.get('/api/products/:id/compatibility', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('material_compatibility')
+            .select('*')
+            .eq('product_id', req.params.id)
+            .order('difficulty', { ascending: true });
+
+        if (error) throw error;
+        res.json(data || []);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Admin: Create/update starter kit
+app.post('/api/admin/starter-kits', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
+    try {
+        const { kit, items } = req.body;
+        if (!kit || !kit.name || !kit.slug) {
+            return res.status(400).json({ error: 'Kit name and slug required' });
+        }
+
+        // Upsert kit
+        const { data: savedKit, error: kitErr } = await supabase
+            .from('starter_kits')
+            .upsert({ ...kit, updated_at: new Date().toISOString() }, { onConflict: 'slug' })
+            .select()
+            .single();
+
+        if (kitErr) throw kitErr;
+
+        // Replace items if provided
+        if (items && Array.isArray(items)) {
+            await supabase.from('starter_kit_items').delete().eq('kit_id', savedKit.id);
+            const itemsWithKit = items.map((item, i) => ({ ...item, kit_id: savedKit.id, sort_order: i }));
+            const { error: itemErr } = await supabase.from('starter_kit_items').insert(itemsWithKit);
+            if (itemErr) throw itemErr;
+        }
+
+        res.json({ success: true, kit: savedKit });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Admin: Add material compatibility
+app.post('/api/admin/material-compatibility', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
+    try {
+        const entries = req.body;
+        if (!Array.isArray(entries) || entries.length === 0) {
+            return res.status(400).json({ error: 'Array of compatibility entries required' });
+        }
+        const { data, error } = await supabase
+            .from('material_compatibility')
+            .upsert(entries, { onConflict: 'product_id,material' })
+            .select();
+        if (error) throw error;
+        res.json({ success: true, count: data.length });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.post('/api/admin/system/x-post-status', async (req, res) => {
     if (!verifyAdmin(req, res)) return;
     try {
