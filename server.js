@@ -1696,7 +1696,7 @@ app.post('/api/admin/enrich-products', async (req, res) => {
         const { data: productsToEnrich, error } = await supabase
             .from('products')
             .select('*')
-            .or('printer_type.is.null,printer_type.eq.Unknown')
+            .is('last_enriched_at', null)
             .order('created_at', { ascending: false })
             .limit(3); // Small batch to fit Vercel timeout
 
@@ -1870,7 +1870,7 @@ CRITICAL: Return ONLY valid JSON array, no markdown.`;
             }
 
             // Re-check count
-            const { count: remainingCount } = await supabase.from('products').select('*', { count: 'exact', head: true }).or('printer_type.is.null,printer_type.eq.Unknown');
+            const { count: remainingCount } = await supabase.from('products').select('*', { count: 'exact', head: true }).is('last_enriched_at', null);
 
             res.json({
                 success: true,
