@@ -1665,10 +1665,10 @@ app.get('/blog/:slug', async (req, res, next) => {
     }
 });
 
-// Fallback to index.html for SPA — skip files with extensions (.xml, .txt, etc.)
+// Fallback to index.html for SPA — skip files with extensions and API routes
 app.get('/{*path}', (req, res, next) => {
-    if (path.extname(req.path)) {
-        return next(); // Let static middleware handle real files
+    if (path.extname(req.path) || req.path.startsWith('/api/')) {
+        return next(); // Let API handlers or static middleware handle these
     }
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
