@@ -1950,11 +1950,11 @@ app.post('/api/admin/fetch-details', async (req, res) => {
                 continue;
             }
 
-            const detailUrl = `https://www.amazon.com/dp/${asin}`;
-            const scraperUrl = `http://api.scraperapi.com?api_key=${scraperApiKey}&url=${encodeURIComponent(detailUrl)}&render=true&country_code=us`;
+            // Use ScraperAPI Structured Data API (purpose-built for Amazon, returns JSON)
+            const scraperUrl = `https://api.scraperapi.com/structured/amazon/product/${asin}?api_key=${scraperApiKey}&country=us&tld=.com`;
 
             try {
-                console.log(`   🌐 Fetching: ${asin}...`);
+                console.log(`   🌐 Fetching: ${asin} (structured API)...`);
 
                 const controller = new AbortController();
                 const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
@@ -1968,100 +1968,45 @@ app.post('/api/admin/fetch-details', async (req, res) => {
                     throw { type: 'fetch', httpStatus, message: `HTTP ${httpStatus}` };
                 }
 
-                const html = await response.text();
-                const $ = cheerio.load(html);
+                const data = await response.json();
 
-                // --- Parse each field with fallback ---
+                // --- Map structured API fields ---
+                const detailTitle = data.name || null;
+                const detailBrand = data.brand || null;
+                const imageUrl = data.images && data.images.length > 0 ? data.images[0] : (data.image || null);
 
-                // Title
-                let detailTitle = $('#productTitle').text().trim() || $('#title').text().trim() || null;
-
-                // Brand
-                let detailBrand = null;
-                const bylineEl = $('#bylineInfo a, #bylineInfo span').first();
-                if (bylineEl.length) {
-                    detailBrand = bylineEl.text().replace(/^(Visit the |Brand: )/i, '').trim();
-                }
-                if (!detailBrand) {
-                    // Fallback: product details table
-                    $('#productDetails_techSpec_section_1 tr, #productDetails_detailBullets_sections1 tr, #detailBullets_feature_div li').each((_, el) => {
-                        const text = $(el).text();
-                        if (text.match(/brand/i) && !detailBrand) {
-                            detailBrand = text.replace(/.*brand[:\s]*/i, '').trim();
-                        }
-                    });
-                }
-
-                // Image
-                let imageUrl = null;
-                const landingImg = $('#landingImage, #imgTagWrapperId img, #imgBlkFront').first();
-                if (landingImg.length) {
-                    // Prefer data-old-hires (highest res), then src
-                    imageUrl = landingImg.attr('data-old-hires') || landingImg.attr('src') || null;
-                }
-
-                // Price
+                // Price parsing
                 let price = null;
-                const priceEl = $('.a-price .a-offscreen, #priceblock_ourprice, #corePrice_feature_div .a-offscreen').first();
-                if (priceEl.length) {
-                    const priceText = priceEl.text().replace(/[^0-9.,]/g, '').replace(/,/g, '');
-                    price = parseFloat(priceText) || null;
+                if (data.pricing) {
+                    price = parseFloat(data.pricing) || null;
+                } else if (data.price) {
+                    const priceStr = String(data.price).replace(/[^0-9.]/g, '');
+                    price = parseFloat(priceStr) || null;
                 }
 
-                // Original price
                 let originalPrice = null;
-                const origPriceEl = $('.a-text-price .a-offscreen, #priceblock_dealprice, .basisPrice .a-offscreen').first();
-                if (origPriceEl.length) {
-                    const origText = origPriceEl.text().replace(/[^0-9.,]/g, '').replace(/,/g, '');
-                    originalPrice = parseFloat(origText) || null;
+                if (data.initial_price) {
+                    const origStr = String(data.initial_price).replace(/[^0-9.]/g, '');
+                    originalPrice = parseFloat(origStr) || null;
+                } else if (data.list_price) {
+                    const origStr = String(data.list_price).replace(/[^0-9.]/g, '');
+                    originalPrice = parseFloat(origStr) || null;
                 }
 
-                // Rating
-                let rating = null;
-                const ratingEl = $('#acrPopover .a-icon-alt, .a-star-4-5, .a-star-4, .a-star-5').first();
-                if (ratingEl.length) {
-                    const ratingText = ratingEl.text() || ratingEl.attr('title') || '';
-                    const ratingMatch = ratingText.match(/([\d.]+)/);
-                    if (ratingMatch) rating = parseFloat(ratingMatch[1]);
-                }
+                // Rating & reviews
+                const rating = data.average_rating ? parseFloat(data.average_rating) : null;
+                const reviewCount = data.total_reviews ? parseInt(String(data.total_reviews).replace(/[^0-9]/g, '')) : null;
 
-                // Review count
-                let reviewCount = null;
-                const reviewEl = $('#acrCustomerReviewText, #ratings-summary .a-size-base').first();
-                if (reviewEl.length) {
-                    const reviewText = reviewEl.text().replace(/[,.\s]/g, '');
-                    const reviewMatch = reviewText.match(/(\d+)/);
-                    if (reviewMatch) reviewCount = parseInt(reviewMatch[1]);
-                }
+                // Features
+                const features = data.feature_bullets || [];
 
-                // Feature bullets
-                let features = [];
-                $('#feature-bullets ul li span.a-list-item, .a-unordered-list .a-list-item').each((_, el) => {
-                    const text = $(el).text().trim();
-                    if (text.length > 10 && text.length < 500 && !text.includes('Make sure this fits')) {
-                        features.push(text);
-                    }
-                });
-
-                // Tech specs table → specs_json
+                // Specs
                 let specsFromPage = {};
-                $('#productDetails_techSpec_section_1 tr').each((_, el) => {
-                    const key = $(el).find('th').text().trim();
-                    const val = $(el).find('td').text().trim();
-                    if (key && val) specsFromPage[key] = val;
-                });
-                // Fallback: detail bullets
-                if (Object.keys(specsFromPage).length === 0) {
-                    $('#detailBullets_feature_div li, #productDetails_detailBullets_sections1 li').each((_, el) => {
-                        const text = $(el).text().trim();
-                        const parts = text.split(/\s*[:\u200F]\s*/);
-                        if (parts.length >= 2) {
-                            specsFromPage[parts[0].trim()] = parts.slice(1).join(':').trim();
-                        }
-                    });
+                if (data.product_information && typeof data.product_information === 'object') {
+                    specsFromPage = data.product_information;
                 }
 
-                // Extract build volume from specs or features
+                // Build volume from specs
                 let buildVolume = null;
                 const bvSpec = specsFromPage['Build Volume'] || specsFromPage['Print Size'] || specsFromPage['Printing Size'];
                 if (bvSpec) {
@@ -2079,7 +2024,7 @@ app.post('/api/admin/fetch-details', async (req, res) => {
                     detail_scraped_at: new Date().toISOString(),
                     detail_http_status: httpStatus,
                     detail_last_error: null,
-                    detail_page_url: detailUrl,
+                    detail_page_url: `https://www.amazon.com/dp/${asin}`,
                     detail_title: detailTitle,
                     detail_brand: detailBrand,
                     price_last_seen_at: new Date().toISOString(),
@@ -2089,14 +2034,12 @@ app.post('/api/admin/fetch-details', async (req, res) => {
                 if (detailTitle) {
                     const existingNameSource = product.display_name_source;
                     if (existingNameSource !== 'manual') {
-                        // Use detail title as display_name (it's usually cleaner)
-                        // But still keep it as-is from Amazon detail page — conservative approach
                         updateObj.display_name = detailTitle;
                         updateObj.display_name_source = 'detail';
                     }
                 }
 
-                // Brand: overwrite if source is NOT 'manual' or 'detail' (already)
+                // Brand: overwrite if source is NOT 'manual'
                 if (detailBrand && detailBrand.trim() !== '') {
                     const existingBrandSource = product.brand_source;
                     if (existingBrandSource !== 'manual') {
@@ -2145,7 +2088,7 @@ app.post('/api/admin/fetch-details', async (req, res) => {
                 // Per-product error isolation
                 const isAbort = err.name === 'AbortError';
                 const errorType = err.type === 'fetch' ? 'fetch' : (isAbort ? 'timeout' : 'parse');
-                const errorMsg = isAbort ? 'Request timed out (15s)' : (err.message || String(err));
+                const errorMsg = isAbort ? 'Request timed out (30s)' : (err.message || String(err));
                 const httpStatus = err.httpStatus || null;
 
                 await supabase.from('products').update({
