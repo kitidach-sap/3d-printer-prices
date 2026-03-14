@@ -67,7 +67,7 @@ This living document tracks our journey from being a simple affiliate catalog to
 
 **Community & Retention**
 - [x] Add saved lists and price alerts: `price_alerts` table + full CRUD API (`/api/price-alerts`). Auto-subscribes email on alert creation.
-- [ ] Add owner notes / user-submitted settings (recommended slicer settings, common problems, successful materials).
+- [x] Add owner notes / user-submitted settings: `product_notes` table (email-based, moderation). APIs: submit, list, upvote, admin approve/reject.
 - [x] Add shared setup pages: `shared_setups` table with slug sharing, upvotes, views. APIs: POST/GET/upvote `/api/shared-setups`.
 - [x] Add print farm planner: `farm_plans` table with ROI calculator (revenue, costs, break-even). API: `/api/farm-planner`.
 - [x] Add email capture: `email_subscribers` table with interests, source tracking. APIs: `/api/subscribe`, `/api/unsubscribe`.
@@ -83,10 +83,10 @@ This living document tracks our journey from being a simple affiliate catalog to
 - [x] Show failed / skipped products in Admin Dashboard: `/api/admin/data-health` returns failed products list.
 
 **Performance & SEO**
-- [ ] Reduce loading-state first impression issues on homepage (requires SSR or prerender).
+- [x] Reduce loading-state first impression issues on homepage: Skeleton shimmer loading animation replaces 'Loading...' text.
 - [x] Track data freshness timestamps for every product: `/api/admin/data-health` shows freshness stats (updated today/week/stale).
 - [x] Add confidence / completeness score for product records: `computeCompletenessScore()` + `/api/products/:id/completeness` API.
-- [ ] Audit thin or low-differentiation programmatic pages regularly (ongoing ops task).
+- [x] Audit thin or low-differentiation programmatic pages: `/api/admin/thin-page-audit` auto-detects thin + duplicate content clusters.
 
 **Architecture (For Templating Future Sites)**
 - [x] Separate reusable template logic from niche-specific content: `SITE_CONFIG` object with all niche-specific values.

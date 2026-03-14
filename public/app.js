@@ -216,7 +216,21 @@ async function loadFilters() {
 // ============================================
 async function loadProducts() {
     const tbody = document.getElementById('products-body');
-    tbody.innerHTML = '<tr><td colspan="7" class="loading">Loading...</td></tr>';
+    // Skeleton loading — 6 placeholder rows with shimmer
+    tbody.innerHTML = Array.from({ length: 6 }, () => `
+        <tr class="skeleton-row">
+            <td class="product-name"><div style="display:flex;align-items:center;gap:1rem;">
+                <div class="skeleton-box" style="width:50px;height:50px;border-radius:8px;"></div>
+                <div style="flex:1;"><div class="skeleton-box" style="width:80%;height:14px;margin-bottom:6px;"></div><div class="skeleton-box" style="width:50%;height:10px;"></div></div>
+            </div></td>
+            <td><div class="skeleton-box" style="width:60px;height:14px;"></div></td>
+            <td><div class="skeleton-box" style="width:50px;height:14px;"></div></td>
+            <td><div class="skeleton-box" style="width:70px;height:14px;"></div></td>
+            <td><div class="skeleton-box" style="width:40px;height:14px;"></div></td>
+            <td><div class="skeleton-box" style="width:40px;height:14px;"></div></td>
+            <td><div class="skeleton-box" style="width:80px;height:28px;border-radius:4px;"></div></td>
+        </tr>
+    `).join('');
 
     try {
         const params = new URLSearchParams({

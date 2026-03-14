@@ -3327,6 +3327,154 @@ app.get('/api/farm-planner/:slug', async (req, res) => {
     }
 });
 
+
+// ============================================
+// OWNER NOTES / USER-SUBMITTED SETTINGS
+// ============================================
+
+// Submit a note (email-based, goes to moderation)
+app.post('/api/products/:id/notes', async (req, res) => {
+    try {
+        const { author_email, author_name, note_type, title, content, metadata } = req.body;
+        if (!author_email || !content) return res.status(400).json({ error: 'Email and content required' });
+
+        const { data, error } = await supabase.from('product_notes').insert({
+            product_id: req.params.id,
+            author_email: author_email.toLowerCase().trim(),
+            author_name: author_name || 'Anonymous',
+            note_type: note_type || 'tip',
+            title,
+            content,
+            metadata: metadata || {},
+            is_approved: false // moderation required
+        }).select().single();
+        if (error) throw error;
+
+        res.json({ success: true, note: data, message: 'Your note has been submitted for review. It will appear after moderation.' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get approved notes for a product
+app.get('/api/products/:id/notes', async (req, res) => {
+    try {
+        const { note_type } = req.query;
+        let query = supabase.from('product_notes')
+            .select('id, author_name, note_type, title, content, metadata, upvotes, created_at')
+            .eq('product_id', req.params.id)
+            .eq('is_approved', true)
+            .order('upvotes', { ascending: false });
+        if (note_type) query = query.eq('note_type', note_type);
+
+        const { data, error } = await query;
+        if (error) throw error;
+        res.json({ notes: data || [] });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Upvote a note
+app.post('/api/notes/:id/upvote', async (req, res) => {
+    try {
+        const { data } = await supabase.from('product_notes').select('upvotes').eq('id', req.params.id).single();
+        if (data) {
+            await supabase.from('product_notes').update({ upvotes: (data.upvotes || 0) + 1 }).eq('id', req.params.id);
+        }
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Admin: list pending notes for moderation
+app.get('/api/admin/notes/pending', async (req, res) => {
+    try {
+        const { data, error } = await supabase.from('product_notes')
+            .select('*, product:products(id, display_name, product_name)')
+            .eq('is_approved', false)
+            .order('created_at', { ascending: false });
+        if (error) throw error;
+        res.json({ notes: data || [] });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Admin: approve/reject a note
+app.patch('/api/admin/notes/:id', async (req, res) => {
+    try {
+        const { is_approved } = req.body;
+        if (is_approved) {
+            await supabase.from('product_notes').update({ is_approved: true, updated_at: new Date().toISOString() }).eq('id', req.params.id);
+        } else {
+            await supabase.from('product_notes').delete().eq('id', req.params.id);
+        }
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ============================================
+// THIN PAGE AUDIT (Automated)
+// ============================================
+app.get('/api/admin/thin-page-audit', async (req, res) => {
+    try {
+        const { data: products, error } = await supabase.from('products')
+            .select('id, product_name, display_name, brand, price, rating, review_count, category, printer_type, specs_json, beginner_score, labels, tags, image_url');
+        if (error) throw error;
+
+        const thinPages = [];
+        const lowDiffPages = {};
+
+        products.forEach(p => {
+            const score = computeCompletenessScore(p);
+            const name = p.display_name || p.product_name || '';
+
+            // Thin: low completeness = thin content
+            if (score < 40) {
+                thinPages.push({ id: p.id, name, score, issue: 'Very incomplete data — thin content' });
+            } else if (score < 60 && !p.specs_json) {
+                thinPages.push({ id: p.id, name, score, issue: 'Missing specs — limited differentiation' });
+            }
+
+            // Low differentiation: group by brand+category and flag if >3 similar products
+            const key = `${(p.brand || 'unknown').toLowerCase()}_${p.category || 'unknown'}`;
+            if (!lowDiffPages[key]) lowDiffPages[key] = [];
+            lowDiffPages[key].push({ id: p.id, name, score });
+        });
+
+        // Find clusters with low differentiation
+        const duplicateClusters = Object.entries(lowDiffPages)
+            .filter(([, items]) => items.length > 3)
+            .map(([key, items]) => ({
+                group: key,
+                count: items.length,
+                products: items.slice(0, 5),
+                risk: 'Multiple similar products may create thin/duplicate content'
+            }));
+
+        res.json({
+            summary: {
+                total_products: products.length,
+                thin_pages: thinPages.length,
+                duplicate_clusters: duplicateClusters.length
+            },
+            thin_pages: thinPages.slice(0, 30),
+            duplicate_clusters: duplicateClusters,
+            recommendations: [
+                thinPages.length > 10 ? 'Consider enriching or hiding products with completeness < 40%' : null,
+                duplicateClusters.length > 0 ? 'Consider consolidating or differentiating products in large brand clusters' : null,
+                'Run this audit monthly to catch new thin pages'
+            ].filter(Boolean)
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Start server
 // Start server (only when running locally, not on Vercel)
 if (process.env.VERCEL !== '1') {
