@@ -1,0 +1,167 @@
+{
+  "content_system": {
+    "version": "1.0.0",
+    "purpose": "Content design rules for UI copy, labels, helper text, metadata, card summaries, and structured page messaging.",
+    "principles": [
+      "Content must reduce confusion and support action.",
+      "Use clear, literal wording over clever wording.",
+      "Write for scanning first, then detail.",
+      "Keep labels and helper text short but specific.",
+      "The same concept should use the same wording across the product."
+    ],
+    "voice_and_tone": {
+      "style": [
+        "clear",
+        "direct",
+        "practical",
+        "calm"
+      ],
+      "avoid": [
+        "hype-heavy marketing language",
+        "unclear metaphors",
+        "filler phrases",
+        "overly technical jargon when simpler words exist"
+      ]
+    },
+    "ui_copy": {
+      "rules": [
+        "Buttons should use action-oriented wording.",
+        "Labels should describe the field or action plainly.",
+        "Helper text should clarify ambiguity, not repeat the label.",
+        "Empty, loading, error, and success messages must follow a consistent pattern."
+      ]
+    },
+    "naming_consistency": {
+      "rules": [
+        "Use one canonical name for each important concept.",
+        "Do not alternate between similar labels such as Catalog/Products/Printers unless meaning truly differs.",
+        "Keep CTA wording and navigation wording aligned."
+      ]
+    },
+    "headlines": {
+      "rules": [
+        "Headlines must quickly explain purpose or value.",
+        "Avoid vague or overly clever headlines.",
+        "Use shorter headlines for utility pages and dashboards.",
+        "Use stronger value framing for public landing sections."
+      ]
+    },
+    "body_copy": {
+      "rules": [
+        "Paragraphs should be short and readable.",
+        "Break dense information into bullets or grouped sections when helpful.",
+        "Avoid long uninterrupted text blocks in UI surfaces."
+      ]
+    },
+    "microcopy": {
+      "labels": [
+        "Must be specific, short, and predictable."
+      ],
+      "helper_text": [
+        "Must explain format, consequence, or intent."
+      ],
+      "status_messages": [
+        "Must explain what happened and what to do next when relevant."
+      ],
+      "empty_states": [
+        "Must explain why nothing is shown and what to do next."
+      ]
+    },
+    "card_content": {
+      "rules": [
+        "Card titles should be concise.",
+        "Card descriptions should be 1 to 3 short lines when possible.",
+        "Metadata should remain visually secondary.",
+        "Do not overload cards with too many competing messages."
+      ]
+    },
+    "ranking_content": {
+      "rules": [
+        "Rank labels such as #1 or #2 should support hierarchy, not dominate it.",
+        "Product titles should remain the key content anchor.",
+        "Summary text should explain why the item is ranked well in 1 to 2 short lines."
+      ]
+    },
+    "compare_content": {
+      "rules": [
+        "Specification labels must be short and recognizable.",
+        "Values should be easy to scan.",
+        "Internal actions and outbound actions must use clearly different copy."
+      ]
+    },
+    "calculator_content": {
+      "rules": [
+        "Input labels must explain what value is expected.",
+        "Units must be shown where relevant.",
+        "Result labels must make cost meaning obvious.",
+        "Supporting explanation should be short and confidence-building."
+      ]
+    },
+    "admin_content": {
+      "rules": [
+        "Admin labels should prioritize speed and accuracy.",
+        "Action wording should be literal and consequence-aware.",
+        "Status text should be operational, not promotional."
+      ]
+    },
+    "legal_and_info_pages": {
+      "rules": [
+        "Use plain language where possible.",
+        "Break long legal text into clear sections and subheadings.",
+        "Use bullet lists when clarity improves."
+      ]
+    },
+    "metadata": {
+      "rules": [
+        "Metadata such as date, author, category, or status should be compact and secondary.",
+        "Metadata should never visually outrank the main title."
+      ]
+    },
+    "lists": {
+      "rules": [
+        "Use lists when scanning is more useful than prose.",
+        "List items should be parallel in structure where possible."
+      ]
+    },
+    "error_copy": {
+      "rules": [
+        "State what failed.",
+        "Say what the user can try next.",
+        "Avoid generic messages unless no more detail is safe or useful."
+      ]
+    },
+    "success_copy": {
+      "rules": [
+        "Confirm the completed action clearly.",
+        "Keep routine success messages brief."
+      ]
+    },
+    "cta_copy": {
+      "rules": [
+        "Use outcome-focused action verbs.",
+        "Keep labels concise.",
+        "Do not use vague wording like 'Click Here' or 'Continue' without context."
+      ]
+    },
+    "seo_and_scanability": {
+      "rules": [
+        "Use descriptive headings.",
+        "Keep important terms visible near the start of labels and headings.",
+        "Support scanability with clear section naming."
+      ]
+    },
+    "anti_patterns": [
+      "Switching terminology across pages",
+      "Overly long button labels",
+      "Helper text that repeats the label without adding value",
+      "Generic empty/error messages with no recovery path",
+      "Cards stuffed with too much text",
+      "Dashboard language that sounds like marketing copy"
+    ],
+    "implementation_notes_for_ai": [
+      "Use the same wording for the same concept everywhere.",
+      "Prefer clarity and scanability over cleverness.",
+      "When rewriting copy, preserve existing user intent and IA structure unless the wording is genuinely confusing."
+    ]
+  }
+}

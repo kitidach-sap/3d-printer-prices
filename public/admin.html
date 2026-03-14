@@ -9,495 +9,36 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <style>
-        .admin-wrap {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 1.5rem;
-        }
-
-        .admin-title {
-            font-size: 1.5rem;
-            font-weight: 800;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        /* Tabs */
-        .admin-tabs {
-            display: flex;
-            gap: 0.25rem;
-            margin-bottom: 1.5rem;
-            border-bottom: 2px solid var(--border);
-            overflow-x: auto;
-        }
-
-        .admin-tab {
-            padding: 0.6rem 1.2rem;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            border: none;
-            background: none;
-            border-bottom: 3px solid transparent;
-            transition: all 0.2s;
-            white-space: nowrap;
-        }
-
-        .admin-tab:hover {
-            color: var(--text-primary);
-        }
-
-        .admin-tab.active {
-            color: var(--accent);
-            border-bottom-color: var(--accent);
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        /* Cards */
-        .admin-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 1.25rem;
-            margin-bottom: 1rem;
-        }
-
-        .admin-card h3 {
-            font-size: 0.95rem;
-            margin-bottom: 1rem;
-            color: var(--accent);
-        }
-
-        /* Grid info */
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 0.75rem;
-            margin-bottom: 1rem;
-        }
-
-        .info-item {
-            display: flex;
-            flex-direction: column;
-            gap: 0.15rem;
-        }
-
-        .info-label {
-            font-size: 0.65rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .info-value {
-            font-size: 1.1rem;
-            font-weight: 700;
-        }
-
-        /* Buttons */
-        .btn {
-            border: none;
-            border-radius: var(--radius-sm);
-            padding: 0.6rem 1.2rem;
-            font-size: 0.85rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-        }
-
-        .btn:hover {
-            transform: translateY(-1px);
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--accent), #0891b2);
-            color: white;
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, var(--success), #059669);
-            color: white;
-        }
-
-        .btn-warning {
-            background: linear-gradient(135deg, var(--warning), #d97706);
-            color: white;
-        }
-
-        .btn-danger {
-            background: var(--danger);
-            color: white;
-        }
-
-        .btn.running {
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.7;
-            }
-        }
-
-        /* Tables */
-        .admin-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.8rem;
-        }
-
-        .admin-table th {
-            text-align: left;
-            padding: 0.45rem 0.6rem;
-            color: var(--text-muted);
-            font-size: 0.68rem;
-            text-transform: uppercase;
-            border-bottom: 2px solid var(--border);
-        }
-
-        .admin-table td {
-            padding: 0.45rem 0.6rem;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .status-success {
-            color: var(--success);
-            font-weight: 600;
-        }
-
-        .status-failed {
-            color: var(--danger);
-            font-weight: 600;
-        }
-
-        .status-partial {
-            color: var(--warning);
-            font-weight: 600;
-        }
-
-        /* Forms */
-        .form-group {
-            margin-bottom: 0.75rem;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin-bottom: 0.3rem;
-        }
-
-        .form-input,
-        .form-select,
-        .form-textarea {
-            width: 100%;
-            padding: 0.5rem 0.75rem;
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--border);
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            font-size: 0.85rem;
-            font-family: inherit;
-        }
-
-        .form-textarea {
-            min-height: 120px;
-            resize: vertical;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.75rem;
-        }
-
-        #status-msg,
-        #blog-status {
-            margin-top: 0.5rem;
-            font-size: 0.82rem;
-            color: var(--text-secondary);
-        }
-
-        /* Blog list */
-        .blog-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.6rem 0;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .blog-item-title {
-            font-weight: 600;
-            font-size: 0.85rem;
-        }
-
-        .blog-item-meta {
-            font-size: 0.72rem;
-            color: var(--text-muted);
-        }
-
-        /* Login */
-        .login-overlay {
-            position: fixed;
-            inset: 0;
-            background: var(--bg-primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 999;
-        }
-
-        .login-box {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 2rem;
-            text-align: center;
-            max-width: 340px;
-            width: 100%;
-        }
-
-        .login-box h2 {
-            margin-bottom: 1rem;
-        }
-
-        .login-box input {
-            width: 100%;
-            padding: 0.6rem 1rem;
-            margin-bottom: 0.75rem;
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--border);
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            font-size: 0.9rem;
-        }
-
-        .login-box button {
-            width: 100%;
-            padding: 0.6rem;
-            background: var(--accent);
-            color: white;
-            border: none;
-            border-radius: var(--radius-sm);
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .schedule-row {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-top: 0.75rem;
-            font-size: 0.85rem;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 0.1rem 0.4rem;
-            border-radius: 999px;
-            font-size: 0.68rem;
-            font-weight: 600;
-        }
-
-        .badge-active {
-            background: rgba(16, 185, 129, 0.15);
-            color: var(--success);
-            border: 1px solid var(--success);
-        }
-
-        .badge-cron {
-            background: var(--accent-glow);
-            color: var(--accent);
-            border: 1px solid var(--accent);
-        }
-
-        @media (max-width: 600px) {
-            .admin-wrap {
-                padding: 0.75rem;
-            }
-
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-
-            .info-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        /* Live progress log */
-        .progress-panel {
-            background: #0d1117;
-            border: 1px solid #30363d;
-            border-radius: var(--radius);
-            padding: 0.75rem;
-            max-height: 350px;
-            overflow-y: auto;
-            font-family: 'Courier New', monospace;
-            font-size: 0.72rem;
-            line-height: 1.6;
-        }
-
-        .progress-panel::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .progress-panel::-webkit-scrollbar-thumb {
-            background: #30363d;
-            border-radius: 3px;
-        }
-
-        .log-entry {
-            padding: 0.1rem 0;
-            border-bottom: 1px solid rgba(48, 54, 61, 0.3);
-        }
-
-        .log-time {
-            color: #6e7681;
-            margin-right: 0.4rem;
-        }
-
-        .log-type {
-            display: inline-block;
-            padding: 0 0.3rem;
-            border-radius: 3px;
-            font-size: 0.65rem;
-            font-weight: 700;
-            margin-right: 0.3rem;
-        }
-
-        .log-start {
-            background: #1f6feb33;
-            color: #58a6ff;
-        }
-
-        .log-search {
-            background: #1f6feb22;
-            color: #79c0ff;
-        }
-
-        .log-parse {
-            background: #8b949e22;
-            color: #8b949e;
-        }
-
-        .log-extract {
-            background: #3fb95022;
-            color: #3fb950;
-        }
-
-        .log-save {
-            background: #3fb95033;
-            color: #56d364;
-        }
-
-        .log-warn {
-            background: #d2992233;
-            color: #e3b341;
-        }
-
-        .log-error {
-            background: #f8514933;
-            color: #f85149;
-        }
-
-        .log-done {
-            background: #3fb95044;
-            color: #56d364;
-            font-weight: 700;
-        }
-
-        .log-msg {
-            color: #c9d1d9;
-        }
-
-        .progress-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.5rem;
-        }
-
-        .progress-header h3 {
-            margin-bottom: 0;
-        }
-
-        .blinking-dot {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #3fb950;
-            animation: blink 1s infinite;
-        }
-
-        @keyframes blink {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.3;
-            }
-        }
-    </style>
 </head>
 
 <body>
     <!-- Login -->
     <div class="login-overlay" id="login-overlay">
-        <div class="login-box">
-            <h2>🔐 Admin Login</h2>
+        <div class="login-box" role="dialog" aria-modal="true" aria-labelledby="login-title">
+            <h2 id="login-title">🔐 Admin Login</h2>
             <input type="password" id="admin-key-input" placeholder="Enter Admin Key" autofocus>
-            <button onclick="doLogin()">Login</button>
+            <button onclick="doLogin()" id="btn-login-submit">Login</button>
             <div id="login-error" style="color:var(--danger);font-size:0.8rem;margin-top:0.5rem"></div>
+        </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div id="confirm-modal" class="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(2px)">
+        <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="confirm-title" style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:1.5rem;max-width:400px;width:90%;box-shadow:var(--shadow-lg)">
+            <h3 id="confirm-title" style="margin-top:0">Confirmation</h3>
+            <p id="confirm-msg" style="color:var(--text-secondary);font-size:0.9rem;margin:1rem 0">Are you sure?</p>
+            <div style="display:flex;justify-content:flex-end;gap:0.5rem;margin-top:1.5rem">
+                <button class="btn" onclick="closeConfirmModal()">Cancel</button>
+                <button class="btn btn-danger" id="btn-confirm-ok">Confirm</button>
+            </div>
         </div>
     </div>
 
     <header class="header">
         <div class="header-content">
-            <div class="logo">
-                <a href="/" class="logo-link">
-                    <span class="logo-icon">🖨️</span>
-                    <div>
-                        <h1>3D Printer Prices</h1>
-                        <p class="tagline">Admin Dashboard</p>
-                    </div>
-                </a>
-            </div>
-            <nav class="header-actions">
-                <a href="/" class="nav-link">← Back to Site</a>
-            </nav>
+            <a href="/" class="logo"><span class="logo-icon">🖨️</span><div><h1>3D Printer Prices</h1><p class="tagline">Admin Dashboard</p></div></a>
+            <nav class="nav-desktop"><a href="/" class="nav-link">Compare</a><a href="/compatibility.html" class="nav-link">Materials</a><a href="/calculator.html" class="nav-link">Calculator</a><a href="/blog/" class="nav-link">Blog</a></nav>
+            <div class="header-actions"><button id="theme-toggle" class="btn-icon" aria-label="Toggle theme">🌙</button></div>
         </div>
     </header>
 
@@ -505,17 +46,17 @@
         <h2 class="admin-title">⚙️ Admin Dashboard</h2>
 
         <!-- Tabs -->
-        <div class="admin-tabs">
-            <button class="admin-tab active" data-tab="scraper">🔄 Scraper</button>
-            <button class="admin-tab" data-tab="products">📦 Products</button>
-            <button class="admin-tab" data-tab="blog">📝 Blog</button>
-            <button class="admin-tab" data-tab="schedule">⏰ Schedule</button>
-            <button class="admin-tab" data-tab="xpost">🐦 X Auto-Post</button>
-            <button class="admin-tab" data-tab="settings">⚙️ Settings</button>
+        <div class="admin-tabs" role="tablist">
+            <button class="admin-tab active" data-tab="scraper" role="tab" aria-selected="true" aria-controls="tab-scraper">🔄 Scraper</button>
+            <button class="admin-tab" data-tab="products" role="tab" aria-selected="false" aria-controls="tab-products">📦 Products</button>
+            <button class="admin-tab" data-tab="blog" role="tab" aria-selected="false" aria-controls="tab-blog">📝 Blog</button>
+            <button class="admin-tab" data-tab="schedule" role="tab" aria-selected="false" aria-controls="tab-schedule">⏰ Schedule</button>
+            <button class="admin-tab" data-tab="xpost" role="tab" aria-selected="false" aria-controls="tab-xpost">🐦 X Auto-Post</button>
+            <button class="admin-tab" data-tab="settings" role="tab" aria-selected="false" aria-controls="tab-settings">⚙️ Settings</button>
         </div>
 
         <!-- ==================== SCRAPER TAB ==================== -->
-        <div class="tab-content active" id="tab-scraper">
+        <div class="tab-content active" id="tab-scraper" role="tabpanel" tabindex="0">
             <div class="admin-card">
                 <h3>📊 Last Scrape Status</h3>
                 <div class="info-grid">
@@ -602,8 +143,8 @@
                         💰 Update Prices
                     </button>
                 </div>
-                <div id="status-msg"></div>
-                <div id="update-msg" style="margin-top:0.3rem;font-size:0.82rem"></div>
+                <div id="status-msg" aria-live="polite"></div>
+                <div id="update-msg" aria-live="polite" style="margin-top:0.3rem;font-size:0.82rem"></div>
             </div>
 
             <!-- LIVE PROGRESS PANEL -->
@@ -627,7 +168,7 @@
 
             <div class="admin-card">
                 <h3>📋 Scrape History</h3>
-                <div style="overflow-x:auto">
+                <div class="admin-table-wrapper">
                     <table class="admin-table">
                         <thead>
                             <tr>
@@ -649,7 +190,7 @@
         </div>
 
         <!-- ==================== PRODUCTS TAB ==================== -->
-        <div class="tab-content" id="tab-products">
+        <div class="tab-content" id="tab-products" role="tabpanel" tabindex="0">
             <div class="admin-card">
                 <h3>📦 Product Overview</h3>
                 <div class="info-grid" id="product-stats">
@@ -730,7 +271,7 @@
                 <button class="btn btn-success" id="btn-add-product" onclick="addProduct()">
                     ➕ Add Product
                 </button>
-                <div id="add-product-msg" style="margin-top:0.5rem;font-size:0.82rem"></div>
+                <div id="add-product-msg" aria-live="polite" style="margin-top:0.5rem;font-size:0.82rem"></div>
             </div>
 
             <div class="admin-card">
@@ -738,11 +279,11 @@
                     style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.75rem">
                     <h3 style="margin:0">📦 Product Management</h3>
                     <div style="display:flex;align-items:center;gap:0.5rem">
-                        <button class="btn btn-primary" id="btn-enrich" style="font-size:0.75rem;padding:0.35rem 0.6rem"
+                        <button class="btn btn-primary btn-sm" id="btn-enrich" 
                             onclick="enrichProducts()">
                             🤖 Enrich Data (AI)
                         </button>
-                        <button class="btn btn-primary" id="btn-fetch-details" style="font-size:0.75rem;padding:0.35rem 0.6rem;background:var(--success)"
+                        <button class="btn btn-success btn-sm" id="btn-fetch-details" 
                             onclick="fetchProductDetails()">
                             🕷️ Fetch Details
                         </button>
@@ -750,14 +291,14 @@
                     </div>
                 </div>
 
-                <div id="enrich-msg"
+                <div id="enrich-msg" aria-live="polite"
                     style="margin-bottom:0.75rem;font-size:0.8rem;color:var(--text-muted);display:none">
                     <span class="blinking-dot"
                         style="background:var(--accent);display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px"></span>
                     Enriching products with AI... (<span id="enrich-remaining">0</span> remaining)
                 </div>
 
-                <div id="detail-scrape-msg"
+                <div id="detail-scrape-msg" aria-live="polite"
                     style="margin-bottom:0.75rem;font-size:0.8rem;color:var(--text-muted);display:none">
                     <span class="blinking-dot"
                         style="background:var(--success);display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px"></span>
@@ -782,14 +323,14 @@
                         <option value="accessories">🔧 Accessories</option>
                         <option value="3d_pen">🖊️ 3D Pen</option>
                     </select>
-                    <button class="btn btn-danger" id="pm-bulk-delete"
-                        style="font-size:0.72rem;padding:0.35rem 0.6rem;display:none" onclick="pmBulkDelete()">
+                    <button class="btn btn-danger btn-sm" id="pm-bulk-delete"
+                        style="display:none" onclick="pmBulkDelete()">
                         🗑️ Delete Selected (<span id="pm-sel-count">0</span>)
                     </button>
                 </div>
 
                 <!-- Product Table -->
-                <div style="overflow-x:auto">
+                <div class="admin-table-wrapper">
                     <table class="admin-table" style="font-size:0.75rem">
                         <thead>
                             <tr>
@@ -816,10 +357,10 @@
                 <div
                     style="display:flex;justify-content:space-between;align-items:center;margin-top:0.5rem;font-size:0.75rem">
                     <div>
-                        <button class="btn" style="font-size:0.72rem;padding:0.25rem 0.5rem" id="pm-prev"
+                        <button class="btn"  id="pm-prev"
                             onclick="pmLoadProducts(pmPage-1)">← Prev</button>
                         <span id="pm-page-info" style="margin:0 0.5rem;color:var(--text-muted)">Page 1</span>
-                        <button class="btn" style="font-size:0.72rem;padding:0.25rem 0.5rem" id="pm-next"
+                        <button class="btn"  id="pm-next"
                             onclick="pmLoadProducts(pmPage+1)">Next →</button>
                     </div>
                     <select class="form-select" style="font-size:0.72rem;padding:0.2rem 0.35rem;width:auto"
@@ -833,7 +374,7 @@
         </div>
 
         <!-- ==================== BLOG TAB ==================== -->
-        <div class="tab-content" id="tab-blog">
+        <div class="tab-content" id="tab-blog" role="tabpanel" tabindex="0">
             <div class="admin-card">
                 <h3>📝 Existing Blog Posts</h3>
                 <div id="blog-list">
@@ -917,7 +458,7 @@
                         <strong style="font-size:0.82rem">📄 Generated Article</strong>
                         <div style="display:flex;gap:0.3rem;align-items:center">
                             <span id="blog-word-count" style="font-size:0.68rem;color:var(--text-muted)"></span>
-                            <button class="btn" style="font-size:0.65rem;padding:0.2rem 0.4rem"
+                            <button class="btn" 
                                 onclick="copyBlogContent()">📋 Copy</button>
                         </div>
                     </div>
@@ -940,7 +481,7 @@
             <div class="admin-card">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
                     <h3 style="margin:0">📚 Blog Posts</h3>
-                    <button class="btn" style="font-size:0.65rem;padding:0.2rem 0.5rem" onclick="loadBlogPosts()">🔄
+                    <button class="btn"  onclick="loadBlogPosts()">🔄
                         Refresh</button>
                 </div>
                 <div id="blog-posts-list" style="font-size:0.75rem;color:var(--text-muted)">Loading...</div>
@@ -987,9 +528,9 @@
                         <div style="display:flex;justify-content:space-between;align-items:center">
                             <span id="x-char-count" style="font-size:0.65rem;color:var(--text-muted)"></span>
                             <div style="display:flex;gap:0.3rem">
-                                <button class="btn" style="font-size:0.65rem;padding:0.2rem 0.4rem"
+                                <button class="btn" 
                                     onclick="copyXPost()">📋 Copy</button>
-                                <button class="btn btn-primary" style="font-size:0.65rem;padding:0.2rem 0.4rem"
+                                <button class="btn btn-primary" 
                                     onclick="generateXPost()">🔄 Regenerate</button>
                             </div>
                         </div>
@@ -999,7 +540,7 @@
         </div>
 
         <!-- ==================== SCHEDULE TAB ==================== -->
-        <div class="tab-content" id="tab-schedule">
+        <div class="tab-content" id="tab-schedule" role="tabpanel" tabindex="0">
             <div class="admin-card">
                 <h3>⏰ Scraper Schedule</h3>
                 <div class="info-grid">
@@ -1049,7 +590,7 @@
                         ▶️ Run Now
                     </button>
                 </div>
-                <div id="sch-msg" style="margin-top:0.5rem;font-size:0.82rem"></div>
+                <div id="sch-msg" aria-live="polite" style="margin-top:0.5rem;font-size:0.82rem"></div>
 
                 <p style="margin-top:1rem;font-size:0.78rem;color:var(--text-muted)">
                     💡 Schedule changes update <code>vercel.json</code> locally. Redeploy to apply on Vercel.
@@ -1142,7 +683,7 @@
                     <button class="btn btn-warning" id="btn-auto-write" onclick="triggerAutoBlog(this)">✍️ Write &amp;
                         Publish Now</button>
                 </div>
-                <div id="blog-sch-msg" style="margin-top:0.3rem;font-size:0.72rem"></div>
+                <div id="blog-sch-msg" aria-live="polite" style="margin-top:0.3rem;font-size:0.72rem"></div>
                 <p style="font-size:0.68rem;color:var(--text-muted);margin-top:0.5rem;margin-bottom:0">
                     ⚠️ ต้องตั้ง Gemini หรือ OpenAI API Key ก่อนในแท็บ <a href="#"
                         onclick="document.querySelector('[data-tab=settings]').click()"
@@ -1203,7 +744,7 @@
                     <button class="btn btn-primary" onclick="saveXSchedule()">💾 Save X Schedule</button>
                     <button class="btn btn-warning" onclick="postToXNow()" id="btn-x-post">🐦 Post Now</button>
                 </div>
-                <div id="x-sch-msg" style="margin-top:0.3rem;font-size:0.72rem"></div>
+                <div id="x-sch-msg" aria-live="polite" style="margin-top:0.3rem;font-size:0.72rem"></div>
                 <p style="font-size:0.68rem;color:var(--text-muted);margin-top:0.5rem;margin-bottom:0">
                     ⚠️ ต้องตั้ง X API Keys ทั้ง 4 ตัวก่อนในแท็บ <a href="#"
                         onclick="document.querySelector('[data-tab=settings]').click()"
@@ -1213,7 +754,7 @@
         </div>
 
         <!-- ==================== X AUTO-POST TAB ==================== -->
-        <div class="tab-content" id="tab-xpost">
+        <div class="tab-content" id="tab-xpost" role="tabpanel" tabindex="0">
             <div class="admin-card">
                 <h3>🐦 X (Twitter) Auto-Post</h3>
                 <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem">
@@ -1237,13 +778,13 @@
                     <button class="btn btn-primary" id="btn-force-xpost" onclick="forceXPost()">
                         🚀 Post to X Now (Test Run)
                     </button>
-                    <span id="xpost-msg" style="margin-left:0.5rem;font-size:0.85rem"></span>
+                    <span id="xpost-msg" aria-live="polite" style="margin-left:0.5rem;font-size:0.85rem"></span>
                 </div>
             </div>
 
             <div class="admin-card mt-4">
                 <h3>📜 Recent Posts (Logs)</h3>
-                <div style="overflow-x:auto;">
+                <div class="admin-table-wrapper">
                     <table class="admin-table">
                         <thead>
                             <tr>
@@ -1264,7 +805,7 @@
         </div>
 
         <!-- ==================== SETTINGS TAB ==================== -->
-        <div class="tab-content" id="tab-settings">
+        <div class="tab-content" id="tab-settings" role="tabpanel" tabindex="0">
             <div class="admin-card">
                 <h3>🔑 API Keys</h3>
                 <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:1rem">
@@ -1283,7 +824,7 @@
                             placeholder="Paste ScraperAPI key..."
                             style="flex:1;font-size:0.75rem;font-family:monospace;padding:0.3rem 0.5rem">
                         <button class="btn btn-primary"
-                            style="font-size:0.68rem;padding:0.3rem 0.5rem;white-space:nowrap"
+                            
                             onclick="saveApiKey('scraper_api_key', this)">💾 Save & Test</button>
                     </div>
                     <div class="key-msg" id="msg-scraper_api_key" style="font-size:0.68rem;margin-top:0.2rem"></div>
@@ -1305,7 +846,7 @@
                             placeholder="Paste Gemini API key..."
                             style="flex:1;font-size:0.75rem;font-family:monospace;padding:0.3rem 0.5rem">
                         <button class="btn btn-primary"
-                            style="font-size:0.68rem;padding:0.3rem 0.5rem;white-space:nowrap"
+                            
                             onclick="saveApiKey('gemini_api_key', this)">💾 Save & Test</button>
                     </div>
                     <div class="key-msg" id="msg-gemini_api_key" style="font-size:0.68rem;margin-top:0.2rem"></div>
@@ -1327,7 +868,7 @@
                             placeholder="Paste OpenAI API key (sk-...)"
                             style="flex:1;font-size:0.75rem;font-family:monospace;padding:0.3rem 0.5rem">
                         <button class="btn btn-primary"
-                            style="font-size:0.68rem;padding:0.3rem 0.5rem;white-space:nowrap"
+                            
                             onclick="saveApiKey('openai_api_key', this)">💾 Save & Test</button>
                     </div>
                     <div class="key-msg" id="msg-openai_api_key" style="font-size:0.68rem;margin-top:0.2rem"></div>
@@ -1370,7 +911,7 @@
                                 style="font-size:0.72rem;font-family:monospace;padding:0.25rem 0.4rem;width:100%">
                         </div>
                     </div>
-                    <button class="btn btn-primary" style="font-size:0.68rem;padding:0.3rem 0.5rem"
+                    <button class="btn btn-primary" 
                         onclick="saveAllXKeys()">💾 Save All X Keys</button>
                     <div class="key-msg" id="msg-x_api_key" style="font-size:0.68rem;margin-top:0.2rem"></div>
                     <div style="font-size:0.65rem;color:var(--text-muted);margin-top:0.15rem">
@@ -1399,32 +940,112 @@
     <script>
         let adminKey = '';
 
-        // ===== Login =====
+        // ===== Login Keyboard Trap =====
+        const loginOverlay = document.getElementById('login-overlay');
+        const loginInput = document.getElementById('admin-key-input');
+        const loginBtn = document.getElementById('btn-login-submit');
+
         function doLogin() {
-            adminKey = document.getElementById('admin-key-input').value;
+            adminKey = loginInput.value;
             if (!adminKey) {
                 document.getElementById('login-error').textContent = 'Please enter admin key';
                 return;
             }
-            document.getElementById('login-overlay').style.display = 'none';
+            loginOverlay.style.display = 'none';
             init();
         }
-        document.getElementById('admin-key-input').addEventListener('keydown', e => {
-            if (e.key === 'Enter') doLogin();
+        
+        loginOverlay.addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+                doLogin();
+            } else if (e.key === 'Tab') {
+                // Trap focus inside login overlay
+                if (e.shiftKey) {
+                    if (document.activeElement === loginInput) {
+                        e.preventDefault();
+                        loginBtn.focus();
+                    }
+                } else {
+                    if (document.activeElement === loginBtn) {
+                        e.preventDefault();
+                        loginInput.focus();
+                    }
+                }
+            }
         });
 
-        // ===== Tabs =====
-        document.querySelectorAll('.admin-tab').forEach(tab => {
+        // ===== Custom Confirm Modal =====
+        let confirmResolver = null;
+
+        function showConfirm(title, message) {
+            return new Promise(resolve => {
+                document.getElementById('confirm-title').textContent = title;
+                document.getElementById('confirm-msg').textContent = message;
+                document.getElementById('confirm-modal').style.display = 'flex';
+                document.getElementById('btn-confirm-ok').focus();
+                confirmResolver = resolve;
+            });
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirm-modal').style.display = 'none';
+            if (confirmResolver) confirmResolver(false);
+            confirmResolver = null;
+        }
+
+        document.getElementById('btn-confirm-ok').addEventListener('click', () => {
+            document.getElementById('confirm-modal').style.display = 'none';
+            if (confirmResolver) confirmResolver(true);
+            confirmResolver = null;
+        });
+
+        // ===== Tabs (with Keyboard Nav) =====
+        const tabs = Array.from(document.querySelectorAll('.admin-tab'));
+        tabs.forEach((tab, index) => {
+            // Init roving tabIndex
+            tab.tabIndex = tab.classList.contains('active') ? 0 : -1;
+
             tab.addEventListener('click', () => {
-                document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+                tabs.forEach(t => {
+                    t.classList.remove('active');
+                    t.setAttribute('aria-selected', 'false');
+                    t.tabIndex = -1;
+                });
                 document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
                 tab.classList.add('active');
+                tab.setAttribute('aria-selected', 'true');
+                tab.tabIndex = 0;
                 document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+                
                 // Auto-load products when switching to products tab
                 if (tab.dataset.tab === 'products') pmLoadProducts(pmPage);
                 if (tab.dataset.tab === 'xpost') {
                     loadXPostSettings();
                     loadXPostHistory();
+                }
+            });
+
+            // Keyboard navigation
+            tab.addEventListener('keydown', e => {
+                let targetIndex = null;
+                if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                    targetIndex = (index + 1) % tabs.length;
+                } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                    targetIndex = (index - 1 + tabs.length) % tabs.length;
+                } else if (e.key === 'Home') {
+                    targetIndex = 0;
+                } else if (e.key === 'End') {
+                    targetIndex = tabs.length - 1;
+                }
+
+                if (targetIndex !== null) {
+                    e.preventDefault();
+                    tabs[targetIndex].focus();
+                    tabs[targetIndex].click();
+                } else if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    tab.click();
                 }
             });
         });
@@ -1718,6 +1339,20 @@
             const params = new URLSearchParams({ page, limit, sort: pmSortCol, order: pmSortOrder });
             if (search) params.set('search', search);
             if (cat) params.set('category', cat);
+            
+            const tbody = document.getElementById('pm-body');
+            // Show Skeleton Loader
+            tbody.innerHTML = Array(7).fill(`
+                <tr class="skeleton-row-container">
+                    <td><div class="skeleton skeleton-text" style="width:20px;margin:0"></div></td>
+                    <td><div class="skeleton skeleton-text" style="width:80%;margin-bottom:4px"></div><div class="skeleton skeleton-text" style="width:40%;height:0.6rem;margin:0"></div></td>
+                    <td><div class="skeleton skeleton-text" style="margin:0"></div></td>
+                    <td><div class="skeleton skeleton-text" style="width:60%;margin:0"></div></td>
+                    <td><div class="skeleton skeleton-btn" style="height:1.2rem;width:50px;margin:0"></div></td>
+                    <td><div class="skeleton skeleton-text" style="margin:0"></div></td>
+                    <td><div class="skeleton skeleton-text" style="margin:0"></div></td>
+                    <td class="actions-cell"><div class="skeleton skeleton-btn" style="height:1.2rem;width:30px;margin:0"></div></td>
+                </tr>`).join('');
 
             try {
                 const res = await fetch(`/api/admin/products?${params}`, { headers: apiHeaders() });
@@ -1760,8 +1395,8 @@
                             ${p.beginner_score ? `<br><span style="font-size:0.65rem;color:var(--text-muted)">Beg. Score: <strong>${p.beginner_score}/10</strong></span>` : ''}
                         </td>
                         <td style="font-size:0.68rem;color:var(--text-muted)">${pmTimeAgo(p.created_at)}</td>
-                        <td>
-                            <button class="btn btn-danger" style="font-size:0.65rem;padding:0.15rem 0.4rem" onclick="pmDeleteProduct('${p.id}', this)">🗑️</button>
+                        <td class="actions-cell">
+                            <button class="btn btn-danger btn-sm" onclick="pmDeleteProduct('${p.id}', this)">🗑️</button>
                         </td>
                     </tr>
                 `).join('');
@@ -1780,8 +1415,11 @@
             const line = document.createElement('div');
             line.style.color = colors[type] || colors.info;
             line.textContent = `[${ts}] ${msg}`;
+            const isNearBottom = log.scrollHeight - log.clientHeight <= log.scrollTop + 50;
             log.appendChild(line);
-            log.scrollTop = log.scrollHeight;
+            if (isNearBottom) {
+                log.scrollTop = log.scrollHeight;
+            }
         }
 
         async function enrichProducts() {
@@ -1923,7 +1561,8 @@
         }
 
         async function pmDeleteProduct(id, btn) {
-            if (!confirm('ลบสินค้านี้จริงหรือ?')) return;
+            const confirmed = await showConfirm('Delete Product', 'ลบสินค้านี้จริงหรือ?');
+            if (!confirmed) return;
             btn.disabled = true;
             btn.textContent = '...';
             try {
@@ -1943,7 +1582,8 @@
         async function pmBulkDelete() {
             const ids = [...pmSelected];
             if (!ids.length) return;
-            if (!confirm(`ลบสินค้า ${ids.length} รายการ จริงหรือ?`)) return;
+            const confirmed = await showConfirm('Bulk Delete', `ลบสินค้า ${ids.length} รายการ จริงหรือ?`);
+            if (!confirmed) return;
             const btn = document.getElementById('pm-bulk-delete');
             btn.disabled = true;
             try {
@@ -2104,7 +1744,12 @@
             }).join('');
 
             document.getElementById('progress-count').textContent = entries.length + ' steps';
-            panel.scrollTop = panel.scrollHeight;
+            
+            // Auto-scroll logic: only scroll if user is near the bottom
+            const isNearBottom = panel.scrollHeight - panel.clientHeight <= panel.scrollTop + 50;
+            if (isNearBottom) {
+                panel.scrollTop = panel.scrollHeight;
+            }
         }
 
         function copyLogs(mode) {
@@ -2639,7 +2284,8 @@
         }
 
         async function deleteBlogPost(id) {
-            if (!confirm('Delete this blog post?')) return;
+            const confirmed = await showConfirm('Delete Blog Post', 'Delete this blog post?');
+            if (!confirmed) return;
             try {
                 await fetch(`/api/admin/blog/${id}`, { method: 'DELETE', headers: apiHeaders() });
                 loadBlogPosts();

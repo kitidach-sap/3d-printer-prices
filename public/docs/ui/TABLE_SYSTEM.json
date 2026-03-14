@@ -1,0 +1,249 @@
+{
+  "table_system": {
+    "version": "1.0.0",
+    "purpose": "Unified rules for data tables across public comparison pages and admin dashboard interfaces.",
+    "scope": [
+      "comparison tables",
+      "admin tables",
+      "ranking tables if any",
+      "blog/admin data lists rendered as tables",
+      "table wrappers and action columns"
+    ],
+    "core_principles": [
+      "Tables are for high-density scanning, comparison, and action-taking.",
+      "The user must always understand column meaning, row grouping, and action location.",
+      "Tables must remain readable under real data, not just ideal demo content.",
+      "Table behavior must be predictable across pages."
+    ],
+    "table_types": {
+      "comparison_table": {
+        "purpose": "Side-by-side or row-based evaluation of products/specs.",
+        "emphasis": "clarity_of_comparison"
+      },
+      "admin_data_table": {
+        "purpose": "Operational editing, reviewing, filtering, and managing data.",
+        "emphasis": "efficiency_and_action_density"
+      },
+      "read_only_reference_table": {
+        "purpose": "Display static or informational tabular content.",
+        "emphasis": "readability"
+      }
+    },
+    "container_rules": {
+      "wrapper": {
+        "rules": [
+          "All wide tables must live inside a dedicated overflow wrapper.",
+          "Use overflow-x: auto for horizontally dense content.",
+          "Avoid allowing the full page layout to break because of table width."
+        ]
+      },
+      "width_behavior": [
+        "Tables should use the available width of their container.",
+        "Do not force awkward compressed columns if scrolling is a better usability tradeoff."
+      ]
+    },
+    "structure": {
+      "required_parts": [
+        "table_wrapper",
+        "thead",
+        "tbody"
+      ],
+      "optional_parts": [
+        "caption",
+        "tfoot",
+        "toolbar",
+        "bulk_action_bar",
+        "empty_state"
+      ],
+      "rules": [
+        "Use semantic table markup when the content is truly tabular.",
+        "Use cards or lists instead of tables if the content is highly unstructured on mobile-only contexts.",
+        "Column intent must remain clear from the header row."
+      ]
+    },
+    "headers": {
+      "rules": [
+        "Headers must be visually distinct from row data.",
+        "Use stronger contrast or weight than body cells.",
+        "Header labels must be short, literal, and unambiguous.",
+        "Sticky headers are recommended for tall scrollable tables.",
+        "Sticky headers must preserve readable background and stacking context."
+      ],
+      "sticky": {
+        "recommended": true,
+        "rules": [
+          "Use sticky headers when vertical scanning spans many rows.",
+          "Sticky headers must not obscure content.",
+          "Use stable background color on sticky headers."
+        ]
+      }
+    },
+    "rows": {
+      "rules": [
+        "Rows must remain visually separable.",
+        "Use subtle borders, striping, or spacing rhythm to support scanning.",
+        "Hover state should aid tracking but remain subtle.",
+        "Selected row state must be clearly visible.",
+        "Do not make rows so tall that density suffers unnecessarily."
+      ],
+      "states": [
+        "default",
+        "hover",
+        "selected",
+        "disabled",
+        "loading_placeholder"
+      ]
+    },
+    "cells": {
+      "alignment_rules": [
+        "Text content aligns left by default.",
+        "Numeric content aligns right.",
+        "Short status indicators may center if consistent."
+      ],
+      "overflow_rules": [
+        "Long text should use a defined strategy: truncate, wrap, or expand.",
+        "Do not let uncontrolled long strings break layout.",
+        "If truncating, preserve access to the full value via title, tooltip, or detail view when appropriate."
+      ],
+      "spacing_rules": [
+        "Use tokenized padding only.",
+        "Dense admin tables may use tighter padding than public comparison tables.",
+        "Preserve readability over extreme density."
+      ]
+    },
+    "columns": {
+      "rules": [
+        "Action columns should be placed predictably, usually last.",
+        "Identifier columns should remain easy to scan.",
+        "Columns with similar data types should align consistently across tables.",
+        "Avoid too many narrow columns that create unreadable clutter."
+      ],
+      "action_column": {
+        "rules": [
+          "Action controls should not wrap unpredictably.",
+          "Use compact controls when space is constrained.",
+          "Keep row-level actions visually subordinate to table content unless action is the row's primary purpose."
+        ]
+      }
+    },
+    "sorting_filtering": {
+      "rules": [
+        "Sorting and filtering controls belong in a table toolbar or nearby control zone, not inside random cells.",
+        "Sort state must be visible.",
+        "Filter state must be understandable and reversible.",
+        "Do not style sort or view toggles as primary CTAs."
+      ]
+    },
+    "selection_and_bulk_actions": {
+      "rules": [
+        "Bulk selection controls must be obvious and consistent.",
+        "Bulk action bars should appear only when relevant.",
+        "Destructive bulk actions must require clear confirmation.",
+        "Selection state must remain visible during scrolling."
+      ]
+    },
+    "responsive_behavior": {
+      "principles": [
+        "Preserve table usefulness on small screens without destroying structure.",
+        "Horizontal scrolling is preferable to unreadable wrapping for dense datasets."
+      ],
+      "rules": [
+        "Use overflow wrappers on smaller screens.",
+        "Keep important columns visible when possible.",
+        "Do not force multi-line action buttons inside narrow cells if it harms readability.",
+        "For extremely dense admin tables, retain table structure with scroll rather than transforming everything into cards."
+      ]
+    },
+    "comparison_table_rules": {
+      "purpose": "Rules specific to public-facing comparison tables.",
+      "rules": [
+        "Key attributes should be easy to compare row-to-row or column-to-column.",
+        "Internal research actions such as View Details must be visually distinct from affiliate actions such as Check Price.",
+        "Comparison controls must not visually compete with page-level CTAs.",
+        "Spec labels must be muted relative to values while remaining legible."
+      ]
+    },
+    "admin_table_rules": {
+      "purpose": "Rules specific to admin dashboard tables.",
+      "rules": [
+        "Favor compact density with readable headers and predictable action placement.",
+        "Admin tables may use sticky headers more aggressively.",
+        "Use stronger row-state affordances for hover and selection than public tables.",
+        "Preserve editing efficiency over decorative styling."
+      ]
+    },
+    "status_content": {
+      "rules": [
+        "Status chips or labels inside tables must use a consistent semantic system.",
+        "Do not rely on color alone to communicate status.",
+        "Statuses should be short and scannable."
+      ]
+    },
+    "loading_states": {
+      "rules": [
+        "Use skeleton rows or loading placeholders that approximate final structure.",
+        "Avoid large layout shifts between loading and loaded state.",
+        "Do not show a blank area with only 'Loading...' if a structured skeleton is feasible."
+      ]
+    },
+    "empty_states": {
+      "rules": [
+        "If a table has no rows, show a meaningful empty state instead of an empty shell.",
+        "Empty states must explain whether there is no data, no search result, or no content yet.",
+        "Provide a recovery action when possible."
+      ],
+      "recommended_ctas": [
+        "Clear Filters",
+        "Add Item",
+        "Browse Printers",
+        "See Top Picks"
+      ]
+    },
+    "error_states": {
+      "rules": [
+        "Table load failures must communicate the problem clearly.",
+        "Show retry or recovery actions when appropriate.",
+        "Do not leave broken headers or half-rendered rows without explanation."
+      ]
+    },
+    "typography": {
+      "rules": [
+        "Header text must be slightly stronger than body text.",
+        "Dense tables may use smaller type, but not below comfortable readability.",
+        "Line height should support scanning, not paragraph reading.",
+        "Avoid mixing too many weights inside a single table."
+      ]
+    },
+    "visual_style": {
+      "rules": [
+        "Use borders, background contrast, and spacing to create structure.",
+        "Do not overuse heavy shadows inside tables.",
+        "Visual cues should aid scanning without making the table noisy."
+      ]
+    },
+    "accessibility": {
+      "rules": [
+        "Use semantic table markup for true tables.",
+        "Header-to-cell relationships must remain understandable.",
+        "Focus-visible states must be visible on interactive cells or controls.",
+        "Do not rely only on hover to reveal critical actions."
+      ]
+    },
+    "anti_patterns": [
+      "Tables without overflow handling",
+      "Action buttons scattered across random columns",
+      "Headers that look like body text",
+      "Long text breaking layout",
+      "Blank tables with no empty state",
+      "Sorting controls styled like primary CTAs",
+      "Dense tables with giant paddings",
+      "Excessive wrapping that destroys scanability"
+    ],
+    "implementation_notes_for_ai": [
+      "Always define table wrapper behavior first.",
+      "Use the same action placement pattern across similar tables.",
+      "Keep internal detail actions and outbound affiliate actions visually distinct.",
+      "When in doubt, favor predictable density and scanning over decorative layout."
+    ]
+  }
+}

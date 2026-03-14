@@ -1,0 +1,573 @@
+{
+  "data_models": {
+    "version": "1.0.0",
+    "models": [
+      {
+        "name": "Product",
+        "purpose": "Core entity representing a 3D printer, filament, resin, accessory, or 3D pen.",
+        "description": "Scraped from Amazon product listings, enriched by AI, and stored in Supabase. Used across nearly every page in the project.",
+        "fields": {
+          "id": "string (UUID)",
+          "product_name": "string",
+          "display_name": "string | null",
+          "brand": "string | null",
+          "price": "number",
+          "original_price": "number | null",
+          "discount_percent": "number | null",
+          "category": "enum: '3d_printer' | 'filament' | 'resin' | 'accessories' | '3d_pen'",
+          "product_type": "string (e.g. 'fdm', 'resin_sla', 'pla', 'abs', 'petg', 'tpu', 'uv_resin', 'nozzle', 'build_plate', 'tools')",
+          "printer_type": "string | null (e.g. 'FDM', 'Resin', 'CoreXY')",
+          "condition": "enum: 'new' | 'used' | 'refurbished'",
+          "rating": "number | null (1-5)",
+          "review_count": "number | null",
+          "build_volume": "string | null (e.g. '220x220x250mm')",
+          "beginner_score": "number | null (1-10)",
+          "speed_score": "number | null (1-10)",
+          "image_url": "string | null",
+          "amazon_url": "string",
+          "amazon_asin": "string | null",
+          "labels": "string[] (AI-generated tags, e.g. 'High Speed', 'Beginner Friendly')",
+          "ai_who_for": "string | null (AI-generated target audience)",
+          "ai_strengths": "string (JSON array as string)",
+          "ai_weaknesses": "string (JSON array as string)",
+          "ai_materials": "string (JSON array as string)",
+          "specs_json": "object | null (key-value pairs of specs)",
+          "created_at": "datetime",
+          "updated_at": "datetime | null"
+        },
+        "required_fields": ["product_name", "price", "category"],
+        "optional_fields": ["display_name", "brand", "original_price", "discount_percent", "product_type", "printer_type", "condition", "rating", "review_count", "build_volume", "beginner_score", "speed_score", "image_url", "amazon_url", "amazon_asin", "labels", "ai_who_for", "ai_strengths", "ai_weaknesses", "ai_materials", "specs_json"],
+        "derived_fields": ["display_name (fallback from product_name)", "discount_percent (computed from price vs original_price)"],
+        "used_by_pages": ["index.html", "compare.html", "best.html", "product.html", "admin.html"],
+        "used_by_components": ["ProductDataTable", "CompareTable", "RankingCard", "TopPicksGrid", "AlternativesGrid", "AdminDataTable"],
+        "used_by_features": ["ProductDiscovery", "ProductFiltering", "ProductComparison", "RankingLists", "AdminProductManagement"],
+        "source": "scraped (Amazon via ScraperAPI) + admin manual input + AI enrichment (Gemini/OpenAI)",
+        "validation_rules": ["product_name required", "price required and numeric", "category required and must be valid enum"],
+        "dependencies": [],
+        "notes": "Primary entity. Most complex model. AI fields populated by batch enrichment process."
+      },
+      {
+        "name": "FilterOptions",
+        "purpose": "Available filter values for the product discovery sidebar.",
+        "description": "Loaded once on index.html init from /api/filters. Drives sidebar checkbox generation.",
+        "fields": {
+          "categories": "string[] (e.g. ['3d_printer', 'filament', 'resin', 'accessories', '3d_pen'])",
+          "brands": "string[] (top 15 brands)",
+          "conditions": "string[] (e.g. ['new', 'used'])"
+        },
+        "required_fields": ["categories"],
+        "optional_fields": ["brands", "conditions"],
+        "derived_fields": [],
+        "used_by_pages": ["index.html"],
+        "used_by_components": ["SidebarFilters"],
+        "used_by_features": ["ProductFiltering"],
+        "source": "API aggregation from product database",
+        "validation_rules": [],
+        "dependencies": ["Product"],
+        "notes": "Read-only. Generated from distinct values in the products table."
+      },
+      {
+        "name": "ActiveFilters",
+        "purpose": "Current filter state for product discovery page.",
+        "description": "In-memory JS object tracking active filter selections. Synced bidirectionally with URL params and sidebar UI.",
+        "fields": {
+          "category": "string (comma-separated)",
+          "search": "string | undefined",
+          "brand": "string (comma-separated) | undefined",
+          "condition": "string (comma-separated) | undefined",
+          "min_price": "string | undefined",
+          "max_price": "string | undefined",
+          "product_type": "string | undefined",
+          "beginner_only": "string | undefined"
+        },
+        "required_fields": [],
+        "optional_fields": ["category", "search", "brand", "condition", "min_price", "max_price", "product_type", "beginner_only"],
+        "derived_fields": [],
+        "used_by_pages": ["index.html"],
+        "used_by_components": ["SidebarFilters", "QuickFilterChips", "QuizModal", "ProductDataTable"],
+        "used_by_features": ["ProductFiltering", "QuizRecommendation"],
+        "source": "user interaction + URL params + quiz results",
+        "validation_rules": ["prices must be numeric"],
+        "dependencies": [],
+        "notes": "Client-side only. Not persisted to server. Default: { category: '3d_printer' }."
+      },
+      {
+        "name": "Stats",
+        "purpose": "Aggregate statistics for hero section display.",
+        "description": "Fetched from /api/products/stats on page load.",
+        "fields": {
+          "total": "number",
+          "byCategory": "object { [category]: { count: number } }",
+          "topBrands": "string[]"
+        },
+        "required_fields": ["total"],
+        "optional_fields": ["byCategory", "topBrands"],
+        "derived_fields": ["printerCount (from byCategory['3d_printer'])", "filamentCount (from byCategory['filament'] + byCategory['resin'])", "brandCount (from topBrands.length)"],
+        "used_by_pages": ["index.html"],
+        "used_by_components": ["HeroSection"],
+        "used_by_features": ["ProductDiscovery"],
+        "source": "API aggregation",
+        "validation_rules": [],
+        "dependencies": ["Product"],
+        "notes": "Read-only. Used for stat counters in hero."
+      },
+      {
+        "name": "ScrapeStatus",
+        "purpose": "Last scrape run status for public display and admin monitoring.",
+        "description": "Fetched from /api/scrape-status.",
+        "fields": {
+          "lastScrape": "datetime | null",
+          "status": "enum: 'success' | 'partial' | 'error'",
+          "productsFound": "number",
+          "productsSaved": "number"
+        },
+        "required_fields": [],
+        "optional_fields": ["lastScrape", "status", "productsFound", "productsSaved"],
+        "derived_fields": ["timeAgo (computed from lastScrape)"],
+        "used_by_pages": ["index.html", "admin.html"],
+        "used_by_components": ["HeroSection", "InfoGrid"],
+        "used_by_features": ["AdminScraper"],
+        "source": "API (scrape log table)",
+        "validation_rules": [],
+        "dependencies": [],
+        "notes": "Public endpoint (no auth required)."
+      },
+      {
+        "name": "ScrapeLog",
+        "purpose": "Historical scrape run records for admin dashboard.",
+        "description": "Fetched from /api/scrape-logs.",
+        "fields": {
+          "created_at": "datetime",
+          "completed_at": "datetime | null",
+          "status": "enum: 'success' | 'partial' | 'error' | 'running'",
+          "products_found": "number",
+          "products_saved": "number",
+          "errors_count": "number"
+        },
+        "required_fields": ["status"],
+        "optional_fields": ["created_at", "completed_at", "products_found", "products_saved", "errors_count"],
+        "derived_fields": [],
+        "used_by_pages": ["admin.html"],
+        "used_by_components": ["AdminDataTable"],
+        "used_by_features": ["AdminScraper"],
+        "source": "API (scrape log table)",
+        "validation_rules": [],
+        "dependencies": [],
+        "notes": "Public endpoint. Displayed in Scraper tab."
+      },
+      {
+        "name": "ScrapeProgress",
+        "purpose": "Live progress entries during active scrape.",
+        "description": "Polled from /api/admin/scrape-progress every 2 seconds during active scrape.",
+        "fields": {
+          "progress": "array of { time: datetime, type: enum ('start'|'search'|'parse'|'extract'|'save'|'warn'|'error'|'done'), message: string }"
+        },
+        "required_fields": ["progress"],
+        "optional_fields": [],
+        "derived_fields": [],
+        "used_by_pages": ["admin.html"],
+        "used_by_components": ["ProgressPanel"],
+        "used_by_features": ["AdminScraper"],
+        "source": "API (in-memory array, reset on each scrape)",
+        "validation_rules": [],
+        "dependencies": [],
+        "notes": "Polled client-side. Auto-scrolls to bottom."
+      },
+      {
+        "name": "CompareItem",
+        "purpose": "Product summary stored in localStorage for the compare tray.",
+        "description": "Lightweight product reference used for the compare feature. Persisted to localStorage.",
+        "fields": {
+          "id": "string",
+          "name": "string",
+          "image": "string",
+          "price": "number",
+          "url": "string (Amazon URL)"
+        },
+        "required_fields": ["id", "name", "price"],
+        "optional_fields": ["image", "url"],
+        "derived_fields": [],
+        "used_by_pages": ["index.html", "compare.html"],
+        "used_by_components": ["CompareTray", "CompareTable"],
+        "used_by_features": ["ProductComparison"],
+        "source": "client-side (localStorage 'compareList')",
+        "validation_rules": ["max 3 items"],
+        "dependencies": ["Product"],
+        "notes": "Persisted across page loads via localStorage. Compare page loads full Product data via IDs."
+      },
+      {
+        "name": "QuizAnswers",
+        "purpose": "User's quiz responses for product recommendation.",
+        "description": "Collected step-by-step during the quiz modal flow.",
+        "fields": {
+          "budget": "enum: 'budget_low' | 'budget_mid' | 'budget_high'",
+          "experience": "enum: 'exp_beginner' | 'exp_intermediate' | 'exp_advanced'",
+          "useCase": "enum: 'use_cosplay' | 'use_miniatures' | 'use_functional' | 'use_general'"
+        },
+        "required_fields": ["budget", "experience", "useCase"],
+        "optional_fields": [],
+        "derived_fields": ["Mapped to ActiveFilters (price range, beginner_only, printer_type)"],
+        "used_by_pages": ["index.html"],
+        "used_by_components": ["QuizModal"],
+        "used_by_features": ["QuizRecommendation"],
+        "source": "user interaction (quiz modal)",
+        "validation_rules": [],
+        "dependencies": [],
+        "notes": "Ephemeral. Not persisted. Converts to ActiveFilters after quiz completion."
+      },
+      {
+        "name": "CalculatorInput",
+        "purpose": "User inputs for the 3D printing cost calculator.",
+        "description": "Form inputs on calculator.html. All values are used in real-time calculation.",
+        "fields": {
+          "printerPrice": "number (USD)",
+          "printHours": "number (hours per week)",
+          "matPrice": "number (USD per kg for FDM, per liter for Resin)",
+          "powerRate": "number (USD per kWh)",
+          "ipaCost": "number | null (Resin only, monthly IPA cost)",
+          "fepCost": "number | null (Resin only, yearly FEP/screen cost)",
+          "currentType": "enum: 'FDM' | 'Resin'"
+        },
+        "required_fields": ["printerPrice", "printHours", "matPrice", "powerRate", "currentType"],
+        "optional_fields": ["ipaCost", "fepCost"],
+        "derived_fields": [],
+        "used_by_pages": ["calculator.html"],
+        "used_by_components": ["CalculatorPanel"],
+        "used_by_features": ["CostCalculator"],
+        "source": "user interaction (form inputs)",
+        "validation_rules": ["all numeric", "printHours >= 0", "prices >= 0"],
+        "dependencies": [],
+        "notes": "Ephemeral. Not persisted."
+      },
+      {
+        "name": "CalculatorResult",
+        "purpose": "Computed annual cost breakdown from calculator inputs.",
+        "description": "Derived in real-time from CalculatorInput using fixed assumptions for power consumption and material usage.",
+        "fields": {
+          "printerCost": "number (one-time)",
+          "materialCost": "number (annual)",
+          "powerCost": "number (annual)",
+          "consumablesCost": "number (annual)",
+          "totalCost": "number (annual)"
+        },
+        "required_fields": ["printerCost", "materialCost", "powerCost", "consumablesCost", "totalCost"],
+        "optional_fields": [],
+        "derived_fields": ["materialCost (hrs × usage_rate × price_per_unit)", "powerCost (hrs × kW × rate)", "consumablesCost (FDM: 30 + 5% of printer | Resin: IPA×12 + FEP)", "totalCost (sum of all)"],
+        "used_by_pages": ["calculator.html"],
+        "used_by_components": ["ResultPanel"],
+        "used_by_features": ["CostCalculator"],
+        "source": "calculated (client-side)",
+        "validation_rules": [],
+        "dependencies": ["CalculatorInput"],
+        "notes": "Assumptions: FDM 0.02kg/hr, 0.15kW; Resin 0.025L/hr, 0.04kW."
+      },
+      {
+        "name": "RankingUseCase",
+        "purpose": "Predefined ranking category configuration.",
+        "description": "Static JS config defining how each 'best-for' category filters and sorts products.",
+        "fields": {
+          "key": "enum: 'beginners' | 'resin-detail' | 'budget' | 'speed'",
+          "title": "string",
+          "desc": "string",
+          "icon": "string (emoji)",
+          "filters": "object (passed to API query)",
+          "preFilter": "function | null (client-side additional filter)",
+          "sortRules": "function (custom comparator)"
+        },
+        "required_fields": ["key", "title", "desc", "filters", "sortRules"],
+        "optional_fields": ["icon", "preFilter"],
+        "derived_fields": [],
+        "used_by_pages": ["best.html"],
+        "used_by_components": ["RankingCard"],
+        "used_by_features": ["RankingLists"],
+        "source": "static (hardcoded in best.js)",
+        "validation_rules": [],
+        "dependencies": ["Product"],
+        "notes": "Top 5 products displayed per category. URL param: ?type=budget|beginners|resin-detail|speed."
+      },
+      {
+        "name": "RecommendedGear",
+        "purpose": "Essential and optional accessories for a specific printer.",
+        "description": "Fetched per-product from /api/products/:id/recommended-gear. Displayed on product detail page.",
+        "fields": {
+          "printer_type": "string",
+          "essentials": "GearItem[]",
+          "optionals": "GearItem[]"
+        },
+        "required_fields": [],
+        "optional_fields": ["printer_type", "essentials", "optionals"],
+        "derived_fields": [],
+        "used_by_pages": ["product.html"],
+        "used_by_components": ["ProductLayout"],
+        "used_by_features": ["ProductDetail"],
+        "source": "API (linked product records or curated data)",
+        "validation_rules": [],
+        "dependencies": ["Product"],
+        "notes": "Only shown for category '3d_printer'. Each GearItem has: display_name, custom_name, label, product_name, price, custom_price, image_url, amazon_url, custom_url, rating, role."
+      },
+      {
+        "name": "BlogPost",
+        "purpose": "AI-generated or manually created blog article.",
+        "description": "Generated via AI (Gemini/OpenAI), stored in Supabase, rendered as static HTML in /blog/.",
+        "fields": {
+          "id": "string (UUID)",
+          "title": "string",
+          "slug": "string",
+          "content": "string (HTML or markdown)",
+          "article_type": "enum: 'buying-guide' | 'comparison' | 'tutorial' | 'review'",
+          "word_count": "number",
+          "is_published": "boolean",
+          "published_at": "datetime | null",
+          "created_at": "datetime"
+        },
+        "required_fields": ["title", "slug", "content", "article_type"],
+        "optional_fields": ["word_count", "is_published", "published_at"],
+        "derived_fields": ["slug (from title)"],
+        "used_by_pages": ["admin.html", "blog/index.html"],
+        "used_by_components": ["BlogCard", "ArticleWrapper"],
+        "used_by_features": ["BlogContentSystem", "AdminBlogManagement"],
+        "source": "AI-generated (Gemini/OpenAI) via /api/admin/generate-blog",
+        "validation_rules": ["title required", "content required"],
+        "dependencies": [],
+        "notes": "Can be auto-generated on schedule (cron). Published posts appear in /blog/."
+      },
+      {
+        "name": "BlogGenerationConfig",
+        "purpose": "Input config for AI blog generation.",
+        "description": "Sent to /api/admin/generate-blog to configure the AI writer.",
+        "fields": {
+          "topic": "string",
+          "autoTopic": "boolean",
+          "articleType": "enum: 'buying-guide' | 'comparison' | 'tutorial' | 'review'",
+          "length": "enum: 'short' | 'medium' | 'long'",
+          "instructions": "string (optional extra instructions)",
+          "aiProvider": "enum: 'auto' | 'gemini' | 'openai'"
+        },
+        "required_fields": ["articleType", "length", "aiProvider"],
+        "optional_fields": ["topic", "autoTopic", "instructions"],
+        "derived_fields": [],
+        "used_by_pages": ["admin.html"],
+        "used_by_components": ["AdminFormGroup"],
+        "used_by_features": ["AdminBlogManagement"],
+        "source": "user interaction (admin form)",
+        "validation_rules": ["topic required unless autoTopic=true"],
+        "dependencies": [],
+        "notes": "Ephemeral. Sent as POST body."
+      },
+      {
+        "name": "XPost",
+        "purpose": "Twitter/X auto-post record.",
+        "description": "Generated tweet content and posting status. Logged in x_post_history.",
+        "fields": {
+          "id": "string",
+          "content": "string (tweet text)",
+          "product_name": "string | null",
+          "tweet_id": "string | null",
+          "status": "enum: 'posted' | 'failed' | 'pending'",
+          "error_message": "string | null",
+          "created_at": "datetime"
+        },
+        "required_fields": ["content", "status"],
+        "optional_fields": ["product_name", "tweet_id", "error_message"],
+        "derived_fields": [],
+        "used_by_pages": ["admin.html"],
+        "used_by_components": ["AdminDataTable"],
+        "used_by_features": ["XAutoPost"],
+        "source": "AI-generated + X API posting",
+        "validation_rules": ["content max 280 characters"],
+        "dependencies": ["Product"],
+        "notes": "History loaded from /api/admin/system/x-post-history."
+      },
+      {
+        "name": "XPostGenerationConfig",
+        "purpose": "Input config for AI tweet generation.",
+        "description": "Sent to /api/admin/generate-x-post.",
+        "fields": {
+          "postType": "enum: 'new_products' | 'blog_links' | 'deals'",
+          "customPrompt": "string (optional)",
+          "aiProvider": "enum: 'auto' | 'gemini' | 'openai'"
+        },
+        "required_fields": ["postType", "aiProvider"],
+        "optional_fields": ["customPrompt"],
+        "derived_fields": [],
+        "used_by_pages": ["admin.html"],
+        "used_by_components": ["AdminFormGroup"],
+        "used_by_features": ["XAutoPost"],
+        "source": "user interaction (admin form)",
+        "validation_rules": [],
+        "dependencies": [],
+        "notes": "Ephemeral."
+      },
+      {
+        "name": "ScheduleConfig",
+        "purpose": "Cron schedule configuration for automated tasks.",
+        "description": "Manages scraper, blog, and X auto-post schedules.",
+        "fields": {
+          "scheduleType": "enum: 'scraper' | 'blog_schedule' | 'x_schedule'",
+          "cron": "string (cron expression)",
+          "enabled": "boolean",
+          "lastRun": "datetime | null",
+          "nextRun": "datetime | null"
+        },
+        "required_fields": ["scheduleType", "cron", "enabled"],
+        "optional_fields": ["lastRun", "nextRun"],
+        "derived_fields": [],
+        "used_by_pages": ["admin.html"],
+        "used_by_components": ["AdminFormGroup", "InfoGrid"],
+        "used_by_features": ["AdminScheduling"],
+        "source": "admin input, stored in server config / vercel.json",
+        "validation_rules": ["cron must be valid cron expression"],
+        "dependencies": [],
+        "notes": "Changes update vercel.json locally. Redeployment required for Vercel cron."
+      },
+      {
+        "name": "ApiKeyConfig",
+        "purpose": "API key configuration for external services.",
+        "description": "Managed through Settings tab. Supports ScraperAPI, Gemini, OpenAI, and X/Twitter API keys.",
+        "fields": {
+          "keyType": "enum: 'scraper_api_key' | 'gemini_api_key' | 'openai_api_key' | 'x_api_key' | 'x_api_secret' | 'x_access_token' | 'x_access_secret'",
+          "value": "string (the actual key, sent on save)",
+          "configured": "boolean",
+          "masked": "string (e.g. 'sk-...***abcd')"
+        },
+        "required_fields": ["keyType", "value"],
+        "optional_fields": ["configured", "masked"],
+        "derived_fields": ["masked (server-generated on save)"],
+        "used_by_pages": ["admin.html"],
+        "used_by_components": ["AdminFormGroup", "StatusBadge"],
+        "used_by_features": ["AdminSettings"],
+        "source": "admin input → server environment",
+        "validation_rules": ["value required on save"],
+        "dependencies": [],
+        "notes": "Keys stored server-side in .env or Vercel env vars. Masked values returned for display."
+      },
+      {
+        "name": "AdminProductEntry",
+        "purpose": "Manual product entry form data.",
+        "description": "Admin form for manually adding products that weren't scraped.",
+        "fields": {
+          "product_name": "string",
+          "price": "number",
+          "brand": "string | null",
+          "category": "enum: '3d_printer' | 'filament' | 'resin' | 'accessories' | '3d_pen'",
+          "product_type": "string",
+          "condition": "enum: 'new' | 'used' | 'refurbished'",
+          "amazon_url": "string | null"
+        },
+        "required_fields": ["product_name", "price", "category"],
+        "optional_fields": ["brand", "product_type", "condition", "amazon_url"],
+        "derived_fields": [],
+        "used_by_pages": ["admin.html"],
+        "used_by_components": ["AdminFormGroup"],
+        "used_by_features": ["AdminProductManagement"],
+        "source": "admin form input",
+        "validation_rules": ["product_name required", "price required and numeric"],
+        "dependencies": [],
+        "notes": "Creates a new Product record via /api/admin/product POST."
+      },
+      {
+        "name": "Pagination",
+        "purpose": "Pagination metadata returned by product listing APIs.",
+        "description": "Returned alongside product data arrays.",
+        "fields": {
+          "total": "number",
+          "hasMore": "boolean",
+          "page": "number (admin)",
+          "totalPages": "number (admin)"
+        },
+        "required_fields": ["total"],
+        "optional_fields": ["hasMore", "page", "totalPages"],
+        "derived_fields": [],
+        "used_by_pages": ["index.html", "admin.html"],
+        "used_by_components": ["Pagination", "AdminDataTable"],
+        "used_by_features": ["ProductDiscovery", "AdminProductManagement"],
+        "source": "API response",
+        "validation_rules": [],
+        "dependencies": [],
+        "notes": "Public API uses offset/limit. Admin API uses page/limit."
+      }
+    ],
+    "relationships": [
+      {
+        "from": "Product",
+        "to": "FilterOptions",
+        "type": "aggregation",
+        "description": "FilterOptions are derived from distinct Product field values (categories, brands, conditions)."
+      },
+      {
+        "from": "Product",
+        "to": "CompareItem",
+        "type": "projection",
+        "description": "CompareItem is a lightweight subset of Product fields (id, name, image, price, url), stored client-side."
+      },
+      {
+        "from": "Product",
+        "to": "RankingUseCase",
+        "type": "filtered_view",
+        "description": "RankingUseCase defines filters and sort rules applied to Products to generate top-5 lists."
+      },
+      {
+        "from": "Product",
+        "to": "RecommendedGear",
+        "type": "one_to_many",
+        "description": "Each printer Product can have multiple RecommendedGear items (essentials and optionals)."
+      },
+      {
+        "from": "Product",
+        "to": "XPost",
+        "type": "reference",
+        "description": "X posts may reference a specific product by name."
+      },
+      {
+        "from": "QuizAnswers",
+        "to": "ActiveFilters",
+        "type": "transformation",
+        "description": "Quiz answers are converted into ActiveFilters (budget→price range, experience→beginner_only, useCase→printer_type)."
+      },
+      {
+        "from": "CalculatorInput",
+        "to": "CalculatorResult",
+        "type": "computation",
+        "description": "CalculatorResult is computed from CalculatorInput using fixed assumptions for power and material usage."
+      },
+      {
+        "from": "BlogGenerationConfig",
+        "to": "BlogPost",
+        "type": "creation",
+        "description": "BlogGenerationConfig is the input that produces a BlogPost via AI generation."
+      },
+      {
+        "from": "XPostGenerationConfig",
+        "to": "XPost",
+        "type": "creation",
+        "description": "XPostGenerationConfig produces an XPost via AI generation."
+      },
+      {
+        "from": "ScheduleConfig",
+        "to": "ScrapeLog",
+        "type": "triggers",
+        "description": "Scraper schedule triggers scrape runs that produce ScrapeLog entries."
+      },
+      {
+        "from": "AdminProductEntry",
+        "to": "Product",
+        "type": "creation",
+        "description": "AdminProductEntry form creates a new Product record."
+      }
+    ],
+    "page_data_usage": {
+      "index.html": ["Product", "FilterOptions", "ActiveFilters", "Stats", "ScrapeStatus", "CompareItem", "QuizAnswers", "Pagination"],
+      "compare.html": ["Product", "CompareItem"],
+      "best.html": ["Product", "RankingUseCase"],
+      "calculator.html": ["CalculatorInput", "CalculatorResult"],
+      "compatibility.html": ["MaterialData (inline static data)"],
+      "product.html": ["Product", "RecommendedGear"],
+      "methodology.html": [],
+      "privacy.html": [],
+      "terms.html": [],
+      "blog/index.html": ["BlogPost"],
+      "blog/best-3d-printers-under-300.html": [],
+      "admin.html": ["Product", "ScrapeStatus", "ScrapeLog", "ScrapeProgress", "BlogPost", "BlogGenerationConfig", "XPost", "XPostGenerationConfig", "ScheduleConfig", "ApiKeyConfig", "AdminProductEntry", "Pagination"]
+    }
+  }
+}

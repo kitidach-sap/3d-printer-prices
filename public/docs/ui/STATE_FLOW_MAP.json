@@ -1,0 +1,704 @@
+{
+  "state_flows": {
+    "version": "1.0.0",
+    "pages": {
+      "index.html": {
+        "page_type": "interactive_discovery",
+        "entry_state": "loading",
+        "states": {
+          "loading": {
+            "description": "Initial page load. Skeleton loaders visible in product grid and sidebar.",
+            "triggers_on_entry": ["parseUrlParams()", "loadFilters()", "loadStats()", "loadScrapeTime()", "loadProducts()", "checkTheme()"],
+            "ui_feedback": ["Skeleton cards in grid (12 items)", "Skeleton lines in sidebar", "Stats counters show '—'"],
+            "transitions": {
+              "products_loaded": "browsing",
+              "products_empty": "empty",
+              "products_error": "error"
+            }
+          },
+          "browsing": {
+            "description": "Products displayed. Filters active. User can interact with all UI.",
+            "triggers_on_entry": ["renderProducts()", "updateUrlParams()", "renderCompareTray()"],
+            "ui_feedback": ["Product cards visible", "Active filter chips shown", "Compare tray shown if items exist", "Stats counters populated"],
+            "transitions": {
+              "filter_change": "filtering",
+              "search_input": "searching",
+              "load_more_click": "loading_more",
+              "compare_add": "browsing (tray updates)",
+              "compare_navigate": "→ compare.html",
+              "product_click": "→ product.html",
+              "quiz_start": "quiz_active",
+              "theme_toggle": "browsing (CSS swap)"
+            }
+          },
+          "filtering": {
+            "description": "User changed a filter. Brief loading state during API call.",
+            "triggers_on_entry": ["updateActiveFilters()", "loadProducts()"],
+            "ui_feedback": ["Skeleton cards replace grid", "Filter chip updates", "URL updates"],
+            "transitions": {
+              "products_loaded": "browsing",
+              "products_empty": "empty"
+            }
+          },
+          "searching": {
+            "description": "User typing in search box. Debounced 300ms.",
+            "triggers_on_entry": ["debounce → loadProducts()"],
+            "ui_feedback": ["Search input active", "Skeleton cards after debounce"],
+            "transitions": {
+              "products_loaded": "browsing",
+              "products_empty": "empty"
+            }
+          },
+          "loading_more": {
+            "description": "User clicked 'Load More' for pagination.",
+            "triggers_on_entry": ["loadProducts(offset)"],
+            "ui_feedback": ["Load More button shows spinner", "Existing products remain visible"],
+            "transitions": {
+              "products_loaded": "browsing",
+              "no_more_products": "browsing (button hidden)"
+            }
+          },
+          "empty": {
+            "description": "No products match current filters/search.",
+            "triggers_on_entry": [],
+            "ui_feedback": ["Empty state card with icon and message", "'Clear Filters' button visible", "Product count shows 0"],
+            "transitions": {
+              "clear_filters": "filtering",
+              "filter_change": "filtering"
+            }
+          },
+          "error": {
+            "description": "API call failed.",
+            "triggers_on_entry": [],
+            "ui_feedback": ["Error message in product grid area"],
+            "transitions": {
+              "retry": "loading",
+              "filter_change": "filtering"
+            }
+          },
+          "quiz_active": {
+            "description": "Quiz modal is open. Multi-step flow.",
+            "triggers_on_entry": ["showQuizModal()", "resetQuizState()"],
+            "ui_feedback": ["Modal overlay visible", "Step indicator shows progress", "Question card with options"],
+            "sub_states": {
+              "step_budget": "First question: budget selection",
+              "step_experience": "Second question: experience level",
+              "step_use_case": "Third question: use case",
+              "step_result": "Quiz complete, showing filter strategy"
+            },
+            "transitions": {
+              "quiz_complete": "filtering (with quiz-derived filters)",
+              "quiz_cancel": "browsing"
+            }
+          }
+        },
+        "persistent_states": {
+          "compare_tray": {
+            "description": "Fixed-position tray showing compare list items.",
+            "states": {
+              "hidden": "No items in compare list (localStorage empty)",
+              "visible": "1-3 items in compare tray. Shows product thumbnails.",
+              "full": "3 items. Add buttons disabled across all cards."
+            },
+            "storage": "localStorage('compareList')"
+          },
+          "theme": {
+            "description": "Light/dark theme toggle.",
+            "states": { "dark": "Default", "light": "User toggled" },
+            "storage": "localStorage('theme')"
+          },
+          "mobile_nav": {
+            "description": "Mobile hamburger menu.",
+            "states": { "closed": "Default", "open": "Hamburger clicked" },
+            "storage": "none (ephemeral)"
+          }
+        }
+      },
+
+      "compare.html": {
+        "page_type": "static_comparison",
+        "entry_state": "loading",
+        "states": {
+          "loading": {
+            "description": "Fetching product data for compare IDs from URL.",
+            "triggers_on_entry": ["parseUrlIds()", "fetchProducts(ids)"],
+            "ui_feedback": ["Loading text", "Skeleton placeholders"],
+            "transitions": {
+              "data_loaded": "comparing",
+              "no_ids": "empty",
+              "fetch_error": "error"
+            }
+          },
+          "comparing": {
+            "description": "Side-by-side comparison table rendered.",
+            "triggers_on_entry": ["reorderByLocalStorage()", "renderTable()"],
+            "ui_feedback": ["Comparison table with product columns", "Spec rows with highlighted differences", "Buy buttons"],
+            "transitions": {
+              "remove_product": "comparing (re-render)",
+              "back_to_browse": "→ index.html"
+            }
+          },
+          "empty": {
+            "description": "No products to compare.",
+            "triggers_on_entry": [],
+            "ui_feedback": ["Empty state with message", "CTA to browse products"],
+            "transitions": {
+              "browse_click": "→ index.html"
+            }
+          },
+          "error": {
+            "description": "Failed to load product data.",
+            "triggers_on_entry": [],
+            "ui_feedback": ["Error message"],
+            "transitions": {}
+          }
+        }
+      },
+
+      "best.html": {
+        "page_type": "curated_ranking",
+        "entry_state": "loading",
+        "states": {
+          "loading": {
+            "description": "Fetching products and applying ranking filters.",
+            "triggers_on_entry": ["parseUrlType()", "loadRanking()"],
+            "ui_feedback": ["Skeleton ranking cards", "Category pills visible"],
+            "transitions": {
+              "ranking_loaded": "showing_rankings",
+              "empty_results": "empty",
+              "fetch_error": "error"
+            }
+          },
+          "showing_rankings": {
+            "description": "Top 5 products displayed as numbered ranking cards.",
+            "triggers_on_entry": ["renderCards()", "highlightActiveCategory()"],
+            "ui_feedback": ["Numbered ranking cards (1-5)", "Category pills with active state", "Product specs and buy CTAs"],
+            "transitions": {
+              "category_switch": "loading",
+              "product_click": "→ product.html"
+            }
+          },
+          "empty": {
+            "description": "No products match ranking criteria.",
+            "triggers_on_entry": [],
+            "ui_feedback": ["Empty state message"],
+            "transitions": {
+              "category_switch": "loading"
+            }
+          },
+          "error": {
+            "description": "API call failed.",
+            "transitions": {}
+          }
+        }
+      },
+
+      "calculator.html": {
+        "page_type": "interactive_tool",
+        "entry_state": "idle",
+        "states": {
+          "idle": {
+            "description": "Calculator form loaded with default values.",
+            "triggers_on_entry": ["setDefaultValues()", "attachInputListeners()"],
+            "ui_feedback": ["FDM mode active", "Default prices pre-filled", "Result panel shows $0"],
+            "transitions": {
+              "input_change": "calculating",
+              "mode_toggle": "mode_switching"
+            }
+          },
+          "mode_switching": {
+            "description": "User switched between FDM and Resin modes.",
+            "triggers_on_entry": ["toggleMode()", "updateDefaults()", "recalculate()"],
+            "ui_feedback": ["Mode buttons update active state", "Resin-specific fields show/hide", "Default values change"],
+            "transitions": {
+              "switch_complete": "calculating"
+            }
+          },
+          "calculating": {
+            "description": "User changed an input. Immediate recalculation.",
+            "triggers_on_entry": ["calculate()"],
+            "ui_feedback": ["Result panel updates with animated numbers", "Cost breakdown bars update"],
+            "transitions": {
+              "calculation_done": "showing_result"
+            }
+          },
+          "showing_result": {
+            "description": "Calculated costs displayed.",
+            "triggers_on_entry": [],
+            "ui_feedback": ["Annual cost with breakdown", "Cost category bars", "Tips section"],
+            "transitions": {
+              "input_change": "calculating",
+              "mode_toggle": "mode_switching"
+            }
+          }
+        }
+      },
+
+      "compatibility.html": {
+        "page_type": "interactive_reference",
+        "entry_state": "loaded",
+        "states": {
+          "loaded": {
+            "description": "Material compatibility matrix loaded with all data.",
+            "triggers_on_entry": ["renderCompatibilityTable()"],
+            "ui_feedback": ["Material compatibility grid with color-coded cells", "Filter controls"],
+            "transitions": {
+              "material_filter": "filtered",
+              "cell_click": "detail_view"
+            }
+          },
+          "filtered": {
+            "description": "User applied material or printer type filter.",
+            "ui_feedback": ["Filtered view of compatibility grid", "Active filter indicators"],
+            "transitions": {
+              "clear_filter": "loaded",
+              "material_filter": "filtered"
+            }
+          },
+          "detail_view": {
+            "description": "User expanded a compatibility cell for details.",
+            "ui_feedback": ["Expanded card/tooltip with compatibility details"],
+            "transitions": {
+              "close_detail": "loaded"
+            }
+          }
+        }
+      },
+
+      "product.html": {
+        "page_type": "product_detail",
+        "entry_state": "loading",
+        "states": {
+          "loading": {
+            "description": "Fetching product data by ID from URL.",
+            "triggers_on_entry": ["parseUrlId()", "fetchProduct(id)"],
+            "ui_feedback": ["Loading indicator", "Skeleton layout"],
+            "transitions": {
+              "product_loaded": "showing_product",
+              "not_found": "not_found",
+              "fetch_error": "error"
+            }
+          },
+          "showing_product": {
+            "description": "Full product detail rendered with specs, strengths, weaknesses, gear, alternatives.",
+            "triggers_on_entry": ["renderProductDetail()", "injectJsonLd()", "loadGear()", "loadAlternatives()"],
+            "ui_feedback": ["Product hero (image, name, price, badges)", "Specs table", "Strengths/weaknesses lists", "AI summary section", "Recommended gear cards", "Alternative products grid", "Buy CTA button"],
+            "sub_states": {
+              "gear_loading": "Recommended gear section shows skeleton",
+              "gear_loaded": "Gear cards rendered",
+              "gear_empty": "Gear section hidden",
+              "alternatives_loading": "Alternatives section shows skeleton",
+              "alternatives_loaded": "Alternative product cards rendered"
+            },
+            "transitions": {
+              "buy_click": "→ Amazon (external)",
+              "alternative_click": "loading (same page, new ID)",
+              "compare_add": "showing_product (tray updates)"
+            }
+          },
+          "not_found": {
+            "description": "Product ID not found in database.",
+            "ui_feedback": ["404-style message", "Link to browse all products"],
+            "transitions": {
+              "browse_click": "→ index.html"
+            }
+          },
+          "error": {
+            "description": "API fetch failed.",
+            "ui_feedback": ["Error message"],
+            "transitions": {}
+          }
+        }
+      },
+
+      "admin.html": {
+        "page_type": "admin_dashboard",
+        "entry_state": "login_required",
+        "states": {
+          "login_required": {
+            "description": "Login overlay visible. Focus trapped within login dialog.",
+            "triggers_on_entry": ["focusLoginInput()", "trapTabKey()"],
+            "ui_feedback": ["Full-screen overlay with login box", "Password input focused", "All dashboard content hidden behind overlay"],
+            "transitions": {
+              "login_success": "authenticated",
+              "login_empty": "login_required (show error)"
+            }
+          },
+          "authenticated": {
+            "description": "User authenticated. Dashboard initialized.",
+            "triggers_on_entry": ["init()", "loadStatus()", "loadHistory()", "loadProductStats()", "loadSchedule()", "loadApiKeysStatus()", "loadBlogSchedule()", "loadXSchedule()", "loadBlogPosts()"],
+            "ui_feedback": ["Login overlay hidden", "Dashboard visible", "Scraper tab active by default", "Polling starts (checkRunning every 2s)"],
+            "transitions": {
+              "tab_switch": "authenticated (tab changes)"
+            }
+          }
+        },
+        "tab_states": {
+          "scraper_tab": {
+            "states": {
+              "idle": {
+                "description": "Showing last scrape status and history.",
+                "ui_feedback": ["Status info grid", "History table", "Category checkboxes", "Scrape/Update buttons enabled"],
+                "transitions": {
+                  "scrape_click": "scraping",
+                  "update_prices_click": "updating_prices"
+                }
+              },
+              "scraping": {
+                "description": "Scraper running. Live progress visible.",
+                "triggers_on_entry": ["showProgressPanel()", "startPolling()"],
+                "ui_feedback": ["Scrape button disabled with spinner", "Progress panel visible", "Live log entries appearing", "Blinking dot indicator", "Step counter updating"],
+                "transitions": {
+                  "scrape_done": "idle (refresh stats)",
+                  "scrape_error": "idle (show error)"
+                }
+              },
+              "updating_prices": {
+                "description": "Price update running in background.",
+                "ui_feedback": ["Update button disabled with spinner", "Status message showing"],
+                "transitions": {
+                  "update_done": "idle (show results summary)",
+                  "update_error": "idle (show error)"
+                }
+              }
+            }
+          },
+          "products_tab": {
+            "states": {
+              "loading": {
+                "description": "Product table loading with skeleton rows.",
+                "ui_feedback": ["7 skeleton rows in table", "Search/filter bar visible"],
+                "transitions": {
+                  "loaded": "browsing",
+                  "empty": "empty",
+                  "error": "error"
+                }
+              },
+              "browsing": {
+                "description": "Product table with data. Supports search, filter, sort, paginate.",
+                "ui_feedback": ["Product rows with checkboxes", "Pagination controls", "Product count", "Sort indicators on column headers"],
+                "transitions": {
+                  "search": "loading",
+                  "filter_change": "loading",
+                  "sort_click": "loading",
+                  "page_change": "loading",
+                  "select_items": "browsing (bulk delete button appears)",
+                  "delete_click": "confirm_dialog",
+                  "enrich_click": "enriching",
+                  "fetch_details_click": "fetching_details"
+                }
+              },
+              "enriching": {
+                "description": "AI enrichment batch running.",
+                "ui_feedback": ["Enrich button disabled with spinner", "Pipeline log visible", "Remaining count updating", "Auto-continues batches"],
+                "transitions": {
+                  "batch_done_more": "enriching (auto-continue)",
+                  "all_done": "browsing",
+                  "error": "browsing (show error)"
+                }
+              },
+              "fetching_details": {
+                "description": "Detail page scraping batch running.",
+                "ui_feedback": ["Fetch button disabled", "Pipeline log visible", "Per-product success/fail in log"],
+                "transitions": {
+                  "batch_done_more": "browsing (button says 'Fetch More')",
+                  "all_done": "browsing",
+                  "error": "browsing (show error)"
+                }
+              },
+              "confirm_dialog": {
+                "description": "Confirmation modal for delete actions.",
+                "ui_feedback": ["Modal overlay with confirm/cancel buttons", "Focus on confirm button"],
+                "transitions": {
+                  "confirmed": "loading (re-fetch products)",
+                  "cancelled": "browsing"
+                }
+              },
+              "empty": {
+                "description": "No products found for current filters.",
+                "ui_feedback": ["'No products found' in table body"],
+                "transitions": {
+                  "clear_filter": "loading"
+                }
+              },
+              "error": {
+                "description": "API error loading products.",
+                "ui_feedback": ["Error message in table body"],
+                "transitions": {}
+              }
+            }
+          },
+          "blog_tab": {
+            "states": {
+              "idle": {
+                "description": "Blog form and existing posts list visible.",
+                "ui_feedback": ["Topic selector", "Type/length selectors", "AI provider selector", "Published posts list"],
+                "transitions": {
+                  "generate_click": "generating",
+                  "auto_generate_click": "generating",
+                  "gen_x_click": "generating_x_post"
+                }
+              },
+              "generating": {
+                "description": "AI generating blog content.",
+                "ui_feedback": ["Generate button disabled with spinner", "Status shows '🤖 Gemini กำลัง generate blog... (~30-60 วินาที)'"],
+                "transitions": {
+                  "generated": "previewing",
+                  "error": "idle (show error)"
+                }
+              },
+              "previewing": {
+                "description": "Generated blog content shown in preview.",
+                "ui_feedback": ["Preview area visible", "Content in scrollable div", "Word count displayed", "Copy/Publish/Save Draft buttons"],
+                "transitions": {
+                  "publish_click": "publishing",
+                  "save_draft_click": "publishing",
+                  "regenerate": "generating"
+                }
+              },
+              "publishing": {
+                "description": "Saving blog post.",
+                "ui_feedback": ["💾 Saving... message"],
+                "transitions": {
+                  "published": "idle (refresh posts list, show success)",
+                  "error": "previewing (show error)"
+                }
+              },
+              "generating_x_post": {
+                "description": "AI generating tweet content.",
+                "ui_feedback": ["Generate Tweet button disabled", "Status shows generating"],
+                "transitions": {
+                  "generated": "x_post_preview",
+                  "error": "idle (show error)"
+                }
+              },
+              "x_post_preview": {
+                "description": "Generated tweet shown in preview.",
+                "ui_feedback": ["Tweet preview box", "Character count (colored if near 280)", "Copy/Regenerate buttons"],
+                "transitions": {
+                  "copy": "x_post_preview (clipboard)",
+                  "regenerate": "generating_x_post"
+                }
+              }
+            }
+          },
+          "schedule_tab": {
+            "states": {
+              "loaded": {
+                "description": "Schedule configuration visible for scraper, blog, and X auto-post.",
+                "ui_feedback": ["Current schedule info grids", "Frequency selectors", "Enable/disable checkboxes", "Save/Run Now buttons"],
+                "transitions": {
+                  "save_scraper": "loaded (show success, update display)",
+                  "save_blog": "loaded (show success)",
+                  "save_x": "loaded (show success)",
+                  "run_now": "loaded (trigger scrape, show msg)",
+                  "auto_blog_now": "blog_writing"
+                }
+              },
+              "blog_writing": {
+                "description": "Auto blog write & publish triggered.",
+                "ui_feedback": ["Button disabled", "Status shows AI writing"],
+                "transitions": {
+                  "success": "loaded (show published link)",
+                  "error": "loaded (show error)"
+                }
+              }
+            }
+          },
+          "xpost_tab": {
+            "states": {
+              "loaded": {
+                "description": "X auto-post settings and history.",
+                "ui_feedback": ["Enable toggle", "Post Now button", "History table"],
+                "transitions": {
+                  "toggle": "loaded (API call to save)",
+                  "post_now": "posting"
+                }
+              },
+              "posting": {
+                "description": "Posting to X/Twitter.",
+                "ui_feedback": ["Button disabled with spinner", "Status updating"],
+                "transitions": {
+                  "posted": "loaded (show tweet link, refresh history)",
+                  "skipped": "loaded (show reason)",
+                  "error": "loaded (show error)"
+                }
+              }
+            }
+          },
+          "settings_tab": {
+            "states": {
+              "loaded": {
+                "description": "API key forms and quick links visible.",
+                "ui_feedback": ["API key input fields with status badges", "Save & Test buttons", "Quick link buttons"],
+                "transitions": {
+                  "save_key": "saving_key"
+                }
+              },
+              "saving_key": {
+                "description": "Saving and testing an API key.",
+                "ui_feedback": ["Button disabled, shows '⏳ Testing...'", "Status message updating"],
+                "transitions": {
+                  "success": "loaded (show masked key, refresh statuses)",
+                  "error": "loaded (show error message)"
+                }
+              }
+            }
+          }
+        }
+      },
+
+      "blog/index.html": {
+        "page_type": "content_listing",
+        "entry_state": "static_loaded",
+        "states": {
+          "static_loaded": {
+            "description": "Static HTML blog listing page. No JS-driven states.",
+            "triggers_on_entry": ["DOMContentLoaded (theme check)"],
+            "ui_feedback": ["Blog post cards with thumbnails, titles, dates", "Category tags"],
+            "transitions": {
+              "post_click": "→ blog post page"
+            }
+          }
+        }
+      },
+
+      "methodology.html": {
+        "page_type": "content_page",
+        "entry_state": "static_loaded",
+        "states": {
+          "static_loaded": {
+            "description": "Static content page. No dynamic states.",
+            "ui_feedback": ["Long-form article content", "Navigation header"],
+            "transitions": {}
+          }
+        }
+      },
+
+      "privacy.html": {
+        "page_type": "legal_page",
+        "entry_state": "static_loaded",
+        "states": {
+          "static_loaded": {
+            "description": "Static legal content. No dynamic states.",
+            "ui_feedback": ["Legal text content"],
+            "transitions": {}
+          }
+        }
+      },
+
+      "terms.html": {
+        "page_type": "legal_page",
+        "entry_state": "static_loaded",
+        "states": {
+          "static_loaded": {
+            "description": "Static legal content. No dynamic states.",
+            "ui_feedback": ["Legal text content"],
+            "transitions": {}
+          }
+        }
+      }
+    },
+
+    "global_states": {
+      "theme": {
+        "storage": "localStorage('theme')",
+        "values": ["dark", "light"],
+        "default": "dark",
+        "trigger": "theme toggle button click",
+        "effect": "data-theme attribute on <html>, icon swap (🌙 ↔ ☀️)",
+        "applies_to": "all pages"
+      },
+      "mobile_nav": {
+        "storage": "none",
+        "values": ["closed", "open"],
+        "default": "closed",
+        "trigger": "hamburger button click",
+        "effect": "nav-mobile class toggle, body scroll lock",
+        "applies_to": "all pages"
+      },
+      "compare_list": {
+        "storage": "localStorage('compareList')",
+        "values": "CompareItem[] (0-3 items)",
+        "default": "[]",
+        "trigger": "Compare button on product cards",
+        "effect": "Compare tray visibility, button states, badge count",
+        "applies_to": ["index.html", "compare.html"]
+      }
+    },
+
+    "api_state_mapping": {
+      "description": "Maps API endpoints to their state impact.",
+      "endpoints": {
+        "GET /api/products": {
+          "loading_state": "skeleton cards",
+          "success_state": "product grid populated",
+          "empty_state": "empty state card",
+          "error_state": "error message"
+        },
+        "GET /api/filters": {
+          "loading_state": "skeleton sidebar",
+          "success_state": "sidebar checkboxes populated"
+        },
+        "GET /api/products/stats": {
+          "loading_state": "stat counters show '—'",
+          "success_state": "stat counters updated with numbers"
+        },
+        "GET /api/scrape-status": {
+          "success_state": "hero scrape time updated"
+        },
+        "POST /api/admin/scrape": {
+          "loading_state": "button disabled, progress panel visible",
+          "success_state": "progress log streaming",
+          "error_state": "error message, button re-enabled"
+        },
+        "POST /api/admin/update-prices": {
+          "loading_state": "button disabled with spinner",
+          "success_state": "results summary with counts",
+          "error_state": "error message"
+        },
+        "GET /api/admin/products": {
+          "loading_state": "skeleton table rows",
+          "success_state": "product table populated",
+          "empty_state": "'No products found'",
+          "error_state": "error in table"
+        },
+        "POST /api/admin/enrich-products": {
+          "loading_state": "pipeline log, remaining count",
+          "success_state": "enrichment complete message",
+          "error_state": "error in pipeline log"
+        },
+        "POST /api/admin/fetch-details": {
+          "loading_state": "per-product log entries",
+          "success_state": "batch complete with counts",
+          "error_state": "error entries in log"
+        },
+        "POST /api/admin/generate-blog": {
+          "loading_state": "generating status message",
+          "success_state": "preview area with content",
+          "error_state": "error message"
+        },
+        "POST /api/admin/publish-blog": {
+          "loading_state": "saving message",
+          "success_state": "published confirmation with link",
+          "error_state": "error message"
+        },
+        "POST /api/admin/save-api-key": {
+          "loading_state": "button shows testing",
+          "success_state": "masked key shown, status badge updated",
+          "error_state": "error message"
+        },
+        "POST /api/admin/generate-x-post": {
+          "loading_state": "generating status",
+          "success_state": "tweet preview with char count",
+          "error_state": "error message"
+        },
+        "GET /api/cron/twitter": {
+          "loading_state": "posting status",
+          "success_state": "posted with tweet link",
+          "error_state": "error or skipped message"
+        }
+      }
+    }
+  }
+}

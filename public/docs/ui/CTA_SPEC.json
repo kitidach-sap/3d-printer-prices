@@ -1,0 +1,419 @@
+{
+  "cta_spec": {
+    "version": "1.0.0",
+    "purpose": "Production CTA specification for comparison-style websites with homepage, filters, product listing/table, and affiliate actions.",
+    "global_principles": [
+      "Each page must have one primary user goal.",
+      "Each section should guide users toward one dominant next action.",
+      "CTA labels must describe the outcome of the action, not the system process.",
+      "Primary CTAs must be visually dominant within their section.",
+      "Secondary CTAs must support the primary CTA without competing with it.",
+      "Tertiary CTAs must remain visible but visually quiet.",
+      "CTA wording must be clear, literal, concise, and action-oriented.",
+      "Do not use vague labels such as 'Click Here', 'Continue', 'More', or 'Learn More' without context.",
+      "CTA hierarchy must remain consistent across all pages.",
+      "CTAs must reflect user intent and funnel stage.",
+      "Low-commitment CTAs should be used earlier in the funnel.",
+      "High-commitment CTAs should appear only when sufficient trust and context exist."
+    ],
+    "funnel_stages": {
+      "discovery": {
+        "description": "User is understanding what the site does.",
+        "preferred_cta_types": ["primary_low_commitment", "secondary_navigation"],
+        "recommended_examples": [
+          "Browse Printers",
+          "Start Comparing",
+          "Explore Top Picks"
+        ]
+      },
+      "evaluation": {
+        "description": "User is filtering, comparing, and reviewing options.",
+        "preferred_cta_types": ["primary_filter_action", "secondary_detail_action"],
+        "recommended_examples": [
+          "Apply Filters",
+          "View Details",
+          "Compare Specs"
+        ]
+      },
+      "decision": {
+        "description": "User is ready to visit an external store or complete a meaningful next step.",
+        "preferred_cta_types": ["primary_affiliate_action", "secondary_research_action"],
+        "recommended_examples": [
+          "Check Price",
+          "View Deal",
+          "See Full Specs"
+        ]
+      }
+    },
+    "hierarchy": {
+      "primary": {
+        "purpose": "Main next step the user should take in a page or section.",
+        "visual_priority": "highest",
+        "usage_rules": [
+          "Only one primary CTA should dominate per section.",
+          "A page may contain multiple primary CTAs only if they are scoped to separate sections and do not compete visually within the same viewport.",
+          "Primary CTA should use the strongest button treatment.",
+          "Primary CTA copy should usually be 2 to 4 words."
+        ]
+      },
+      "secondary": {
+        "purpose": "Supporting action that helps users without distracting from the main goal.",
+        "visual_priority": "medium",
+        "usage_rules": [
+          "Secondary CTA must be visibly less dominant than primary.",
+          "Secondary CTA may appear next to primary when both actions are truly complementary.",
+          "Secondary CTA should not use the same emphasis level as primary."
+        ]
+      },
+      "tertiary": {
+        "purpose": "Low-emphasis utility action or optional interaction.",
+        "visual_priority": "low",
+        "usage_rules": [
+          "Tertiary CTA should appear as ghost, text, or icon-with-label where appropriate.",
+          "Tertiary CTA should not visually compete with primary or secondary actions.",
+          "Tertiary CTA is suitable for sort, expand, save, or auxiliary controls."
+        ]
+      }
+    },
+    "copy_rules": {
+      "general": [
+        "Start with a verb when possible.",
+        "Describe what the user gets after clicking.",
+        "Use plain language over clever language.",
+        "Prefer concise labels between 2 and 4 words.",
+        "Use title case or sentence case consistently across the product.",
+        "Avoid jargon unless the audience clearly understands it."
+      ],
+      "preferred_patterns": [
+        "Verb + object",
+        "Verb + result",
+        "Action + context"
+      ],
+      "examples_good": [
+        "Browse Printers",
+        "Apply Filters",
+        "View Details",
+        "Compare Specs",
+        "Check Price",
+        "See Top Picks"
+      ],
+      "examples_avoid": [
+        "Click Here",
+        "Continue",
+        "More",
+        "Submit",
+        "Learn More",
+        "Explore"
+      ],
+      "tone": {
+        "style": "clear, practical, direct",
+        "avoid": [
+          "hype-heavy phrases",
+          "overly clever copy",
+          "unclear metaphorical wording",
+          "pressure language unless intentionally used for urgency modules"
+        ]
+      }
+    },
+    "design_rules": {
+      "visual_hierarchy": [
+        "Primary CTA must be the most prominent interactive element in its section.",
+        "CTA emphasis must be created through color, contrast, size, spacing, and position.",
+        "Do not give low-priority actions the same visual weight as primary actions."
+      ],
+      "size": {
+        "sm": {
+          "height": "32px",
+          "usage": "tight controls, compact rows, utility buttons"
+        },
+        "md": {
+          "height": "40px",
+          "usage": "default button size for most interfaces"
+        },
+        "lg": {
+          "height": "48px",
+          "usage": "hero sections, major calls-to-action, touch-friendly layouts"
+        }
+      },
+      "shape": {
+        "border_radius": "Use a consistent radius across all CTA variants; do not mix multiple unrelated radii."
+      },
+      "spacing": [
+        "Keep at least 8px between adjacent CTAs.",
+        "Use 12px to 16px gaps when grouping primary and secondary actions.",
+        "Provide enough whitespace around primary CTA so it remains visually isolated."
+      ],
+      "icon_usage": [
+        "Icons may support CTA meaning but should not replace text for important actions.",
+        "Use arrow icons only when they clearly reinforce forward navigation.",
+        "Avoid icon-only primary CTAs unless the pattern is universally recognized and the context is obvious."
+      ]
+    },
+    "interaction_states": {
+      "required_states": [
+        "default",
+        "hover",
+        "active",
+        "focus",
+        "disabled"
+      ],
+      "rules": [
+        "All CTA buttons must have visible feedback on hover or press.",
+        "Keyboard focus must be clearly visible.",
+        "Disabled buttons must appear non-interactive and should not create confusion about what is missing.",
+        "State changes must remain consistent across all CTA variants."
+      ]
+    },
+    "placement_rules": {
+      "global": [
+        "Place CTAs only after the user has enough context to act confidently.",
+        "Do not bury the main CTA below unrelated content.",
+        "Place the primary CTA near the end of a logical information block.",
+        "Keep CTA alignment predictable within similar sections."
+      ],
+      "hero": [
+        "Hero CTA should appear above the fold when the page has a clear top-level action.",
+        "Hero CTA should follow headline and supporting value text.",
+        "Use one primary CTA and optionally one secondary CTA in the hero."
+      ],
+      "filters": [
+        "Filter CTA should appear at the end of filter controls or in a sticky action zone if the filter panel is long.",
+        "Apply and Reset actions must be visually distinguishable.",
+        "Do not make Reset visually stronger than Apply."
+      ],
+      "listing_or_table": [
+        "Per-item CTA must be attached directly to the relevant row or card.",
+        "Comparison and details actions must be clearly separated.",
+        "Affiliate CTA must not be visually confused with internal product-detail actions."
+      ],
+      "empty_state": [
+        "Empty-state CTA should help users recover quickly.",
+        "Use recovery-oriented copy such as 'Clear Filters' or 'Browse All Printers'."
+      ]
+    },
+    "page_level_specs": {
+      "homepage": {
+        "page_goal": "Help users immediately understand the site and begin browsing or comparing printers.",
+        "primary_cta": {
+          "label_options": [
+            "Browse Printers",
+            "Start Comparing",
+            "Find Your Printer"
+          ],
+          "recommended_variant": "primary",
+          "recommended_size": "lg",
+          "placement": "hero section",
+          "rules": [
+            "Use only one primary hero CTA.",
+            "Primary hero CTA should be low-friction and discovery-oriented.",
+            "Do not use a purchase CTA as the main homepage hero action unless the site is commerce-first."
+          ]
+        },
+        "secondary_cta": {
+          "label_options": [
+            "See Top Picks",
+            "Browse by Use Case",
+            "How It Works"
+          ],
+          "recommended_variant": "secondary",
+          "recommended_size": "lg",
+          "placement": "next to or below hero primary CTA",
+          "rules": [
+            "Secondary hero CTA must support exploration, not compete with the primary CTA.",
+            "Avoid more than one secondary CTA in the hero."
+          ]
+        }
+      },
+      "filter_section": {
+        "section_goal": "Help users narrow the product list with confidence.",
+        "primary_cta": {
+          "label_options": [
+            "Apply Filters",
+            "Show Results",
+            "Update Results"
+          ],
+          "recommended_variant": "primary",
+          "recommended_size": "md",
+          "placement": "end of filter controls",
+          "rules": [
+            "There must be one clear action to commit filter changes.",
+            "If filtering is live and updates instantly, remove the apply CTA and instead show clear state feedback."
+          ]
+        },
+        "secondary_cta": {
+          "label_options": [
+            "Reset Filters",
+            "Clear Filters"
+          ],
+          "recommended_variant": "secondary",
+          "recommended_size": "md",
+          "placement": "adjacent to primary filter CTA",
+          "rules": [
+            "Reset/Clear must never be more visually dominant than Apply.",
+            "Reset/Clear should be easy to find but visually safer."
+          ]
+        }
+      },
+      "product_table_or_listing": {
+        "section_goal": "Help users inspect, compare, and move into decision-making.",
+        "internal_primary_cta": {
+          "label_options": [
+            "View Details",
+            "Compare Specs"
+          ],
+          "recommended_variant": "secondary",
+          "recommended_size": "sm",
+          "placement": "within each row or card",
+          "rules": [
+            "Use internal CTA for deeper product research.",
+            "Keep labels consistent across all rows/cards."
+          ]
+        },
+        "internal_secondary_cta": {
+          "label_options": [
+            "Save",
+            "Compare",
+            "Add to Compare"
+          ],
+          "recommended_variant": "tertiary",
+          "recommended_size": "sm",
+          "placement": "near internal primary CTA",
+          "rules": [
+            "Use tertiary treatment for utility actions.",
+            "Avoid cluttering each row with too many low-value actions."
+          ]
+        }
+      },
+      "affiliate_actions": {
+        "section_goal": "Send ready users to external stores with clear intent.",
+        "primary_cta": {
+          "label_options": [
+            "Check Price",
+            "View Deal",
+            "Shop Now"
+          ],
+          "recommended_variant": "primary",
+          "recommended_size": "sm",
+          "placement": "row/card action area after user sees enough product context",
+          "rules": [
+            "Affiliate CTA must be visually distinct from internal detail actions.",
+            "Use outcome-focused language that matches user intent.",
+            "Do not disguise affiliate CTA as internal navigation."
+          ]
+        },
+        "supporting_note_rules": [
+          "If needed, indicate that the action leads to an external store.",
+          "Use subtle disclosure if affiliate relationships need to be transparent."
+        ]
+      },
+      "empty_state": {
+        "state_goal": "Help the user recover from zero results or incomplete searches.",
+        "primary_cta": {
+          "label_options": [
+            "Clear Filters",
+            "Browse All Printers",
+            "See Top Picks"
+          ],
+          "recommended_variant": "primary",
+          "recommended_size": "md",
+          "placement": "inside empty state block",
+          "rules": [
+            "The CTA must help the user recover quickly.",
+            "Do not leave the empty state without a suggested next action."
+          ]
+        },
+        "support_text_rules": [
+          "Briefly explain why no results were found.",
+          "Suggest the most likely way to recover."
+        ]
+      }
+    },
+    "cta_mapping_by_component": {
+      "hero_section": {
+        "allowed_cta_types": ["primary", "secondary"],
+        "recommended_labels": [
+          "Browse Printers",
+          "Start Comparing",
+          "See Top Picks"
+        ]
+      },
+      "stats_bar": {
+        "allowed_cta_types": [],
+        "rules": [
+          "Stats bar should not contain dominant CTAs.",
+          "Stats are informational and should support trust, not compete for action."
+        ]
+      },
+      "quick_filters": {
+        "allowed_cta_types": ["tertiary", "chip_action"],
+        "rules": [
+          "Quick filter chips are interaction shortcuts, not primary CTAs.",
+          "Selected state must be obvious."
+        ]
+      },
+      "sidebar_form": {
+        "allowed_cta_types": ["primary", "secondary"],
+        "recommended_labels": [
+          "Apply Filters",
+          "Reset Filters"
+        ]
+      },
+      "sort_controls": {
+        "allowed_cta_types": ["tertiary"],
+        "rules": [
+          "Sort and view toggles are utility controls and should not use primary CTA styling."
+        ]
+      },
+      "product_row": {
+        "allowed_cta_types": ["secondary", "tertiary", "primary_affiliate"],
+        "recommended_labels": [
+          "View Details",
+          "Compare Specs",
+          "Check Price"
+        ]
+      }
+    },
+    "anti_patterns": [
+      "Multiple competing primary CTAs in the same section",
+      "Using the same strong visual treatment for every button",
+      "Generic CTA text with unclear outcome",
+      "Primary CTA hidden below dense content",
+      "Affiliate CTA indistinguishable from internal navigation",
+      "Reset action styled like the main action",
+      "Too many per-row CTAs causing decision fatigue",
+      "Icon-only primary actions without clear text labels",
+      "CTA copy that promises more than the click delivers"
+    ],
+    "accessibility_rules": [
+      "CTA text must meet minimum color contrast requirements.",
+      "Buttons must be large enough for touch interaction.",
+      "Focus states must be visible for keyboard users.",
+      "Button labels must remain understandable to screen readers.",
+      "Icon buttons must have accessible labels."
+    ],
+    "analytics_recommendations": {
+      "track": [
+        "hero_primary_cta_click",
+        "hero_secondary_cta_click",
+        "filter_apply_click",
+        "filter_reset_click",
+        "product_view_details_click",
+        "product_compare_click",
+        "affiliate_check_price_click",
+        "empty_state_recovery_click"
+      ],
+      "notes": [
+        "Track CTA clicks by section and placement.",
+        "Track click-through rate separately for internal versus affiliate CTAs.",
+        "Measure whether CTA wording changes impact downstream conversions."
+      ]
+    },
+    "implementation_notes_for_ai": [
+      "Do not invent new CTA labels unless they follow the copy rules in this spec.",
+      "Do not style utility controls as primary actions.",
+      "Keep CTA hierarchy stable across all pages and components.",
+      "When uncertain, choose clarity over creativity.",
+      "If a section lacks a clear user goal, simplify the section before adding more CTAs."
+    ]
+  }
+}

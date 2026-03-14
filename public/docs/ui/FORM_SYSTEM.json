@@ -1,0 +1,208 @@
+{
+  "form_system": {
+    "version": "1.0.0",
+    "purpose": "Unified rules for forms across public pages, utility pages, and admin workflows.",
+    "principles": [
+      "Forms must optimize for clarity, speed, and error recovery.",
+      "Users should understand what to enter, what is required, and what happens next.",
+      "Validation must help users recover, not punish them.",
+      "Related fields should feel grouped and predictable."
+    ],
+    "form_structure": {
+      "required_parts": [
+        "form_title_or_context",
+        "field_groups",
+        "field_labels",
+        "validation_or_helper_text",
+        "submit_zone"
+      ],
+      "rules": [
+        "Every form must have a clear purpose.",
+        "Fields must be grouped by meaning, not by arbitrary visual symmetry.",
+        "Primary submit actions must appear in a predictable position."
+      ]
+    },
+    "field_types": {
+      "text_input": {
+        "rules": [
+          "Use a visible label.",
+          "Use helper text only when it adds clarity.",
+          "Do not rely on placeholder text as the only explanation."
+        ]
+      },
+      "number_input": {
+        "rules": [
+          "Show units when relevant.",
+          "Prevent clearly invalid values where possible.",
+          "Use helper text if the range or precision is not obvious."
+        ]
+      },
+      "select": {
+        "rules": [
+          "Use selects when the option list is constrained and recognizable.",
+          "Default selection must be intentional, not accidental."
+        ]
+      },
+      "textarea": {
+        "rules": [
+          "Use for longer user-authored content.",
+          "Keep resizing behavior controlled."
+        ]
+      },
+      "toggle_or_segmented": {
+        "rules": [
+          "Use for mutually exclusive modes or compact option switching.",
+          "Exactly one selected state must be obvious when required."
+        ]
+      },
+      "checkbox_and_radio": {
+        "rules": [
+          "Use when choices are naturally boolean or multi-select.",
+          "Labels must be clearly clickable."
+        ]
+      }
+    },
+    "labels": {
+      "rules": [
+        "Labels must be visible and concise.",
+        "Use sentence case or title case consistently.",
+        "Required status should be clear.",
+        "Avoid vague labels like 'Value' or 'Input' without context."
+      ]
+    },
+    "helper_text": {
+      "rules": [
+        "Use helper text only when it reduces ambiguity.",
+        "Helper text should explain format, units, limits, or consequence.",
+        "Helper text must remain visually secondary to the label."
+      ]
+    },
+    "validation": {
+      "principles": [
+        "Validate early when it helps, but do not overwhelm users with premature errors.",
+        "Explain what is wrong and how to fix it.",
+        "Validation must not rely only on color."
+      ],
+      "states": {
+        "default": {
+          "rules": [
+            "Field is ready for input and not currently in error."
+          ]
+        },
+        "focus": {
+          "rules": [
+            "Focused field must be clearly visible."
+          ]
+        },
+        "invalid": {
+          "rules": [
+            "Use visible invalid border/state plus readable message.",
+            "Message should be specific.",
+            "Example: 'Please enter a valid non-negative number.'"
+          ]
+        },
+        "valid": {
+          "rules": [
+            "Valid states may be subtle.",
+            "Do not over-celebrate routine valid input."
+          ]
+        },
+        "disabled": {
+          "rules": [
+            "Disabled fields must look unavailable.",
+            "The reason should be inferable from context."
+          ]
+        },
+        "read_only": {
+          "rules": [
+            "Read-only fields must look different from editable fields but remain readable."
+          ]
+        }
+      }
+    },
+    "field_grouping": {
+      "rules": [
+        "Group related fields visually and semantically.",
+        "Use predictable spacing between groups.",
+        "Do not create unrelated two-column layouts just for visual balance.",
+        "On mobile, stack field groups cleanly."
+      ]
+    },
+    "layout_rules": {
+      "single_column": [
+        "Preferred for most forms, especially on mobile and admin forms with validation."
+      ],
+      "multi_column": [
+        "Use only when the relationship between fields is obvious and readability remains strong."
+      ],
+      "rules": [
+        "Keep field widths intentional.",
+        "Avoid random width mismatches.",
+        "Do not place too many fields in one horizontal row."
+      ]
+    },
+    "submit_zone": {
+      "rules": [
+        "Submit actions must be visually clear.",
+        "Primary action must be easy to identify.",
+        "Secondary actions like cancel or reset must not compete.",
+        "Destructive actions must not sit too close to primary submit without separation."
+      ]
+    },
+    "state_feedback": {
+      "success": {
+        "rules": [
+          "Success feedback should confirm completion clearly and briefly."
+        ]
+      },
+      "error": {
+        "rules": [
+          "Errors should explain what happened and what to do next."
+        ]
+      },
+      "loading": {
+        "rules": [
+          "Submission loading must be visible.",
+          "Prevent double-submit when appropriate."
+        ]
+      }
+    },
+    "calculator_specific_rules": {
+      "rules": [
+        "Numeric inputs must clearly show expected units and meaning.",
+        "Mode switches such as FDM/Resin should be treated as segmented controls.",
+        "Conditional fields must appear without jarring layout shifts.",
+        "Results must not appear visually disconnected from the form."
+      ]
+    },
+    "admin_form_rules": {
+      "rules": [
+        "Favor compact readable density.",
+        "Keep labels and validation highly scannable.",
+        "Use predictable placement for save/add/update actions.",
+        "Do not use decorative form layouts that reduce speed."
+      ]
+    },
+    "a11y": {
+      "rules": [
+        "Every input must have an accessible label.",
+        "Focus-visible must be clear.",
+        "Error text must be understandable without color alone.",
+        "Required fields must be programmatically and visually clear."
+      ]
+    },
+    "anti_patterns": [
+      "Placeholder-only labels",
+      "Multiple competing submit buttons",
+      "Validation messages far away from the field",
+      "Overly wide forms with weak grouping",
+      "Dense forms with no spacing rhythm",
+      "Conditional fields appearing chaotically"
+    ],
+    "implementation_notes_for_ai": [
+      "Always define labels, states, validation, and action hierarchy before styling the form.",
+      "Prefer simple repeatable field layouts.",
+      "Use the same visual language for all fields unless there is a strong reason not to."
+    ]
+  }
+}

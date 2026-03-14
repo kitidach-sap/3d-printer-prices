@@ -1,0 +1,404 @@
+{
+  "admin_ui_rules": {
+    "version": "1.0.0",
+    "purpose": "Design and interaction rules for admin dashboard interfaces.",
+    "scope": [
+      "admin.html",
+      "admin tabs",
+      "admin forms",
+      "admin tables",
+      "progress/log panels",
+      "login overlay",
+      "empty/loading/error/success states"
+    ],
+    "global_principles": [
+      "Admin interfaces prioritize clarity, speed, dense information display, and task completion over decoration.",
+      "The admin dashboard must feel stable, predictable, and highly scannable.",
+      "Every major admin section must have a clear purpose and visible hierarchy.",
+      "Use shared global design tokens and component systems whenever possible.",
+      "Avoid creating one-off admin-only visual patterns unless they solve a real workflow problem.",
+      "Preserve consistent interaction patterns across tabs, cards, tables, forms, and dialogs.",
+      "Prefer compact but readable layouts over spacious marketing-style layouts.",
+      "Do not use decorative animation that slows down task-oriented work."
+    ],
+    "page_structure": {
+      "required_zones": [
+        "admin_header",
+        "tab_navigation",
+        "tab_context_header",
+        "main_workspace",
+        "secondary_support_panels",
+        "status_or_log_area"
+      ],
+      "hierarchy_order": [
+        "page_title",
+        "active_tab_context",
+        "card_headers",
+        "table_headers",
+        "row_data",
+        "helper_text"
+      ],
+      "rules": [
+        "The page title must be the strongest text element on the page.",
+        "The active tab context must clearly indicate which workspace the user is in.",
+        "Card headers must be visually stronger than card body text but weaker than the page title.",
+        "Utility or support panels such as logs must not visually overpower the main workspace.",
+        "Secondary information must remain clearly separated from the main task area."
+      ]
+    },
+    "layout": {
+      "container": {
+        "max_width": "1200px",
+        "rules": [
+          "Use a slightly wider container than public-facing content pages.",
+          "Avoid excessively wide unreadable tables by using scroll containers where necessary."
+        ]
+      },
+      "density": {
+        "mode": "compact_readable",
+        "rules": [
+          "Use tighter vertical spacing than public marketing pages.",
+          "Reduce card and table padding where appropriate while preserving readability.",
+          "Do not compress controls so much that tap/click accuracy suffers.",
+          "Dense layouts must still preserve grouping and separation."
+        ]
+      },
+      "spacing": {
+        "rules": [
+          "Use spacing tokens only.",
+          "Prefer compact admin spacing such as var(--sp-2), var(--sp-3), var(--sp-4).",
+          "Avoid raw rem or px spacing unless tied to an explicit token.",
+          "Maintain consistent spacing rhythm between cards, form groups, and data tables."
+        ]
+      },
+      "responsive_rules": [
+        "Admin grids must collapse predictably on smaller screens.",
+        "info-grid and form-row must stack to a single column on narrow widths.",
+        "Do not allow cards or form controls to overflow horizontally.",
+        "Use horizontal scrolling for dense tables on small screens instead of uncontrolled wrapping.",
+        "Maintain clear touch targets on smaller devices."
+      ]
+    },
+    "tabs": {
+      "purpose": "Top-level workspace switching within the admin dashboard.",
+      "semantics": {
+        "required_attributes": [
+          "role=tablist on the container",
+          "role=tab on interactive tabs",
+          "aria-selected on active tab",
+          "aria-controls when applicable"
+        ]
+      },
+      "visual_rules": [
+        "Inactive tabs must look clickable but visually muted.",
+        "Active tabs must have a strong indicator such as accent border-bottom and stronger text color.",
+        "Hover state must improve discoverability without competing with the active state.",
+        "Focus-visible state must be clearly visible."
+      ],
+      "interaction_rules": [
+        "Tab switching should feel immediate and stable.",
+        "Avoid large layout jumps when switching tabs.",
+        "Keep tab labels short and literal.",
+        "Do not overload tabs with badges or noisy visuals unless task-critical."
+      ],
+      "keyboard_rules": [
+        "Tabs should support keyboard focus.",
+        "Left and right arrow keys should move between tabs where feasible.",
+        "Enter or Space should activate the focused tab.",
+        "Focus order must remain logical after switching tabs."
+      ],
+      "state_sync_rules": [
+        "URL hash or parameter sync is allowed as a progressive enhancement.",
+        "If URL-based tab sync is implemented, it must not break no-JS or default tab behavior.",
+        "Default fallback tab must be predictable."
+      ]
+    },
+    "cards": {
+      "purpose": "Primary grouping containers for admin content.",
+      "visual_rules": [
+        "Use global card variables for background, radius, and shadow.",
+        "Interactive cards may use a subtle hover lift or border emphasis.",
+        "Non-interactive cards should remain visually stable.",
+        "Card headers must be clearly separated from card bodies."
+      ],
+      "density_rules": [
+        "Card padding should be tighter than public pages.",
+        "Cards that contain tables or forms may use compact padding to maximize usable space.",
+        "Do not stack too many nested card layers."
+      ]
+    },
+    "forms": {
+      "principles": [
+        "Admin forms must optimize for speed and accuracy.",
+        "Labels must be visible and clear.",
+        "Required fields must be understandable before submission.",
+        "Validation must help recovery, not just block progress."
+      ],
+      "controls": {
+        "input": {
+          "rules": [
+            "Use the shared global input styles.",
+            "Use consistent padding, border, radius, and focus ring.",
+            "Do not create custom admin-only input visuals unless functionally necessary."
+          ]
+        },
+        "select": {
+          "rules": [
+            "Select controls must match input sizing and visual language.",
+            "Use clear selected states and visible focus treatment."
+          ]
+        },
+        "textarea": {
+          "rules": [
+            "Textareas must match the global form language.",
+            "Allow vertical resizing only if it does not break layout."
+          ]
+        }
+      },
+      "layout_rules": [
+        "Use form rows and groups with predictable spacing.",
+        "Keep related fields visually grouped.",
+        "On mobile, stack form groups cleanly.",
+        "Do not create irregular field widths without reason."
+      ],
+      "validation_rules": [
+        "Required fields must communicate their requirement clearly.",
+        "Use :invalid styles or equivalent validation states consistently.",
+        "Validation feedback must not rely on color alone.",
+        "Display inline validation messages near the relevant field when possible.",
+        "Show success and error messages using consistent status components."
+      ],
+      "submit_rules": [
+        "Primary form submission must be visually clear.",
+        "Secondary actions such as cancel or reset must not compete with submit.",
+        "Disable submit only when the reason is clear or user-understandable."
+      ]
+    },
+    "button_semantics": {
+      "principle": "Use semantic styling sparingly to maintain visual discipline.",
+      "categories": {
+        "primary": {
+          "usage": [
+            "Save",
+            "Add",
+            "Create",
+            "Run primary workflow"
+          ],
+          "rules": [
+            "Use one dominant primary button style.",
+            "Do not create multiple competing primary actions in the same context."
+          ]
+        },
+        "secondary": {
+          "usage": [
+            "Cancel",
+            "Preview",
+            "Open details",
+            "Navigate to secondary workflow"
+          ],
+          "rules": [
+            "Must be visually quieter than primary.",
+            "Supports the main task without competing."
+          ]
+        },
+        "success": {
+          "usage": [
+            "Optional positive semantic action",
+            "Confirmed completion state"
+          ],
+          "rules": [
+            "Use sparingly.",
+            "Do not turn every positive action green."
+          ]
+        },
+        "warning": {
+          "usage": [
+            "Bulk update",
+            "Override",
+            "Risky but not destructive action"
+          ],
+          "rules": [
+            "Reserve for actions needing caution.",
+            "Do not use for ordinary editing tasks."
+          ]
+        },
+        "danger": {
+          "usage": [
+            "Delete",
+            "Remove permanently",
+            "Clear data"
+          ],
+          "rules": [
+            "Use only for destructive actions.",
+            "Danger actions should require confirmation where appropriate."
+          ]
+        },
+        "utility": {
+          "usage": [
+            "Refresh",
+            "View logs",
+            "Expand",
+            "Open helper panel"
+          ],
+          "rules": [
+            "Use tertiary or ghost styles.",
+            "Utility actions must not visually overpower task actions."
+          ]
+        }
+      }
+    },
+    "tables": {
+      "principles": [
+        "Tables are work surfaces, not decorative components.",
+        "Dense information must remain readable and scannable.",
+        "Header clarity and action predictability are critical."
+      ],
+      "structure_rules": [
+        "Use a scroll wrapper with overflow-x auto when needed.",
+        "Use sticky headers when table height and scrolling justify it.",
+        "Headers must remain visually distinct from rows.",
+        "Action controls should appear in a predictable last column when possible.",
+        "Numeric values such as price or counts should align right.",
+        "Use controlled text overflow for long content.",
+        "Prefer truncation with title/tooltips or wrap rules depending on context."
+      ],
+      "row_rules": [
+        "Use subtle row separation or striping.",
+        "Hover highlight must be visible but restrained.",
+        "Selected or active rows must have a clear state.",
+        "Rows must not feel cramped even in dense mode."
+      ],
+      "mobile_rules": [
+        "Prefer horizontal scrolling over chaotic wrapping for data-dense tables.",
+        "Maintain action visibility on small screens.",
+        "Do not let action buttons wrap to multiple lines if it harms readability."
+      ],
+      "empty_rules": [
+        "Empty tables must be replaced or supplemented by a meaningful empty state.",
+        "Do not show blank table shells without guidance."
+      ]
+    },
+    "state_system": {
+      "required_states": [
+        "default",
+        "loading",
+        "empty",
+        "success",
+        "error",
+        "disabled"
+      ],
+      "rules": [
+        "Every major admin area must define its state behavior.",
+        "Loading states should indicate that work is in progress without causing panic.",
+        "Empty states should guide the user toward the next meaningful action.",
+        "Success states should confirm completion clearly but briefly.",
+        "Error states should explain the issue and recovery path where possible."
+      ],
+      "tab_level_state_examples": {
+        "scraper": [
+          "idle",
+          "running",
+          "completed",
+          "failed",
+          "no_logs"
+        ],
+        "products": [
+          "empty_list",
+          "loaded_list",
+          "no_results",
+          "save_success",
+          "validation_error"
+        ],
+        "blog": [
+          "empty_posts",
+          "loaded_posts",
+          "draft_editing",
+          "publish_success",
+          "publish_error"
+        ]
+      }
+    },
+    "progress_and_logs": {
+      "purpose": "Developer-oriented visibility into background or ongoing admin tasks.",
+      "visual_rules": [
+        "Progress/log panels may use a terminal-inspired style.",
+        "Use darker surfaces and monospace typography.",
+        "Maintain readable contrast and sufficient line spacing.",
+        "Do not let the log panel dominate the page visually."
+      ],
+      "behavior_rules": [
+        "New logs should appear predictably at the end.",
+        "Auto-scroll to bottom is recommended when the user is already near the bottom.",
+        "Allow manual scroll override so the user can inspect earlier logs.",
+        "Use aria-live politely for important live updates when appropriate."
+      ]
+    },
+    "login_overlay": {
+      "purpose": "Secure access gate before entering the dashboard.",
+      "layout_rules": [
+        "Center the login box with stable spacing.",
+        "Use a constrained width that works on mobile and desktop.",
+        "Do not allow the overlay contents to overflow narrow screens."
+      ],
+      "interaction_rules": [
+        "Inputs must use shared focus-visible states.",
+        "Loading state must be visible on submit.",
+        "Error state must be clearly communicated.",
+        "Disabled state must be visually clear.",
+        "Enter key submission should work when appropriate."
+      ],
+      "accessibility_rules": [
+        "Focus should move into the login overlay when shown.",
+        "Focus should not be lost behind the overlay.",
+        "Error messages must be readable without relying only on color."
+      ]
+    },
+    "dialogs_and_confirmation": {
+      "rules": [
+        "Destructive actions should trigger confirmation dialogs when accidental activation would be costly.",
+        "Confirmation dialogs must have clear primary and cancel actions.",
+        "Dialog copy must explain the consequence plainly.",
+        "Do not use confirmation for trivial reversible actions."
+      ]
+    },
+    "status_messages": {
+      "rules": [
+        "Use consistent status components for success, error, warning, and neutral information.",
+        "Messages must be concise and actionable.",
+        "Icons may support status meaning but must not be the only signal.",
+        "Status text should explain what happened and what to do next when relevant."
+      ]
+    },
+    "accessibility": {
+      "principles": [
+        "Admin interfaces must remain efficient for keyboard and assistive technology users.",
+        "Focus visibility is mandatory.",
+        "Color must not be the only carrier of meaning."
+      ],
+      "rules": [
+        "Use :focus-visible for all interactive elements.",
+        "Ensure keyboard navigation works for tabs, forms, buttons, and dialogs.",
+        "Use aria-live for dynamic status updates where appropriate.",
+        "Keep labels explicit and accessible.",
+        "Ensure contrast meets readable standards."
+      ]
+    },
+    "anti_patterns": [
+      "Huge admin paddings that waste working space",
+      "Multiple competing button colors in the same area",
+      "Blank tables without empty-state guidance",
+      "Logs that visually overpower the main workspace",
+      "Validation that only says 'invalid' without explanation",
+      "Tabs that rely on color alone",
+      "Unsafe destructive actions without confirmation",
+      "Embedded page-specific styles that bypass the design system"
+    ],
+    "implementation_notes_for_ai": [
+      "Refactor UI structure before rebinding behavior logic.",
+      "Do not invent new admin components unless necessary.",
+      "Reuse global tokens, buttons, cards, forms, and state styles first.",
+      "When uncertain, choose compact clarity over visual novelty.",
+      "Preserve predictable action placement and hierarchy at all times."
+    ]
+  }
+}

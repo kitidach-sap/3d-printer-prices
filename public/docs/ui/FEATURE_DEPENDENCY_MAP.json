@@ -1,0 +1,439 @@
+{
+  "feature_dependencies": {
+    "version": "1.0.0",
+    "features": [
+      {
+        "name": "ProductDiscovery",
+        "purpose": "Main product browsing experience with grid, stats, and scrape time.",
+        "scope": "Public",
+        "pages": ["index.html"],
+        "components": ["HeroSection", "ProductDataTable", "TopPicksGrid", "Pagination", "ProductCard"],
+        "data_models": ["Product", "Stats", "ScrapeStatus", "Pagination"],
+        "state_flows": ["index.html → loading → browsing → loading_more"],
+        "api_endpoints": [
+          "GET /api/products",
+          "GET /api/products/stats",
+          "GET /api/scrape-status"
+        ],
+        "js_files": ["app.js"],
+        "css_dependencies": [".product-card", ".hero", ".stat-card", ".skeleton-card", ".load-more-btn", ".pagination"],
+        "depends_on": ["ProductFiltering"],
+        "depended_by": ["ProductComparison", "QuizRecommendation"],
+        "localStorage_keys": [],
+        "notes": "Entry point feature. Loads products with default filters on page init."
+      },
+      {
+        "name": "ProductFiltering",
+        "purpose": "Sidebar filters, search, quick filter chips, and URL param sync.",
+        "scope": "Public",
+        "pages": ["index.html"],
+        "components": ["SidebarFilters", "QuickFilterChips", "SearchInput"],
+        "data_models": ["FilterOptions", "ActiveFilters"],
+        "state_flows": ["index.html → filtering → browsing / empty"],
+        "api_endpoints": [
+          "GET /api/filters",
+          "GET /api/products (with filter params)"
+        ],
+        "js_files": ["app.js"],
+        "css_dependencies": [".sidebar", ".filter-group", ".quick-filters", ".search-box", ".filter-chip"],
+        "depends_on": [],
+        "depended_by": ["ProductDiscovery", "QuizRecommendation"],
+        "localStorage_keys": [],
+        "notes": "Bidirectional sync: URL ↔ sidebar ↔ activeFilters object. Debounced search (300ms)."
+      },
+      {
+        "name": "ProductComparison",
+        "purpose": "Compare tray on index page + full comparison table on compare page.",
+        "scope": "Public",
+        "pages": ["index.html", "compare.html"],
+        "components": ["CompareTray", "CompareTable", "CompareButton"],
+        "data_models": ["CompareItem", "Product"],
+        "state_flows": [
+          "index.html → compare_tray (hidden/visible/full)",
+          "compare.html → loading → comparing / empty"
+        ],
+        "api_endpoints": [
+          "GET /api/products?ids=..."
+        ],
+        "js_files": ["app.js", "compare.js"],
+        "css_dependencies": [".compare-tray", ".compare-btn", ".compare-table", ".compare-header"],
+        "depends_on": ["ProductDiscovery"],
+        "depended_by": [],
+        "localStorage_keys": ["compareList"],
+        "notes": "Max 3 items. Persisted via localStorage. Compare page reads IDs from URL params."
+      },
+      {
+        "name": "QuizRecommendation",
+        "purpose": "Multi-step quiz modal that converts answers to filter strategy.",
+        "scope": "Public",
+        "pages": ["index.html"],
+        "components": ["QuizModal"],
+        "data_models": ["QuizAnswers", "ActiveFilters"],
+        "state_flows": ["index.html → quiz_active → step_budget → step_experience → step_use_case → step_result → filtering"],
+        "api_endpoints": [],
+        "js_files": ["app.js"],
+        "css_dependencies": [".quiz-modal", ".quiz-step", ".quiz-option", ".quiz-header"],
+        "depends_on": ["ProductFiltering"],
+        "depended_by": [],
+        "localStorage_keys": [],
+        "notes": "Pure client-side. Transforms answers to filter params: budget→price range, experience→beginner_only, useCase→printer_type."
+      },
+      {
+        "name": "RankingLists",
+        "purpose": "Curated 'Best For' top-5 product rankings.",
+        "scope": "Public",
+        "pages": ["best.html"],
+        "components": ["RankingCard", "CategoryPills"],
+        "data_models": ["Product", "RankingUseCase"],
+        "state_flows": ["best.html → loading → showing_rankings / empty"],
+        "api_endpoints": [
+          "GET /api/products (with ranking filters)"
+        ],
+        "js_files": ["best.js"],
+        "css_dependencies": [".ranking-card", ".rank-number", ".category-pills"],
+        "depends_on": [],
+        "depended_by": [],
+        "localStorage_keys": [],
+        "notes": "4 predefined use cases: beginners, resin-detail, budget, speed. URL param: ?type=. Products sorted by custom comparator."
+      },
+      {
+        "name": "CostCalculator",
+        "purpose": "Interactive cost estimation tool for FDM and Resin printing.",
+        "scope": "Public",
+        "pages": ["calculator.html"],
+        "components": ["CalculatorPanel", "ResultPanel", "ModeToggle"],
+        "data_models": ["CalculatorInput", "CalculatorResult"],
+        "state_flows": ["calculator.html → idle → calculating → showing_result"],
+        "api_endpoints": [],
+        "js_files": ["calculator.js"],
+        "css_dependencies": [".calculator-panel", ".result-panel", ".mode-toggle", ".cost-bar"],
+        "depends_on": [],
+        "depended_by": [],
+        "localStorage_keys": [],
+        "notes": "Pure client-side calculation. No API calls. Assumptions hardcoded: FDM 0.02kg/hr 0.15kW, Resin 0.025L/hr 0.04kW."
+      },
+      {
+        "name": "MaterialCompatibility",
+        "purpose": "Material compatibility matrix reference chart.",
+        "scope": "Public",
+        "pages": ["compatibility.html"],
+        "components": ["CompatibilityGrid"],
+        "data_models": ["MaterialData (inline static)"],
+        "state_flows": ["compatibility.html → loaded → filtered → detail_view"],
+        "api_endpoints": [],
+        "js_files": ["inline JS in compatibility.html"],
+        "css_dependencies": [".compatibility-grid", ".material-cell"],
+        "depends_on": [],
+        "depended_by": [],
+        "localStorage_keys": [],
+        "notes": "Static data embedded in page. No server calls. Color-coded compatibility cells."
+      },
+      {
+        "name": "ProductDetail",
+        "purpose": "Full product detail page with specs, AI summary, gear, alternatives.",
+        "scope": "Public",
+        "pages": ["product.html"],
+        "components": ["ProductHero", "SpecsTable", "StrengthsList", "GearGrid", "AlternativesGrid"],
+        "data_models": ["Product", "RecommendedGear"],
+        "state_flows": ["product.html → loading → showing_product → sub-states (gear_loading, alternatives_loading)"],
+        "api_endpoints": [
+          "GET /api/products?ids=...",
+          "GET /api/products/:id/recommended-gear",
+          "GET /api/products (for alternatives)"
+        ],
+        "js_files": ["product.js"],
+        "css_dependencies": [".product-detail", ".specs-table", ".strengths-list", ".gear-card", ".alternatives-grid"],
+        "depends_on": [],
+        "depended_by": [],
+        "localStorage_keys": ["compareList (for compare button)"],
+        "notes": "Injects JSON-LD for SEO. Parses specs_json for specs table. AI strengths/weaknesses from enrichment."
+      },
+      {
+        "name": "BlogContentSystem",
+        "purpose": "Blog listing page and individual blog articles.",
+        "scope": "Public",
+        "pages": ["blog/index.html", "blog/best-3d-printers-under-300.html"],
+        "components": ["BlogCard", "ArticleWrapper"],
+        "data_models": ["BlogPost"],
+        "state_flows": ["blog/index.html → static_loaded"],
+        "api_endpoints": [],
+        "js_files": [],
+        "css_dependencies": [".blog-card", ".blog-grid", ".article-content (blog.css)"],
+        "depends_on": [],
+        "depended_by": ["AdminBlogManagement"],
+        "localStorage_keys": [],
+        "notes": "Static HTML pages. Blog posts generated by admin AI tools and deployed as HTML files."
+      },
+      {
+        "name": "AdminScraper",
+        "purpose": "Product scraping from Amazon with live progress tracking.",
+        "scope": "Admin",
+        "pages": ["admin.html (scraper tab)"],
+        "components": ["InfoGrid", "ProgressPanel", "AdminDataTable", "CategoryCheckboxes"],
+        "data_models": ["ScrapeStatus", "ScrapeLog", "ScrapeProgress"],
+        "state_flows": ["admin.html.scraper_tab → idle → scraping → idle", "admin.html.scraper_tab → idle → updating_prices → idle"],
+        "api_endpoints": [
+          "GET /api/scrape-status",
+          "GET /api/scrape-logs",
+          "POST /api/admin/scrape",
+          "GET /api/admin/scrape-running",
+          "GET /api/admin/scrape-progress",
+          "POST /api/admin/update-prices",
+          "GET /api/admin/update-prices-running"
+        ],
+        "js_files": ["inline JS in admin.html"],
+        "css_dependencies": [".admin-card", ".info-grid", ".progress-panel", ".admin-table", ".blinking-dot"],
+        "depends_on": ["AdminAuth"],
+        "depended_by": ["AdminProductManagement"],
+        "localStorage_keys": [],
+        "notes": "Scraper runs async. Client polls every 2s via checkRunning(). Progress log auto-scrolls. Category selection with select all."
+      },
+      {
+        "name": "AdminProductManagement",
+        "purpose": "Product CRUD, AI enrichment, detail scraping, search/filter/sort/paginate.",
+        "scope": "Admin",
+        "pages": ["admin.html (products tab)"],
+        "components": ["AdminDataTable", "Pagination", "PipelineLog", "AdminFormGroup"],
+        "data_models": ["Product", "AdminProductEntry", "Pagination"],
+        "state_flows": ["admin.html.products_tab → loading → browsing → enriching/fetching_details → browsing"],
+        "api_endpoints": [
+          "GET /api/admin/products",
+          "POST /api/admin/product",
+          "DELETE /api/admin/products/:id",
+          "POST /api/admin/products/bulk-delete",
+          "POST /api/admin/enrich-products",
+          "POST /api/admin/fetch-details",
+          "GET /api/admin/product-stats"
+        ],
+        "js_files": ["inline JS in admin.html"],
+        "css_dependencies": [".admin-table", ".admin-card", ".form-input", ".form-select", ".actions-cell", ".skeleton-row-container"],
+        "depends_on": ["AdminAuth", "AdminScraper"],
+        "depended_by": [],
+        "localStorage_keys": [],
+        "notes": "Supports sort by name/price/date, search/filter, pagination (20/50/100). Bulk delete with checkboxes. Skeleton loader during fetch. AI enrichment auto-chains batches."
+      },
+      {
+        "name": "AdminBlogManagement",
+        "purpose": "AI blog generation, preview, publish, and post management.",
+        "scope": "Admin",
+        "pages": ["admin.html (blog tab)"],
+        "components": ["AdminFormGroup", "BlogPreview"],
+        "data_models": ["BlogPost", "BlogGenerationConfig"],
+        "state_flows": ["admin.html.blog_tab → idle → generating → previewing → publishing → idle"],
+        "api_endpoints": [
+          "POST /api/admin/generate-blog",
+          "POST /api/admin/publish-blog",
+          "GET /api/admin/blog/list",
+          "PATCH /api/admin/blog/:id/toggle",
+          "DELETE /api/admin/blog/:id",
+          "GET /api/cron/blog"
+        ],
+        "js_files": ["inline JS in admin.html"],
+        "css_dependencies": [".admin-card", ".form-group", ".form-select", ".form-textarea"],
+        "depends_on": ["AdminAuth", "AdminSettings (API keys)"],
+        "depended_by": ["BlogContentSystem"],
+        "localStorage_keys": [],
+        "notes": "Supports Gemini and OpenAI with auto-fallback. Auto-topic mode for cron. Posts can be published or saved as draft."
+      },
+      {
+        "name": "XAutoPost",
+        "purpose": "AI tweet generation and X/Twitter auto-posting.",
+        "scope": "Admin",
+        "pages": ["admin.html (blog tab, xpost tab, schedule tab)"],
+        "components": ["AdminFormGroup", "XPostPreview", "AdminDataTable"],
+        "data_models": ["XPost", "XPostGenerationConfig"],
+        "state_flows": [
+          "admin.html.blog_tab → generating_x_post → x_post_preview",
+          "admin.html.xpost_tab → loaded → posting → loaded",
+          "admin.html.schedule_tab → x schedule config"
+        ],
+        "api_endpoints": [
+          "POST /api/admin/generate-x-post",
+          "GET /api/cron/twitter",
+          "GET /api/admin/system/x-post-status",
+          "POST /api/admin/system/x-post-status",
+          "GET /api/admin/system/x-post-history"
+        ],
+        "js_files": ["inline JS in admin.html"],
+        "css_dependencies": [".admin-card", ".switch", ".slider"],
+        "depends_on": ["AdminAuth", "AdminSettings (X API keys + AI keys)"],
+        "depended_by": [],
+        "localStorage_keys": [],
+        "notes": "X API requires 4 keys. Tweet generation supports 3 post types: new_products, blog_links, deals. Max 280 chars."
+      },
+      {
+        "name": "AdminScheduling",
+        "purpose": "Cron schedule management for scraper, blog, and X auto-post.",
+        "scope": "Admin",
+        "pages": ["admin.html (schedule tab)"],
+        "components": ["AdminFormGroup", "InfoGrid"],
+        "data_models": ["ScheduleConfig"],
+        "state_flows": ["admin.html.schedule_tab → loaded"],
+        "api_endpoints": [
+          "GET /api/admin/schedule",
+          "GET /api/admin/get-schedule/blog",
+          "GET /api/admin/get-schedule/x",
+          "POST /api/admin/save-schedule"
+        ],
+        "js_files": ["inline JS in admin.html"],
+        "css_dependencies": [".admin-card", ".info-grid", ".form-select"],
+        "depends_on": ["AdminAuth"],
+        "depended_by": ["AdminScraper", "AdminBlogManagement", "XAutoPost"],
+        "localStorage_keys": [],
+        "notes": "Schedule changes update vercel.json locally. Vercel redeployment required to activate. Custom cron supported."
+      },
+      {
+        "name": "AdminSettings",
+        "purpose": "API key management for external services.",
+        "scope": "Admin",
+        "pages": ["admin.html (settings tab)"],
+        "components": ["AdminFormGroup", "StatusBadge"],
+        "data_models": ["ApiKeyConfig"],
+        "state_flows": ["admin.html.settings_tab → loaded → saving_key → loaded"],
+        "api_endpoints": [
+          "POST /api/admin/save-api-key",
+          "GET /api/admin/api-keys-status"
+        ],
+        "js_files": ["inline JS in admin.html"],
+        "css_dependencies": [".admin-card", ".api-key-row", ".key-status", ".form-input"],
+        "depends_on": ["AdminAuth"],
+        "depended_by": ["AdminScraper", "AdminBlogManagement", "XAutoPost"],
+        "localStorage_keys": [],
+        "notes": "7 key types: scraper_api_key, gemini_api_key, openai_api_key, x_api_key, x_api_secret, x_access_token, x_access_secret. Keys stored server-side."
+      },
+      {
+        "name": "AdminAuth",
+        "purpose": "Admin authentication via API key.",
+        "scope": "Admin",
+        "pages": ["admin.html"],
+        "components": ["LoginOverlay"],
+        "data_models": [],
+        "state_flows": ["admin.html → login_required → authenticated"],
+        "api_endpoints": [],
+        "js_files": ["inline JS in admin.html"],
+        "css_dependencies": [".login-overlay", ".login-box"],
+        "depends_on": [],
+        "depended_by": ["AdminScraper", "AdminProductManagement", "AdminBlogManagement", "XAutoPost", "AdminScheduling", "AdminSettings"],
+        "localStorage_keys": [],
+        "notes": "Simple key-based auth. Key sent as X-Admin-Key header on all admin API calls. Focus trap on login overlay. No session persistence."
+      },
+      {
+        "name": "ThemeSystem",
+        "purpose": "Light/dark theme toggle across all pages.",
+        "scope": "Global",
+        "pages": ["all"],
+        "components": ["ThemeToggle"],
+        "data_models": [],
+        "state_flows": ["global → dark ↔ light"],
+        "api_endpoints": [],
+        "js_files": ["app.js", "inline in other pages"],
+        "css_dependencies": [":root[data-theme]", "CSS custom properties"],
+        "depends_on": [],
+        "depended_by": ["all features (visual layer)"],
+        "localStorage_keys": ["theme"],
+        "notes": "Default: dark. All colors via CSS custom properties. Toggle updates data-theme on <html>."
+      }
+    ],
+    "dependency_graph": {
+      "description": "Shows which features depend on other features.",
+      "edges": [
+        { "from": "ProductDiscovery", "to": "ProductFiltering", "type": "requires" },
+        { "from": "ProductComparison", "to": "ProductDiscovery", "type": "extends" },
+        { "from": "QuizRecommendation", "to": "ProductFiltering", "type": "feeds_into" },
+        { "from": "AdminScraper", "to": "AdminAuth", "type": "requires" },
+        { "from": "AdminProductManagement", "to": "AdminAuth", "type": "requires" },
+        { "from": "AdminProductManagement", "to": "AdminScraper", "type": "follows" },
+        { "from": "AdminBlogManagement", "to": "AdminAuth", "type": "requires" },
+        { "from": "AdminBlogManagement", "to": "AdminSettings", "type": "requires_keys" },
+        { "from": "AdminBlogManagement", "to": "BlogContentSystem", "type": "produces" },
+        { "from": "XAutoPost", "to": "AdminAuth", "type": "requires" },
+        { "from": "XAutoPost", "to": "AdminSettings", "type": "requires_keys" },
+        { "from": "AdminScheduling", "to": "AdminAuth", "type": "requires" },
+        { "from": "AdminScheduling", "to": "AdminScraper", "type": "configures" },
+        { "from": "AdminScheduling", "to": "AdminBlogManagement", "type": "configures" },
+        { "from": "AdminScheduling", "to": "XAutoPost", "type": "configures" },
+        { "from": "AdminSettings", "to": "AdminAuth", "type": "requires" },
+        { "from": "ThemeSystem", "to": "(none)", "type": "standalone" }
+      ]
+    },
+    "feature_isolation_zones": {
+      "description": "Groups features by their coupled files, for safe modification zones.",
+      "zones": {
+        "public_discovery": {
+          "features": ["ProductDiscovery", "ProductFiltering", "ProductComparison", "QuizRecommendation"],
+          "primary_files": ["index.html", "compare.html", "app.js", "compare.js", "style.css"],
+          "shared_dependencies": ["Product model", "/api/products endpoint", "CSS product-card class"],
+          "modification_risk": "HIGH — all features share app.js and interact via activeFilters, compareList, and URL params."
+        },
+        "public_tools": {
+          "features": ["CostCalculator", "MaterialCompatibility"],
+          "primary_files": ["calculator.html", "calculator.js", "compatibility.html", "style.css"],
+          "shared_dependencies": ["style.css layout classes"],
+          "modification_risk": "LOW — self-contained features with no cross-page data sharing."
+        },
+        "public_rankings": {
+          "features": ["RankingLists"],
+          "primary_files": ["best.html", "best.js", "style.css"],
+          "shared_dependencies": ["Product model", "/api/products endpoint"],
+          "modification_risk": "LOW — independent feature. Only shares Product API with discovery zone."
+        },
+        "public_product": {
+          "features": ["ProductDetail"],
+          "primary_files": ["product.html", "product.js", "style.css"],
+          "shared_dependencies": ["Product model", "/api/products endpoint", "compareList (localStorage)"],
+          "modification_risk": "MEDIUM — shares compare logic with discovery zone."
+        },
+        "public_content": {
+          "features": ["BlogContentSystem"],
+          "primary_files": ["blog/index.html", "blog/*.html", "blog/blog.css"],
+          "shared_dependencies": ["style.css (header/footer)"],
+          "modification_risk": "LOW — static pages. Generated by admin. No JS logic."
+        },
+        "admin_dashboard": {
+          "features": ["AdminAuth", "AdminScraper", "AdminProductManagement", "AdminBlogManagement", "XAutoPost", "AdminScheduling", "AdminSettings"],
+          "primary_files": ["admin.html", "style.css"],
+          "shared_dependencies": ["All admin features share admin.html inline JS", "apiHeaders() function", "adminKey variable", "showConfirm() modal", "Shared pipeline log component"],
+          "modification_risk": "VERY HIGH — all 7 features in one monolithic file. Changes to shared functions (apiHeaders, showConfirm, init) affect all tabs. Refactoring to separate JS modules recommended."
+        },
+        "global": {
+          "features": ["ThemeSystem"],
+          "primary_files": ["style.css (CSS custom properties)", "app.js (theme toggle)"],
+          "shared_dependencies": ["data-theme attribute affects all pages"],
+          "modification_risk": "MEDIUM — CSS token changes affect ALL pages."
+        }
+      }
+    },
+    "cross_cutting_concerns": {
+      "authentication": {
+        "mechanism": "X-Admin-Key header",
+        "affects": ["All admin features"],
+        "implementation": "adminKey variable + apiHeaders() helper in admin.html"
+      },
+      "theming": {
+        "mechanism": "CSS custom properties + data-theme attribute",
+        "affects": ["All pages and components"],
+        "implementation": "style.css root variables, localStorage persistence"
+      },
+      "responsive_design": {
+        "mechanism": "CSS media queries",
+        "affects": ["All pages"],
+        "implementation": "Mobile-first breakpoints in style.css"
+      },
+      "skeleton_loading": {
+        "mechanism": "CSS animation classes",
+        "affects": ["ProductDiscovery", "AdminProductManagement"],
+        "implementation": ".skeleton, .skeleton-card, .skeleton-text classes"
+      },
+      "error_handling": {
+        "mechanism": "try-catch with UI feedback",
+        "affects": ["All API-dependent features"],
+        "implementation": "Inline error messages in status divs"
+      },
+      "url_state_sync": {
+        "mechanism": "URL search params ↔ JS state",
+        "affects": ["ProductFiltering", "RankingLists", "ProductDetail", "ProductComparison"],
+        "implementation": "URLSearchParams API in app.js, best.js, product.js, compare.js"
+      }
+    }
+  }
+}

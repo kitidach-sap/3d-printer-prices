@@ -1,0 +1,167 @@
+{
+  "article_system": {
+    "version": "1.0.0",
+    "purpose": "Rules for long-form content pages such as blog posts, legal pages, methodology pages, and informational articles.",
+    "principles": [
+      "Long-form reading must optimize for comfort, clarity, and hierarchy.",
+      "Readable width, spacing, and typography are more important than decorative layout.",
+      "Article pages must feel calm, stable, and distraction-light.",
+      "The reading experience must remain excellent on both desktop and mobile."
+    ],
+    "layout": {
+      "article_container": {
+        "max_width": "container-sm or approximately 700px to 800px",
+        "rules": [
+          "Center article content within a constrained reading column.",
+          "Do not allow article paragraphs to span excessively wide lines."
+        ]
+      },
+      "page_structure": [
+        "global_header",
+        "article_header",
+        "article_metadata",
+        "article_content",
+        "optional_supporting_navigation",
+        "global_footer"
+      ]
+    },
+    "typography": {
+      "body": {
+        "rules": [
+          "Use readable body size and generous line-height.",
+          "Paragraph line-height should typically feel more open than UI text.",
+          "Use consistent paragraph spacing."
+        ]
+      },
+      "headings": {
+        "rules": [
+          "Headings must create a clear outline.",
+          "Use generous spacing above headings, especially h2 and h3.",
+          "Headings should visually separate sections without feeling oversized."
+        ]
+      },
+      "intro": {
+        "rules": [
+          "An optional intro paragraph may use slightly larger or stronger styling.",
+          "Do not over-style intros if they reduce readability."
+        ]
+      }
+    },
+    "content_elements": {
+      "paragraphs": {
+        "rules": [
+          "Keep paragraphs moderate in length.",
+          "Avoid giant text walls.",
+          "Break ideas into separate paragraphs logically."
+        ]
+      },
+      "lists": {
+        "rules": [
+          "Use lists when scanability improves.",
+          "Maintain consistent bullet spacing.",
+          "Keep list structure parallel when possible."
+        ]
+      },
+      "blockquotes": {
+        "rules": [
+          "Visually separate quotes clearly.",
+          "Do not over-style blockquotes."
+        ]
+      },
+      "tables": {
+        "rules": [
+          "Tables inside articles must remain readable and responsive.",
+          "Use the global table system where possible.",
+          "Do not let article tables break the reading layout."
+        ]
+      },
+      "images": {
+        "rules": [
+          "Images must scale responsively.",
+          "Use max-width 100 percent and preserve aspect ratio.",
+          "Images should not exceed the article content width."
+        ]
+      },
+      "figures_and_captions": {
+        "rules": [
+          "Captions should be visually secondary and readable.",
+          "Use captions when they add meaning, not just decoration."
+        ]
+      },
+      "code_or_technical_blocks": {
+        "rules": [
+          "Use monospace styling and clear separation.",
+          "Preserve horizontal scrolling where needed instead of breaking layout."
+        ]
+      }
+    },
+    "metadata": {
+      "rules": [
+        "Date, author, category, and other metadata must appear below or near the headline.",
+        "Metadata must remain visually secondary.",
+        "Metadata should be compact and scannable."
+      ]
+    },
+    "legal_pages": {
+      "rules": [
+        "Privacy, Terms, and legal pages should use the same article container.",
+        "Use clear section breaks and headings.",
+        "Avoid inline styles.",
+        "Preserve the shared global header and footer."
+      ]
+    },
+    "methodology_pages": {
+      "rules": [
+        "Methodology content should use the same readable article structure.",
+        "Any supporting tables or lists must follow global visual standards.",
+        "Technical explanations should remain readable, not cramped."
+      ]
+    },
+    "blog_index": {
+      "rules": [
+        "The blog index may use a clean list or grid of article cards.",
+        "Card titles should be clear and readable.",
+        "Metadata should be secondary.",
+        "Descriptions should be short and scannable."
+      ]
+    },
+    "article_navigation": {
+      "rules": [
+        "Optional previous/next article links should be visually secondary to the main article.",
+        "Do not clutter article pages with too many competing navigation elements."
+      ]
+    },
+    "readability_rules": [
+      "Use sufficient paragraph spacing.",
+      "Use a comfortable line length.",
+      "Avoid overly dense side-by-side layouts inside article content.",
+      "Keep visual noise low."
+    ],
+    "responsive_rules": [
+      "Article content width must adapt gracefully on small screens.",
+      "Images, tables, and code blocks must not break the viewport.",
+      "Metadata and header structure must remain readable on mobile."
+    ],
+    "a11y": {
+      "rules": [
+        "Maintain heading hierarchy correctly.",
+        "Ensure links are distinguishable.",
+        "Images must have alt text where appropriate.",
+        "Readable contrast must be preserved in article typography and metadata."
+      ]
+    },
+    "anti_patterns": [
+      "Full-width long paragraphs on desktop",
+      "Tiny paragraph spacing",
+      "Overly decorative typography in legal or informational pages",
+      "Inline styling for one-off article pages",
+      "Metadata louder than the headline",
+      "Images breaking the content column"
+    ],
+    "implementation_notes_for_ai": [
+      "Use a shared article-content wrapper across all long-form pages.",
+      "Preserve the same reading width and spacing rhythm throughout the site.",
+      "Prioritize reading comfort over visual novelty."
+    ]
+  }
+}

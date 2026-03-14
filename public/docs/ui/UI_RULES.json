@@ -1,0 +1,204 @@
+{
+  "ui_principles": {
+    "clarity": {
+      "description": "Interfaces must communicate purpose immediately.",
+      "rules": [
+        "Every screen must answer: what is this, why it matters, what to do next.",
+        "Headlines must clearly describe the function or value of the page.",
+        "Avoid ambiguous labels like 'Click here' or 'Learn more' without context.",
+        "Use familiar wording over clever or creative wording.",
+        "Primary actions must be visually distinguishable."
+      ]
+    },
+
+    "consistency": {
+      "description": "Similar elements should behave and appear the same.",
+      "rules": [
+        "Buttons with the same purpose must share identical styles.",
+        "Navigation patterns should remain consistent across pages.",
+        "Icons must represent the same meaning everywhere.",
+        "Spacing and typography scales must remain consistent.",
+        "Design patterns should not change unexpectedly between sections."
+      ]
+    },
+
+    "visual_hierarchy": {
+      "description": "Guide user attention using size, contrast, spacing and alignment.",
+      "rules": [
+        "Each page must have a clear primary element.",
+        "Headings must follow a logical order: H1 > H2 > H3.",
+        "Primary actions must visually stand out.",
+        "Use size and contrast to indicate importance.",
+        "Important content must appear above secondary content."
+      ]
+    },
+
+    "simplicity": {
+      "description": "Reduce complexity and remove unnecessary elements.",
+      "rules": [
+        "Each screen should focus on a single primary task.",
+        "Avoid more than 5 primary navigation items.",
+        "Avoid unnecessary decorative elements.",
+        "Reduce text to the minimum required to understand the interface.",
+        "Prefer simple layouts over complex multi-column designs."
+      ]
+    },
+
+    "familiarity": {
+      "description": "Use patterns users already understand.",
+      "rules": [
+        "Use recognizable icons like search, cart, menu, and user profile.",
+        "Follow common navigation conventions.",
+        "Do not reinvent standard interaction patterns.",
+        "Use common UI metaphors when possible.",
+        "Prefer established design systems when applicable."
+      ]
+    },
+
+    "feedback": {
+      "description": "The system must always communicate the result of user actions.",
+      "rules": [
+        "Buttons must visually respond to hover, press, or tap.",
+        "Loading indicators must appear during delays.",
+        "Successful actions must show confirmation messages.",
+        "Errors must clearly explain what happened and how to fix it.",
+        "System state changes must be visible."
+      ]
+    },
+
+    "error_prevention": {
+      "description": "Design should prevent mistakes before they happen.",
+      "rules": [
+        "Validate user input before submission when possible.",
+        "Use constrained inputs like dropdowns when appropriate.",
+        "Show examples or placeholders in form fields.",
+        "Confirm destructive actions such as deletion.",
+        "Prevent invalid states through interface constraints."
+      ]
+    },
+
+    "accessibility": {
+      "description": "Interfaces must be usable by people with different abilities.",
+      "rules": [
+        "Text must meet WCAG contrast requirements.",
+        "Font sizes must be readable on small screens.",
+        "Interactive elements must be large enough to tap.",
+        "Interfaces must support keyboard navigation.",
+        "Images must include descriptive alt text."
+      ]
+    },
+
+    "responsiveness": {
+      "description": "Interfaces must adapt to different screen sizes and devices.",
+      "rules": [
+        "Design mobile-first layouts.",
+        "Ensure layouts scale smoothly across breakpoints.",
+        "Touch targets must be at least 44px high on mobile.",
+        "Avoid horizontal scrolling.",
+        "Content must remain readable on all screen sizes."
+      ]
+    },
+
+    "whitespace": {
+      "description": "Use spacing to improve readability and focus.",
+      "rules": [
+        "Use consistent spacing systems such as 8px grids.",
+        "Group related elements together using spacing.",
+        "Separate unrelated elements clearly.",
+        "Avoid crowded layouts.",
+        "Whitespace should guide visual structure."
+      ]
+    },
+
+    "affordance": {
+      "description": "UI elements must indicate how they can be used.",
+      "rules": [
+        "Clickable elements must visually appear interactive.",
+        "Links should be distinguishable from text.",
+        "Buttons should visually appear pressable.",
+        "Interactive states should provide cues for interaction.",
+        "Avoid hidden actions that require guesswork."
+      ]
+    },
+
+    "recognition_over_recall": {
+      "description": "Users should recognize options rather than remember them.",
+      "rules": [
+        "Provide suggestions or autocomplete when possible.",
+        "Display recently used items or history.",
+        "Use icons and labels together when helpful.",
+        "Expose common actions visibly.",
+        "Avoid requiring users to remember information across screens."
+      ]
+    },
+
+    "progressive_disclosure": {
+      "description": "Reveal complexity gradually to avoid overwhelming users.",
+      "rules": [
+        "Show essential information first.",
+        "Hide advanced settings behind expandable sections.",
+        "Avoid presenting too many options at once.",
+        "Provide contextual help when needed.",
+        "Keep advanced functionality accessible but unobtrusive."
+      ]
+    },
+
+    "primary_action_focus": {
+      "description": "Every screen should guide the user toward a main action.",
+      "rules": [
+        "Each screen must have one dominant call-to-action.",
+        "Primary actions must be visually prominent.",
+        "Secondary actions must be visually subdued.",
+        "Avoid multiple competing primary actions.",
+        "Guide user flow toward the intended outcome."
+      ]
+    },
+
+    "performance_perception": {
+      "description": "Interfaces should feel fast and responsive.",
+      "rules": [
+        "Show loading indicators for operations longer than 300ms.",
+        "Use skeleton screens for content loading.",
+        "Avoid blocking the interface unnecessarily.",
+        "Provide immediate visual response to user input.",
+        "Optimize interactions to feel smooth."
+      ]
+    },
+
+    "button_system": {
+      "variants": {
+        "primary": {
+          "usage": "main action",
+          "style": "solid background",
+          "priority": "highest"
+        },
+        "secondary": {
+          "usage": "secondary actions",
+          "style": "outline or neutral background"
+        },
+        "tertiary": {
+          "usage": "minor actions",
+          "style": "text or ghost button"
+        }
+      },
+      "sizes": {
+        "sm": "32px height",
+        "md": "40px height",
+        "lg": "48px height"
+      },
+      "states": [
+        "default",
+        "hover",
+        "active",
+        "disabled"
+      ],
+      "rules": [
+        "Each screen must have one primary action.",
+        "Primary buttons must visually stand out.",
+        "Secondary actions must be visually less dominant.",
+        "Buttons must provide visual feedback on hover and click.",
+        "Avoid placing multiple primary buttons in the same section."
+      ]
+    }
+  }
+}

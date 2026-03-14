@@ -91,6 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadProducts();
     setupEventListeners();
     setupTheme();
+    setupMobileNav();
     syncUiFromFilters();
     renderCompareTray();
 });
@@ -114,6 +115,24 @@ function setupTheme() {
 
 function updateThemeIcon(theme) {
     document.getElementById('theme-toggle').textContent = theme === 'dark' ? '☀️' : '🌙';
+}
+
+// ============================================
+// Mobile Navigation
+// ============================================
+function setupMobileNav() {
+    const toggle = document.getElementById('mobile-menu-toggle');
+    const nav = document.getElementById('mobile-nav');
+    const overlay = document.getElementById('mobile-nav-overlay');
+    const close = document.getElementById('mobile-nav-close');
+    if (!toggle || !nav) return;
+
+    function openNav() { nav.classList.add('open'); overlay?.classList.add('open'); document.body.style.overflow = 'hidden'; }
+    function closeNav() { nav.classList.remove('open'); overlay?.classList.remove('open'); document.body.style.overflow = ''; }
+
+    toggle.addEventListener('click', openNav);
+    close?.addEventListener('click', closeNav);
+    overlay?.addEventListener('click', closeNav);
 }
 
 // ============================================
@@ -255,7 +274,18 @@ async function loadProducts() {
         document.getElementById('result-count').textContent = `${totalProducts.toLocaleString()} products found`;
 
         if (!data || data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="loading">No products found</td></tr>';
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <span class="empty-icon">🔍</span>
+                            <h3>No matches found</h3>
+                            <p>We couldn't find any products matching your current filter combination.</p>
+                            <button class="btn btn-primary" onclick="document.getElementById('clear-filters').click()">Clear All Filters</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
             return;
         }
 
@@ -280,6 +310,10 @@ async function loadProducts() {
                                 ${p.labels.map(l => `<span class="${l.toLowerCase().includes('beginner') ? 'badge-beginner' : 'badge-feature'}">${escapeHtml(l)}</span>`).join('')}
                             </div>
                             ` : ''}
+                            <div style="margin-top: 0.5rem; display: flex; gap: var(--sp-2); align-items: center; flex-wrap: wrap;">
+                                <a href="${affiliateUrl(p.amazon_url)}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm" onclick="event.stopPropagation()">Check Price</a>
+                                <a href="/product.html?id=${p.id}" class="btn btn-secondary btn-sm" onclick="event.stopPropagation()">View Details</a>
+                            </div>
                         </div>
                     </a>
                     <div style="margin-top:0.5rem; margin-left: calc(60px + 1rem); /* align with text */">
@@ -492,7 +526,7 @@ function updateCheckboxFilter(name) {
 // ============================================
 // Quiz Logic
 // ============================================
-const quizBtn = document.getElementById('take-quiz-btn');
+const quizBtn = document.getElementById('take-quiz-btn-hero');
 const quizModal = document.getElementById('quiz-modal');
 const closeQuizBtn = document.getElementById('close-quiz');
 const quizSteps = document.querySelectorAll('.quiz-step');
@@ -643,21 +677,21 @@ function renderCompareTray() {
             <div class="compare-items">
                 ${compareList.map(item => `
                     <div class="compare-item">
-                        <img src="${item.image}" alt="Thumb" onerror="this.style.display='none'">
+                        <img src="${item.image}" alt="${escapeHtml(item.name)}" onerror="this.style.display='none'">
                         <div class="compare-item-details">
-                            <span class="compare-item-name">${item.name}</span>
+                            <span class="compare-item-name">${escapeHtml(item.name)}</span>
                             <span class="compare-item-price">$${item.price.toFixed(2)}</span>
                         </div>
-                        <button class="compare-item-remove" onclick="removeCompare('${item.id}')">&times;</button>
+                        <button class="compare-item-remove" onclick="removeCompare('${item.id}')" aria-label="Remove ${escapeHtml(item.name)} from comparison">&times;</button>
                     </div>
                 `).join('')}
                 ${Array(3 - compareList.length).fill('<div class="compare-placeholder">Add another</div>').join('')}
             </div>
             <div class="compare-actions">
-                <button class="btn btn-primary" style="padding: 0.5rem 1rem;" onclick="openCompareModal()" ${compareList.length < 2 ? 'disabled' : ''}>
+                <button class="btn btn-primary" onclick="openCompareModal()" ${compareList.length < 2 ? 'disabled' : ''}>
                     Compare ${compareList.length} Items
                 </button>
-                <button class="btn btn-outline" style="margin-left:0.5rem; padding: 0.5rem 1rem;" onclick="clearCompare()">Clear</button>
+                <button class="btn btn-tertiary" style="margin-left:0.5rem;" onclick="clearCompare()">Clear</button>
             </div>
         </div>
     `;

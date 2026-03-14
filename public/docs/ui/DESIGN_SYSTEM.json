@@ -1,0 +1,314 @@
+{
+  "design_system": {
+    "version": "1.0.0",
+    "purpose": "Core visual system for public pages, utility pages, and admin dashboard interfaces.",
+    "principles": [
+      "Prioritize clarity over decoration.",
+      "Use a small number of repeatable visual patterns.",
+      "Prefer tokens over hardcoded values.",
+      "Visual hierarchy must be obvious at a glance.",
+      "Consistency across pages is more important than local cleverness.",
+      "UI should feel stable, readable, and scalable."
+    ],
+    "tokens": {
+      "spacing": {
+        "scale": {
+          "sp-1": "0.25rem",
+          "sp-2": "0.5rem",
+          "sp-3": "0.75rem",
+          "sp-4": "1rem",
+          "sp-5": "1.25rem",
+          "sp-6": "1.5rem",
+          "sp-8": "2rem",
+          "sp-10": "2.5rem",
+          "sp-12": "3rem",
+          "sp-16": "4rem"
+        },
+        "rules": [
+          "Use only spacing tokens for margins, paddings, gaps, and layout separation.",
+          "Avoid raw px or rem values in component-level spacing unless tokenized.",
+          "Use tighter spacing in admin/data-dense contexts and more generous spacing in public/article contexts."
+        ]
+      },
+      "radius": {
+        "scale": {
+          "radius-xs": "0.375rem",
+          "radius-sm": "0.5rem",
+          "radius-md": "0.75rem",
+          "radius-lg": "1rem",
+          "radius-xl": "1.25rem"
+        },
+        "rules": [
+          "Use a consistent radius family across cards, inputs, buttons, and overlays.",
+          "Do not mix unrelated rounding styles within the same product."
+        ]
+      },
+      "shadow": {
+        "levels": {
+          "shadow-sm": "subtle separation",
+          "shadow-md": "default card elevation",
+          "shadow-lg": "overlay or modal emphasis"
+        },
+        "rules": [
+          "Use shadows sparingly and consistently.",
+          "Do not stack multiple heavy shadows in dense interfaces.",
+          "Prefer contrast and spacing over excessive elevation."
+        ]
+      },
+      "color_roles": {
+        "surface": [
+          "bg-page",
+          "bg-card",
+          "bg-elevated",
+          "bg-overlay"
+        ],
+        "text": [
+          "text-primary",
+          "text-secondary",
+          "text-muted",
+          "text-inverse"
+        ],
+        "border": [
+          "border",
+          "border-strong"
+        ],
+        "semantic": [
+          "accent",
+          "success",
+          "warning",
+          "danger",
+          "info"
+        ],
+        "rules": [
+          "Always use semantic color roles instead of page-specific one-off colors.",
+          "Use semantic colors with restraint.",
+          "Do not use semantic colors as decoration."
+        ]
+      },
+      "focus": {
+        "tokens": [
+          "accent-glow",
+          "focus-ring"
+        ],
+        "rules": [
+          "All interactive elements must use visible focus-visible states.",
+          "Focus styling must be consistent across buttons, inputs, tabs, and links."
+        ]
+      }
+    },
+    "layout": {
+      "containers": {
+        "container-sm": {
+          "usage": "articles, legal pages, long-form reading"
+        },
+        "container-md": {
+          "usage": "default public pages"
+        },
+        "container-lg": {
+          "usage": "compare pages, ranking pages, utility pages"
+        },
+        "container-xl": {
+          "usage": "admin dashboard, dense data surfaces"
+        }
+      },
+      "rules": [
+        "Every page must use an intentional container size.",
+        "Do not let long-form reading content stretch too wide.",
+        "Use wider containers only when supporting dense data or grid-heavy interfaces."
+      ],
+      "grid_rules": [
+        "Use simple, repeatable grid structures.",
+        "Public pages should prefer clean content stacks and simple responsive grids.",
+        "Admin pages may use denser multi-column layouts but must collapse predictably."
+      ]
+    },
+    "typography": {
+      "font_roles": {
+        "display": "high-emphasis page hero headings only",
+        "heading": "page titles, card titles, section titles",
+        "body": "default readable text",
+        "ui": "labels, buttons, controls, metadata",
+        "mono": "logs, code-like output, technical tokens"
+      },
+      "type_scale": {
+        "display-xl": {
+          "usage": "rare public hero usage"
+        },
+        "h1": {
+          "usage": "page title"
+        },
+        "h2": {
+          "usage": "section title"
+        },
+        "h3": {
+          "usage": "card or subsection title"
+        },
+        "body-lg": {
+          "usage": "supporting intro text"
+        },
+        "body-md": {
+          "usage": "default body text"
+        },
+        "body-sm": {
+          "usage": "secondary details, metadata"
+        },
+        "ui-sm": {
+          "usage": "compact labels, dense tables"
+        }
+      },
+      "rules": [
+        "Use a limited and consistent type hierarchy.",
+        "Page titles must always be visually stronger than section titles.",
+        "Section titles must always be visually stronger than body text.",
+        "Muted or secondary text must remain readable.",
+        "Do not mix too many font weights in one area."
+      ],
+      "line_height_rules": [
+        "Use tighter line-height for UI labels and dense tables.",
+        "Use moderate line-height for body text.",
+        "Use more generous line-height for article content."
+      ]
+    },
+    "buttons": {
+      "variants": {
+        "primary": {
+          "usage": "main action"
+        },
+        "secondary": {
+          "usage": "supporting action"
+        },
+        "tertiary": {
+          "usage": "utility or low-emphasis action"
+        },
+        "danger": {
+          "usage": "destructive action"
+        },
+        "warning": {
+          "usage": "caution-heavy action"
+        },
+        "success": {
+          "usage": "select positive semantic actions"
+        }
+      },
+      "sizes": {
+        "sm": {
+          "height": "compact"
+        },
+        "md": {
+          "height": "default"
+        },
+        "lg": {
+          "height": "high-emphasis or touch-friendly"
+        }
+      },
+      "rules": [
+        "Every screen or section should have one clear primary action.",
+        "Do not use multiple competing primary buttons in one section.",
+        "Secondary and tertiary buttons must not visually compete with primary.",
+        "Danger and warning styles must be used sparingly.",
+        "Buttons must have default, hover, active, focus, and disabled states."
+      ]
+    },
+    "cards": {
+      "rules": [
+        "Cards are grouping containers, not decoration.",
+        "Use consistent card background, border/radius, spacing, and header separation.",
+        "Interactive cards may have subtle hover response.",
+        "Do not create a different card pattern for every page."
+      ],
+      "content_rules": [
+        "Card title",
+        "Card supporting content",
+        "Card actions",
+        "Optional metadata"
+      ]
+    },
+    "inputs": {
+      "rules": [
+        "All text inputs, selects, and textareas must share a common visual language.",
+        "Input states must include default, focus, invalid, disabled, and read-only where applicable.",
+        "Use labels over placeholder-only patterns whenever possible.",
+        "Inputs must align consistently in forms and tool panels."
+      ]
+    },
+    "chips_badges": {
+      "chips": {
+        "usage": [
+          "filters",
+          "quick actions",
+          "selected states"
+        ],
+        "rules": [
+          "Chips are not primary CTAs.",
+          "Selected state must be obvious.",
+          "Keep chip text short."
+        ]
+      },
+      "badges": {
+        "usage": [
+          "status",
+          "rank",
+          "category",
+          "metadata"
+        ],
+        "rules": [
+          "Badges must remain compact and scannable.",
+          "Badges must not replace clear text when more explanation is needed."
+        ]
+      }
+    },
+    "icons": {
+      "rules": [
+        "Use icons to support recognition, not replace clarity.",
+        "Important actions should not rely on icon-only controls unless universally understood and context is obvious.",
+        "Icon size and alignment must remain consistent in similar components."
+      ]
+    },
+    "motion": {
+      "principles": [
+        "Motion should support clarity, not performance theater."
+      ],
+      "rules": [
+        "Use subtle state transitions only.",
+        "Avoid large decorative motion in admin and utility workflows.",
+        "Use motion to clarify hover, expand, loading, and reveal states."
+      ]
+    },
+    "dark_mode": {
+      "rules": [
+        "Preserve the same hierarchy and semantic roles in dark mode.",
+        "Do not rely on pure black/white extremes unless necessary.",
+        "Muted text and border contrast must remain readable.",
+        "Interactive states must stay distinguishable in both themes."
+      ]
+    },
+    "responsive_rules": [
+      "Design mobile-first where possible.",
+      "Component behavior must be predictable across breakpoints.",
+      "Do not invent page-specific responsive logic if a shared pattern already exists.",
+      "Keep tap targets comfortable on touch devices."
+    ],
+    "a11y": {
+      "rules": [
+        "Use focus-visible across all interactive components.",
+        "Do not rely on color alone for meaning.",
+        "Text contrast must remain readable.",
+        "Dynamic feedback should be perceivable and understandable."
+      ]
+    },
+    "anti_patterns": [
+      "Hardcoded spacing values scattered across files",
+      "Different button styles for similar actions",
+      "Overly decorative cards",
+      "Hero-scale spacing in admin views",
+      "Unclear typography hierarchy",
+      "Too many semantic colors used at once",
+      "Page-specific one-off components with no reuse strategy"
+    ],
+    "implementation_notes_for_ai": [
+      "Use tokens first, then components, then page-specific refinements.",
+      "When uncertain, reuse the existing system instead of inventing new visual patterns.",
+      "Always preserve hierarchy, spacing rhythm, and component consistency."
+    ]
+  }
+}

@@ -1,0 +1,372 @@
+{
+  "state_system": {
+    "version": "1.0.0",
+    "purpose": "Unified state rules for loading, empty, success, error, disabled, and live-progress experiences across the site.",
+    "scope": [
+      "public pages",
+      "admin dashboard",
+      "compare page",
+      "best page",
+      "calculator page",
+      "blog/article pages when applicable"
+    ],
+    "core_principles": [
+      "Every interactive area must communicate its current state clearly.",
+      "States must reduce uncertainty, not increase it.",
+      "Users should always know what is happening, what happened, and what to do next.",
+      "Visual feedback must be timely and consistent.",
+      "States must be informative without becoming noisy."
+    ],
+    "required_state_categories": [
+      "default",
+      "loading",
+      "empty",
+      "success",
+      "error",
+      "disabled",
+      "partial",
+      "live_progress"
+    ],
+    "default_state": {
+      "description": "The neutral baseline state before user action or data retrieval.",
+      "rules": [
+        "Default states must establish context.",
+        "Do not leave large blank areas without explanation.",
+        "Use placeholder text or helper copy where users may otherwise feel lost."
+      ],
+      "examples": [
+        "Enter your printer settings to estimate the true monthly cost.",
+        "Use filters to narrow down printer results.",
+        "Select a tab to manage products, blog posts, or scraping tools."
+      ]
+    },
+    "loading_state": {
+      "description": "Indicates data is being fetched or work is in progress.",
+      "principles": [
+        "Show that the system is working.",
+        "Avoid abrupt blankness.",
+        "Match the loading layout to the final content shape when possible."
+      ],
+      "patterns": {
+        "spinner": {
+          "usage": [
+            "small isolated async actions",
+            "button submission feedback",
+            "short-lived loads"
+          ],
+          "rules": [
+            "Use near the affected area.",
+            "Do not rely on a lone spinner for large content regions when skeletons are better."
+          ]
+        },
+        "skeleton": {
+          "usage": [
+            "cards",
+            "tables",
+            "content blocks",
+            "ranking lists"
+          ],
+          "rules": [
+            "Skeletons should roughly mirror final structure.",
+            "Avoid flashy skeleton animations that distract.",
+            "Prevent layout jumps when real content arrives."
+          ]
+        },
+        "inline_loading_text": {
+          "usage": [
+            "secondary helper states",
+            "small status regions"
+          ],
+          "rules": [
+            "Use only when a richer loading treatment is unnecessary.",
+            "Pair with subtle visual feedback where possible."
+          ]
+        }
+      },
+      "copy_rules": [
+        "Use calm, direct language.",
+        "Avoid dramatic wording.",
+        "If loading may take longer, indicate what is happening."
+      ],
+      "examples": [
+        "Loading products…",
+        "Calculating cost…",
+        "Fetching comparison data…"
+      ]
+    },
+    "empty_state": {
+      "description": "Indicates that there is no content to display in the current context.",
+      "principles": [
+        "Differentiate between 'nothing exists yet' and 'no results found'.",
+        "Provide recovery guidance.",
+        "Use an icon or visual cue only if it supports clarity."
+      ],
+      "subtypes": {
+        "no_data_yet": {
+          "description": "The system has no created content yet.",
+          "examples": [
+            "No products have been added yet.",
+            "No blog posts exist yet."
+          ],
+          "recommended_ctas": [
+            "Add Product",
+            "Create Post"
+          ]
+        },
+        "no_results": {
+          "description": "Filters or search returned nothing.",
+          "examples": [
+            "No printers match your filters.",
+            "No products matched your search."
+          ],
+          "recommended_ctas": [
+            "Clear Filters",
+            "Browse All Printers",
+            "Reset Search"
+          ]
+        },
+        "not_selected_yet": {
+          "description": "The user has not started the relevant workflow.",
+          "examples": [
+            "You have not added any printers to compare yet.",
+            "Choose a printer type to begin."
+          ],
+          "recommended_ctas": [
+            "Browse Printers",
+            "See Top Picks"
+          ]
+        }
+      },
+      "visual_rules": [
+        "Empty states must be centered or clearly framed within the affected area.",
+        "Use structured spacing and readable copy.",
+        "Provide one clear next step when possible."
+      ]
+    },
+    "success_state": {
+      "description": "Confirms that an action completed successfully.",
+      "principles": [
+        "Be clear and brief.",
+        "Do not over-celebrate routine admin actions.",
+        "Where appropriate, indicate the next possible step."
+      ],
+      "visual_rules": [
+        "Use consistent success styling.",
+        "Icons may support the message but must not be the only signal."
+      ],
+      "examples": [
+        "Product saved successfully.",
+        "Blog post published.",
+        "Calculation updated."
+      ]
+    },
+    "error_state": {
+      "description": "Communicates that something failed or needs correction.",
+      "principles": [
+        "Explain the issue in plain language.",
+        "When possible, explain how to recover.",
+        "Avoid vague generic failures."
+      ],
+      "subtypes": {
+        "validation_error": {
+          "usage": [
+            "forms",
+            "calculator inputs",
+            "login"
+          ],
+          "rules": [
+            "Attach error feedback near the relevant control when possible.",
+            "Use visible border/state changes plus readable text.",
+            "Do not rely on color alone."
+          ]
+        },
+        "load_error": {
+          "usage": [
+            "tables",
+            "lists",
+            "API content"
+          ],
+          "rules": [
+            "Replace broken blank states with explicit error UI.",
+            "Offer retry when appropriate."
+          ]
+        },
+        "action_error": {
+          "usage": [
+            "save failures",
+            "publish failures",
+            "delete failures",
+            "scrape failures"
+          ],
+          "rules": [
+            "Explain whether the action partially completed or failed fully.",
+            "Keep destructive failure messaging especially clear."
+          ]
+        }
+      },
+      "examples": [
+        "Could not load products. Please try again.",
+        "Login failed. Check your password and try again.",
+        "Please enter a valid non-negative number."
+      ]
+    },
+    "disabled_state": {
+      "description": "Indicates an action is currently unavailable.",
+      "rules": [
+        "Disabled controls must look non-interactive.",
+        "The reason for disabled state should be understandable from context or helper text.",
+        "Do not silently disable critical actions without explanation."
+      ]
+    },
+    "partial_state": {
+      "description": "Used when only some content is available or some work completed.",
+      "rules": [
+        "Indicate what succeeded and what remains missing.",
+        "Use this for mixed-result admin operations or partially loaded dashboards when relevant."
+      ],
+      "examples": [
+        "Some products loaded, but blog data could not be fetched.",
+        "3 of 5 scrape tasks completed."
+      ]
+    },
+    "live_progress_state": {
+      "description": "Represents work that is actively updating over time.",
+      "usage": [
+        "scraper logs",
+        "background tasks",
+        "batch operations"
+      ],
+      "rules": [
+        "Show live progress in a dedicated area.",
+        "Use monospace logs if appropriate.",
+        "Auto-scroll intelligently when new lines are appended.",
+        "Preserve user ability to inspect previous output.",
+        "Use polite live region behavior for accessibility when needed."
+      ]
+    },
+    "state_layout_rules": [
+      "States must render within the affected component or section whenever possible.",
+      "Do not redirect the user's attention to unrelated parts of the page for critical state feedback.",
+      "Keep state UI aligned with the component hierarchy."
+    ],
+    "state_copy_rules": [
+      "Use plain, direct language.",
+      "Explain the outcome, not internal implementation.",
+      "Keep messages concise.",
+      "Where needed, include the next step.",
+      "Avoid generic phrases like 'Something went wrong' without context."
+    ],
+    "state_visual_rules": [
+      "Use consistent iconography if icons are used.",
+      "Do not rely on color alone.",
+      "Use spacing and framing so states feel intentional, not like broken layouts.",
+      "State styling must remain consistent across pages."
+    ],
+    "component_state_mapping": {
+      "calculator": {
+        "states": [
+          "default",
+          "incomplete_input",
+          "calculated",
+          "validation_error"
+        ]
+      },
+      "compare_page": {
+        "states": [
+          "empty_compare",
+          "loaded_compare",
+          "invalid_product_id",
+          "affiliate_ready"
+        ]
+      },
+      "best_page": {
+        "states": [
+          "loading_rankings",
+          "loaded_rankings",
+          "empty_category",
+          "invalid_category"
+        ]
+      },
+      "admin_login": {
+        "states": [
+          "default",
+          "submitting",
+          "login_error",
+          "authenticated"
+        ]
+      },
+      "admin_products": {
+        "states": [
+          "loading_list",
+          "empty_list",
+          "loaded_list",
+          "no_results",
+          "save_success",
+          "save_error",
+          "delete_confirm",
+          "delete_error"
+        ]
+      },
+      "admin_scraper": {
+        "states": [
+          "idle",
+          "running",
+          "live_progress",
+          "completed",
+          "failed"
+        ]
+      },
+      "admin_blog": {
+        "states": [
+          "empty_posts",
+          "loaded_posts",
+          "draft_editing",
+          "publish_success",
+          "publish_error"
+        ]
+      }
+    },
+    "cta_behavior_by_state": {
+      "loading": [
+        "Primary action may show spinner and temporarily disable repeated submission.",
+        "Do not hide the context of the action while loading."
+      ],
+      "empty": [
+        "Provide one recovery or next-step CTA where possible."
+      ],
+      "error": [
+        "Provide retry or corrective CTA when appropriate."
+      ],
+      "success": [
+        "Allow continuation or return to workflow if relevant."
+      ]
+    },
+    "animation_rules": [
+      "State transitions may be subtle and fast.",
+      "Do not use large theatrical animations for admin or utility workflows.",
+      "Prioritize stability and clarity over visual flourish."
+    ],
+    "accessibility": {
+      "rules": [
+        "Dynamic status updates should use aria-live where appropriate.",
+        "Messages must remain understandable without icons or color alone.",
+        "Focus should move predictably after major state changes only when it genuinely helps."
+      ]
+    },
+    "anti_patterns": [
+      "Blank white areas during loading",
+      "Empty tables with no explanation",
+      "Errors that do not explain recovery",
+      "Success banners that feel louder than the task itself",
+      "Disabled buttons with no understandable reason",
+      "State messages inconsistent across pages",
+      "Logs that update invisibly below the fold"
+    ],
+    "implementation_notes_for_ai": [
+      "Always identify the likely states of a component before redesigning it.",
+      "Create structured empty, loading, success, and error UI instead of leaving placeholders.",
+      "Use the same state language patterns across the site.",
+      "When uncertain, prefer explicit helpful feedback over minimalist ambiguity."
+    ]
+  }
+}
