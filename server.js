@@ -2635,6 +2635,133 @@ app.get('/api/recommendations', async (req, res) => {
 });
 
 // ============================================
+// UPGRADE COMPATIBILITY API
+// ============================================
+
+// List all upgrade categories with counts
+app.get('/api/upgrades', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('printer_upgrades')
+            .select('*')
+            .order('category')
+            .order('estimated_cost', { ascending: true });
+        if (error) throw error;
+
+        // Group by category
+        const grouped = {};
+        (data || []).forEach(u => {
+            if (!grouped[u.category]) grouped[u.category] = [];
+            grouped[u.category].push(u);
+        });
+
+        res.json({ upgrades: data, by_category: grouped, total: data?.length || 0 });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get compatible upgrades for a specific printer
+app.get('/api/products/:id/upgrades', async (req, res) => {
+    try {
+        const { data: compatEntries, error } = await supabase
+            .from('upgrade_compatibility')
+            .select('*, upgrade:printer_upgrades(*)')
+            .eq('printer_id', req.params.id)
+            .order('priority');
+
+        if (error) throw error;
+
+        // Group by priority
+        const essential = [];
+        const recommended = [];
+        const optional = [];
+        const advanced = [];
+
+        (compatEntries || []).forEach(entry => {
+            const item = {
+                ...entry.upgrade,
+                compatibility: entry.compatibility,
+                install_difficulty: entry.install_difficulty,
+                priority: entry.priority,
+                notes: entry.notes
+            };
+            switch (entry.priority) {
+                case 'essential': essential.push(item); break;
+                case 'recommended': recommended.push(item); break;
+                case 'advanced': advanced.push(item); break;
+                default: optional.push(item);
+            }
+        });
+
+        res.json({ essential, recommended, optional, advanced, total: compatEntries?.length || 0 });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Knowledge Graph: get all connections for a product
+app.get('/api/compatibility-graph/:id', async (req, res) => {
+    try {
+        const productId = req.params.id;
+
+        // Get all connections where this product is source or target
+        const { data: asSource, error: e1 } = await supabase
+            .from('compatibility_graph')
+            .select('*')
+            .eq('source_id', productId);
+
+        const { data: asTarget, error: e2 } = await supabase
+            .from('compatibility_graph')
+            .select('*')
+            .eq('target_id', productId);
+
+        if (e1) throw e1;
+        if (e2) throw e2;
+
+        // Collect unique connected IDs to resolve names
+        const connectedIds = new Set();
+        [...(asSource || []), ...(asTarget || [])].forEach(e => {
+            connectedIds.add(e.source_id);
+            connectedIds.add(e.target_id);
+        });
+        connectedIds.delete(productId);
+
+        // Fetch names for connected products and upgrades
+        const resolvedNames = {};
+        if (connectedIds.size > 0) {
+            const ids = Array.from(connectedIds);
+            const { data: products } = await supabase
+                .from('products')
+                .select('id, display_name, product_name, category')
+                .in('id', ids);
+            const { data: upgrades } = await supabase
+                .from('printer_upgrades')
+                .select('id, name, category')
+                .in('id', ids);
+
+            (products || []).forEach(p => resolvedNames[p.id] = p.display_name || p.product_name);
+            (upgrades || []).forEach(u => resolvedNames[u.id] = u.name);
+        }
+
+        res.json({
+            product_id: productId,
+            outgoing: (asSource || []).map(e => ({
+                ...e,
+                target_name: resolvedNames[e.target_id] || e.target_id
+            })),
+            incoming: (asTarget || []).map(e => ({
+                ...e,
+                source_name: resolvedNames[e.source_id] || e.source_id
+            })),
+            total_connections: (asSource?.length || 0) + (asTarget?.length || 0)
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ============================================
 // STARTER KITS API
 // ============================================
 

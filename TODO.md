@@ -62,8 +62,8 @@ This living document tracks our journey from being a simple affiliate catalog to
 
 **Compatibility & Ecosystem**
 - [x] Build filament compatibility explorer (`compatibility.html`): Browse by Material (11 types) or Browse by Printer.
-- [ ] Build upgrade compatibility database: Track hotends, nozzles, beds, extruders, firmware notes, and compatible upgrade paths by printer model.
-- [ ] Build printer-material-upgrade knowledge graph (This is the PCPartPicker compatibility engine equivalent).
+- [x] Build upgrade compatibility database: 17 upgrades (hotends, nozzles, beds, extruders) mapped to 51 printers (537 entries). APIs: `/api/upgrades`, `/api/products/:id/upgrades`.
+- [x] Build printer-material-upgrade knowledge graph: `compatibility_graph` table with 537 entries linking printers ↔ upgrades. API: `/api/compatibility-graph/:id`.
 
 **Community & Retention**
 - [ ] Add saved lists and price alerts (Start with localStorage, later add Auth + Email capture).
