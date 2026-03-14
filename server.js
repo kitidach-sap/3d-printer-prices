@@ -1875,6 +1875,10 @@ CRITICAL: Return ONLY valid JSON array, no markdown.`;
                     }
                 }
 
+                // Auto-compute tags for this product (using updated fields)
+                const mergedProduct = { ...product, ...updateObj };
+                updateObj.tags = computeProductTags(mergedProduct);
+
                 const { error: updateErr } = await supabase
                     .from('products')
                     .update(updateObj)
@@ -2171,6 +2175,170 @@ app.get('/api/compatibility-data', async (req, res) => {
         if (prnErr) throw prnErr;
 
         res.json({ materials: materials || [], printers: printers || [] });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ============================================
+// PRODUCT TAGS API
+// ============================================
+
+// Auto-tag logic: compute tags from product fields
+function computeProductTags(product) {
+    const tags = {};
+    const name = (product.product_name || '').toUpperCase();
+
+    // 1. Product type
+    const catMap = { '3d_printer': '3D Printer', 'filament': 'Filament', 'resin': 'Resin Material', 'accessories': 'Accessory', '3d_pen': '3D Pen' };
+    tags.product_type = [catMap[product.category] || 'Other'];
+
+    // 2. Technology
+    if (product.category === '3d_printer') {
+        if (product.printer_type === 'FDM') tags.technology = ['FDM'];
+        else if (['Resin', 'Resin/SLA'].includes(product.printer_type)) tags.technology = ['Resin', 'SLA'];
+    }
+
+    // 3. Material (for filaments/resins)
+    if (product.material_type) tags.material = [product.material_type];
+
+    // 4. Price range
+    const p = product.price;
+    if (p == null) tags.price_range = ['Unknown'];
+    else if (p < 100) tags.price_range = ['Under $100', 'Budget'];
+    else if (p < 300) tags.price_range = ['$100-$300', 'Mid-Range'];
+    else if (p < 500) tags.price_range = ['$300-$500', 'Premium'];
+    else if (p < 1000) tags.price_range = ['$500-$1000', 'Professional'];
+    else tags.price_range = ['$1000+', 'Industrial'];
+
+    // 5. Brand
+    if (product.brand) tags.brand = [product.brand];
+
+    // 6. Rating tier
+    const r = product.rating;
+    if (r == null) tags.rating_tier = ['Unrated'];
+    else if (r >= 4.5) tags.rating_tier = ['Top Rated', '⭐⭐⭐⭐⭐'];
+    else if (r >= 4.0) tags.rating_tier = ['Highly Rated', '⭐⭐⭐⭐'];
+    else if (r >= 3.5) tags.rating_tier = ['Average', '⭐⭐⭐'];
+    else tags.rating_tier = ['Below Average'];
+
+    // 7. Use case (from name keywords)
+    const useCases = [];
+    if (/BEGINNER|STARTER|EASY/.test(name) || (product.beginner_score && product.beginner_score >= 8)) useCases.push('Beginner-Friendly');
+    if (/HIGH.?SPEED|FAST|500MM/.test(name) || (product.speed_score && product.speed_score >= 8)) useCases.push('High-Speed');
+    if (/LARGE|BIG|300X300|400X400/.test(name)) useCases.push('Large Format');
+    if (/ENCLOS/.test(name)) useCases.push('Enclosed');
+    if (/MULTI.?COLOR|AMS|4.?COLOR/.test(name)) useCases.push('Multi-Color');
+    if (/DIRECT.?DRIVE/.test(name)) useCases.push('Direct Drive');
+    if (/AUTO.?LEVEL/.test(name)) useCases.push('Auto-Leveling');
+    if (/WIFI|WI-FI|WIRELESS/.test(name)) useCases.push('WiFi');
+    if (/TOUCHSCREEN|TOUCH SCREEN/.test(name)) useCases.push('Touchscreen');
+    if (/DUAL.?EXTRU/.test(name)) useCases.push('Dual Extruder');
+    if (/PORTABLE|COMPACT|MINI/.test(name)) useCases.push('Compact');
+    if (/PROFESSIONAL|INDUSTRIAL|COMMERCIAL/.test(name)) useCases.push('Professional');
+    if (/GLOW/.test(name)) useCases.push('Glow-in-Dark');
+    if (/MULTI.?PACK|BUNDLE|\dKG/.test(name)) useCases.push('Multi-Pack');
+    if (/MATTE/.test(name)) useCases.push('Matte Finish');
+    if (/SILK|SHINY|SHIMMER/.test(name)) useCases.push('Silk/Shiny');
+    if (useCases.length > 0) tags.use_case = useCases;
+
+    // 8. Accessory type
+    if (product.category === 'accessories' && product.printer_type && product.printer_type !== 'Unknown') {
+        tags.accessory_type = [product.printer_type];
+    }
+
+    // 9. Deal
+    if (product.discount_percent && product.discount_percent >= 10) {
+        tags.deal = product.discount_percent >= 30 ? ['Big Sale', 'On Sale'] : ['On Sale'];
+    }
+
+    // 10. Popularity
+    const rc = product.review_count;
+    if (rc >= 1000) tags.popularity = ['Bestseller', 'Popular'];
+    else if (rc >= 500) tags.popularity = ['Popular'];
+    else if (rc >= 100) tags.popularity = ['Well-Reviewed'];
+
+    return tags;
+}
+
+// GET all unique tags with counts
+app.get('/api/tags', async (req, res) => {
+    try {
+        const { data, error } = await supabase.from('products')
+            .select('tags')
+            .not('tags', 'is', null);
+
+        if (error) throw error;
+
+        // Aggregate all tags
+        const tagCounts = {};
+        (data || []).forEach(row => {
+            const tags = row.tags || {};
+            Object.entries(tags).forEach(([category, values]) => {
+                if (!tagCounts[category]) tagCounts[category] = {};
+                (Array.isArray(values) ? values : [values]).forEach(v => {
+                    tagCounts[category][v] = (tagCounts[category][v] || 0) + 1;
+                });
+            });
+        });
+
+        res.json(tagCounts);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET products by tag filter
+// Usage: /api/products/by-tag?use_case=Beginner-Friendly&price_range=Budget
+app.get('/api/products/by-tag', async (req, res) => {
+    try {
+        let query = supabase.from('products')
+            .select('id, product_name, display_name, brand, price, image_url, rating, review_count, amazon_asin, amazon_url, category, printer_type, material_type, tags')
+            .order('rating', { ascending: false, nullsFirst: false });
+
+        // Build JSONB containment filter from query params
+        const tagFilters = {};
+        const reserved = ['limit', 'offset', 'sort_by', 'sort_order'];
+        Object.entries(req.query).forEach(([key, value]) => {
+            if (!reserved.includes(key)) {
+                tagFilters[key] = [value];
+            }
+        });
+
+        if (Object.keys(tagFilters).length > 0) {
+            query = query.contains('tags', tagFilters);
+        }
+
+        const limit = Math.min(parseInt(req.query.limit) || 50, 200);
+        const offset = parseInt(req.query.offset) || 0;
+        query = query.range(offset, offset + limit - 1);
+
+        const { data, error, count } = await query;
+        if (error) throw error;
+
+        res.json({ data: data || [], count: (data || []).length });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Admin: Refresh all product tags
+app.post('/api/admin/tags/refresh', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
+    try {
+        const { data: products, error } = await supabase.from('products').select('*');
+        if (error) throw error;
+
+        let updated = 0;
+        for (const product of (products || [])) {
+            const newTags = computeProductTags(product);
+            const { error: upErr } = await supabase.from('products')
+                .update({ tags: newTags })
+                .eq('id', product.id);
+            if (!upErr) updated++;
+        }
+
+        res.json({ success: true, updated, total: (products || []).length });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
