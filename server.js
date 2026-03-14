@@ -1900,7 +1900,7 @@ app.post('/api/admin/fetch-details', async (req, res) => {
 
     const cheerio = require('cheerio');
     const AFFILIATE_TAG = 'kiti09-20';
-    const FETCH_TIMEOUT = 15000; // 15 seconds per product
+    const FETCH_TIMEOUT = 30000; // 30 seconds per product (render=true is slower)
 
     try {
         console.log("🔍 Starting detail page scraper...");
@@ -1919,7 +1919,7 @@ app.post('/api/admin/fetch-details', async (req, res) => {
         }
 
         // Atomic row claiming via RPC (FOR UPDATE SKIP LOCKED)
-        const { data: batch, error: claimErr } = await supabase.rpc('claim_detail_scrape_batch', { batch_size: 5 });
+        const { data: batch, error: claimErr } = await supabase.rpc('claim_detail_scrape_batch', { batch_size: 3 });
 
         if (claimErr) {
             console.error("Claim error:", claimErr);
@@ -1951,7 +1951,7 @@ app.post('/api/admin/fetch-details', async (req, res) => {
             }
 
             const detailUrl = `https://www.amazon.com/dp/${asin}`;
-            const scraperUrl = `http://api.scraperapi.com?api_key=${scraperApiKey}&url=${encodeURIComponent(detailUrl)}&render=false`;
+            const scraperUrl = `http://api.scraperapi.com?api_key=${scraperApiKey}&url=${encodeURIComponent(detailUrl)}&render=true&country_code=us`;
 
             try {
                 console.log(`   🌐 Fetching: ${asin}...`);
