@@ -284,13 +284,17 @@
     let selectedMaterial = null;
 
     async function init() {
-      // Fetch all products with material_type
-      const res = await fetch('/api/products?limit=500');
-      const data = await res.json();
-      allProducts = data.products || data || [];
-
-      // Separate printers and filaments
-      allPrinters = allProducts.filter(p => p.category === '3d_printer');
+      // Fetch all materials + printers from dedicated endpoint
+      try {
+        const res = await fetch('/api/compatibility-data');
+        const json = await res.json();
+        allProducts = [...(json.materials || []), ...(json.printers || [])];
+        allPrinters = json.printers || [];
+      } catch (e) {
+        console.error('Failed to load products:', e);
+        allProducts = [];
+        allPrinters = [];
+      }
 
       buildMaterialGrid();
     }

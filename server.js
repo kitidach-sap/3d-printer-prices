@@ -2147,6 +2147,36 @@ app.post('/api/admin/fetch-details', async (req, res) => {
 });
 
 // ============================================
+// COMPATIBILITY EXPLORER DATA
+// ============================================
+app.get('/api/compatibility-data', async (req, res) => {
+    try {
+        // Fetch all filaments/resins with material_type
+        const { data: materials, error: matErr } = await supabase
+            .from('products')
+            .select('id, product_name, display_name, brand, price, image_url, rating, review_count, amazon_asin, affiliate_url, category, material_type, printer_type')
+            .in('category', ['filament', 'resin'])
+            .not('material_type', 'is', null)
+            .order('rating', { ascending: false, nullsFirst: false });
+
+        if (matErr) throw matErr;
+
+        // Fetch all printers
+        const { data: printers, error: prnErr } = await supabase
+            .from('products')
+            .select('id, product_name, display_name, brand, price, image_url, rating, review_count, amazon_asin, affiliate_url, category, printer_type')
+            .eq('category', '3d_printer')
+            .order('rating', { ascending: false, nullsFirst: false });
+
+        if (prnErr) throw prnErr;
+
+        res.json({ materials: materials || [], printers: printers || [] });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ============================================
 // STARTER KITS API
 // ============================================
 
