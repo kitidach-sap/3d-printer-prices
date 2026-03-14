@@ -2345,6 +2345,104 @@ app.post('/api/admin/tags/refresh', async (req, res) => {
 });
 
 // ============================================
+// RECOMMENDED GEAR (per printer)
+// ============================================
+app.get('/api/products/:id/recommended-gear', async (req, res) => {
+    try {
+        // 1. Get the printer
+        const { data: printer, error: pErr } = await supabase
+            .from('products')
+            .select('id, category, printer_type, brand')
+            .eq('id', req.params.id)
+            .single();
+
+        if (pErr || !printer || printer.category !== '3d_printer') {
+            return res.json({ essentials: [], optionals: [] });
+        }
+
+        const isResin = ['Resin', 'Resin/SLA'].includes(printer.printer_type);
+
+        // 2. Find matching accessories
+        let accessoryQuery = supabase.from('products')
+            .select('id, product_name, display_name, brand, price, image_url, rating, review_count, amazon_asin, amazon_url, category, printer_type, material_type')
+            .eq('category', 'accessories')
+            .not('price', 'is', null)
+            .order('rating', { ascending: false, nullsFirst: false })
+            .limit(10);
+
+        const { data: accessories } = await accessoryQuery;
+
+        // 3. Find matching filaments/resins
+        const matCategory = isResin ? 'resin' : 'filament';
+        const { data: materials } = await supabase.from('products')
+            .select('id, product_name, display_name, brand, price, image_url, rating, review_count, amazon_asin, amazon_url, category, printer_type, material_type')
+            .eq('category', matCategory)
+            .not('price', 'is', null)
+            .order('rating', { ascending: false, nullsFirst: false })
+            .limit(10);
+
+        // 4. Categorize into essentials vs optionals
+        const essentials = [];
+        const optionals = [];
+
+        if (isResin) {
+            // Resin essentials: wash & cure, tools
+            const washCure = (accessories || []).find(a => 
+                (a.printer_type || '').match(/wash.*cure/i));
+            const toolSet = (accessories || []).find(a => 
+                (a.printer_type || '').match(/tool/i));
+            const resinMat = (materials || [])[0]; // top rated resin
+
+            if (washCure) essentials.push({ ...washCure, role: 'tool', label: 'Wash & Cure Station', is_required: true });
+            if (toolSet) essentials.push({ ...toolSet, role: 'tool', label: 'Resin Tool Kit', is_required: true });
+            if (resinMat) essentials.push({ ...resinMat, role: 'material', label: 'UV Resin', is_required: true });
+
+            // Custom essentials (not in DB)
+            essentials.push({ role: 'safety', label: 'Nitrile Gloves', is_required: true, custom_name: 'Nitrile Gloves (100 pack)', custom_price: 9.99, custom_url: 'https://www.amazon.com/s?k=nitrile+gloves+disposable' });
+            essentials.push({ role: 'safety', label: 'Respirator Mask', is_required: true, custom_name: '3M Half Facepiece Respirator', custom_price: 19.99, custom_url: 'https://www.amazon.com/s?k=3m+respirator+mask+organic+vapor' });
+            essentials.push({ role: 'consumable', label: 'Isopropyl Alcohol 99%', is_required: true, custom_name: 'IPA 99% (1 Gallon)', custom_price: 24.99, custom_url: 'https://www.amazon.com/s?k=99+isopropyl+alcohol+gallon' });
+
+            // Optionals
+            (accessories || []).filter(a => a.id !== washCure?.id && a.id !== toolSet?.id).slice(0, 3)
+                .forEach(a => optionals.push({ ...a, role: 'accessory', label: a.display_name || a.product_name, is_required: false }));
+
+        } else {
+            // FDM essentials
+            const scraper = (accessories || []).find(a => 
+                (a.printer_type || '').match(/scraper/i));
+            const toolKit = (accessories || []).find(a => 
+                (a.printer_type || '').match(/tool/i));
+            const plaMat = (materials || []).find(m => m.material_type === 'PLA');
+            const nozzle = (accessories || []).find(a => 
+                (a.printer_type || '').match(/nozzle/i) && !(a.printer_type || '').match(/brush|clean/i));
+
+            if (plaMat) essentials.push({ ...plaMat, role: 'material', label: 'PLA Filament', is_required: true });
+            if (scraper) essentials.push({ ...scraper, role: 'tool', label: 'Scraper / Removal Tool', is_required: true });
+            if (toolKit) essentials.push({ ...toolKit, role: 'tool', label: '3D Printer Tool Kit', is_required: true });
+
+            // Optionals
+            if (nozzle) optionals.push({ ...nozzle, role: 'upgrade', label: 'Spare Nozzles', is_required: false });
+            
+            const petg = (materials || []).find(m => m.material_type === 'PETG');
+            if (petg) optionals.push({ ...petg, role: 'material', label: 'PETG Filament (stronger)', is_required: false });
+
+            const nozzleBrush = (accessories || []).find(a => 
+                (a.printer_type || '').match(/nozzle.*clean|clean.*nozzle|brush/i));
+            if (nozzleBrush) optionals.push({ ...nozzleBrush, role: 'tool', label: 'Nozzle Cleaning Kit', is_required: false });
+
+            (accessories || []).filter(a => 
+                ![scraper?.id, toolKit?.id, nozzle?.id, nozzleBrush?.id].includes(a.id)
+            ).slice(0, 2)
+                .forEach(a => optionals.push({ ...a, role: 'accessory', label: a.display_name || a.product_name, is_required: false }));
+        }
+
+        res.json({ essentials, optionals, printer_type: printer.printer_type });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ============================================
 // STARTER KITS API
 // ============================================
 

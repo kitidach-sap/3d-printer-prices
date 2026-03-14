@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const product = result.data[0];
         renderProduct(product);
-        renderChecklist(product);
+        loadRecommendedGear(product);
         injectJsonLd(product);
         fetchAlternatives(product);
         
@@ -136,59 +136,63 @@ function renderProduct(p) {
 }
 
 // -----------------------------------------
-// Beginner Checklist
+// Recommended Gear (Dynamic from API)
 // -----------------------------------------
-function renderChecklist(p) {
-    if (!p.printer_type || p.printer_type === 'Unknown' || p.category !== '3d_printer') return;
+async function loadRecommendedGear(product) {
+    if (!product.id || product.category !== '3d_printer') return;
 
-    document.getElementById('checklist-section').style.display = 'grid';
-    document.getElementById('cl-printer-type').textContent = p.printer_type;
+    try {
+        const res = await fetch(`/api/products/${product.id}/recommended-gear`);
+        const gear = await res.json();
+        
+        if (!gear.essentials?.length && !gear.optionals?.length) return;
 
-    const essentialsMenu = document.getElementById('cl-essentials');
-    const consumablesMenu = document.getElementById('cl-consumables');
+        document.getElementById('checklist-section').style.display = 'grid';
+        document.getElementById('cl-printer-type').textContent = gear.printer_type || product.printer_type || 'FDM';
 
-    let essentials = [];
-    let consumables = [];
+        const essentialsEl = document.getElementById('cl-essentials');
+        const consumablesEl = document.getElementById('cl-consumables');
 
-    if (p.printer_type === 'Resin') {
-        essentials = [
-            { name: "Wash & Cure Station", link: "https://www.amazon.com/s?k=wash+and+cure+station+resin" },
-            { name: "Silicone Slap Mat", link: "https://www.amazon.com/s?k=silicone+slap+mat+3d+printing" },
-            { name: "UV Safety Glasses", link: "https://www.amazon.com/s?k=uv+safety+glasses" }
-        ];
-        consumables = [
-            { name: "Quality 3D Printing Resin", link: "https://www.amazon.com/s?k=3d+printer+resin" },
-            { name: "99% Isopropyl Alcohol (IPA)", link: "https://www.amazon.com/s?k=99+isopropyl+alcohol+gallon" },
-            { name: "Nitrile Disposable Gloves", link: "https://www.amazon.com/s?k=nitrile+gloves+thick" },
-            { name: "Paper Towels / Microfiber", link: "https://www.amazon.com/s?k=shop+towels+heavy+duty" }
-        ];
-    } else {
-        // FDM
-        essentials = [
-            { name: "Filament Dryer Box", link: "https://www.amazon.com/s?k=3d+printer+filament+dryer" },
-            { name: "Flush Cutters & Deburring Tool", link: "https://www.amazon.com/s?k=flush+cutters+deburring+tool+3d+print" },
-            { name: "Digital Calipers", link: "https://www.amazon.com/s?k=digital+calipers" }
-        ];
-        consumables = [
-            { name: "PLA / PETG Filament Rolls", link: "https://www.amazon.com/s?k=pla+filament+1.75mm" },
-            { name: "Brass Nozzle Replacements", link: "https://www.amazon.com/s?k=3d+printer+brass+nozzle+0.4" },
-            { name: "Bed Adhesion Glue (Optional)", link: "https://www.amazon.com/s?k=3d+printer+glue+stick" }
-        ];
+        // Update section titles
+        essentialsEl.closest('.summary-card').querySelector('h3').innerHTML = '✅ Essential (Must-Have)';
+        consumablesEl.closest('.summary-card').querySelector('h3').innerHTML = '💡 Optional (Recommended)';
+
+        const renderGearItem = (item) => {
+            const name = item.display_name || item.custom_name || item.label || item.product_name || '';
+            const price = item.price || item.custom_price;
+            const img = item.image_url;
+            const url = item.amazon_url || item.custom_url || '#';
+            const rating = item.rating;
+            const roleIcons = { material: '🧵', tool: '🔧', safety: '🧤', upgrade: '⬆️', consumable: '🧴', accessory: '📦' };
+            const icon = roleIcons[item.role] || '📦';
+
+            return `
+                <li style="margin-bottom: 0.75rem;">
+                    <a href="${affiliateUrl(url)}" target="_blank" rel="noopener" style="color:var(--text-primary); text-decoration:none; display:flex; align-items:center; gap:0.75rem; padding:0.75rem; background:var(--bg-primary); border-radius:var(--radius-sm); border:1px solid var(--border); transition: border-color 0.2s;"
+                       onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                        ${img 
+                            ? `<img src="${img}" alt="${escapeHtml(name)}" style="width:48px;height:48px;object-fit:contain;border-radius:6px;background:var(--bg-card);flex-shrink:0;" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+                            : ''}
+                        <span style="width:48px;height:48px;display:${img ? 'none' : 'flex'};align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;background:var(--bg-card);border-radius:6px;">${icon}</span>
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-weight:600;font-size:0.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(item.label || name)}</div>
+                            <div style="font-size:0.8rem;color:var(--text-muted);margin-top:2px;">
+                                ${price ? `<span style="color:var(--success);font-weight:600;">$${Number(price).toFixed(2)}</span>` : ''}
+                                ${rating ? ` ⭐ ${Number(rating).toFixed(1)}` : ''}
+                            </div>
+                        </div>
+                        <span style="color:var(--accent);font-size:0.75rem;white-space:nowrap;flex-shrink:0;">View ↗</span>
+                    </a>
+                </li>
+            `;
+        };
+
+        essentialsEl.innerHTML = (gear.essentials || []).map(renderGearItem).join('');
+        consumablesEl.innerHTML = (gear.optionals || []).map(renderGearItem).join('');
+
+    } catch (err) {
+        console.error('Failed to load recommended gear:', err);
     }
-
-    const renderItems = (items) => {
-        return items.map(item => `
-            <li style="margin-bottom: 0.75rem;">
-                <a href="${affiliateUrl(item.link)}" target="_blank" style="color: var(--text-primary); text-decoration: none; display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: var(--bg-primary); border-radius: var(--radius-sm); border: 1px solid var(--border);">
-                    <span>${escapeHtml(item.name)}</span>
-                    <span style="color: var(--accent); font-size: 0.8rem;">View on Amazon ↗</span>
-                </a>
-            </li>
-        `).join('');
-    };
-
-    essentialsMenu.innerHTML = renderItems(essentials);
-    consumablesMenu.innerHTML = renderItems(consumables);
 }
 
 // -----------------------------------------
