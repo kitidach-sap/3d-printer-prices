@@ -13,53 +13,63 @@
 <body>
     <header class="header">
         <div class="header-content">
-            <div class="logo">
-                <a href="/" style="display:flex;align-items:center;gap:0.75rem;text-decoration:none;color:inherit">
-                    <span class="logo-icon">🖨️</span>
-                    <h1>3D Printer Prices</h1>
-                </a>
-            </div>
+            <a href="/" class="logo"><span class="logo-icon">🖨️</span><div><h1>3D Printer Prices</h1><p class="tagline">Compare prices & find the best deals</p></div></a>
+            <nav class="nav-desktop"><a href="/" class="nav-link">Compare</a><a href="/compatibility.html" class="nav-link">Materials</a><a href="/calculator.html" class="nav-link">Calculator</a><a href="/blog/" class="nav-link">Blog</a></nav>
+            <div class="header-actions"><button id="theme-toggle" class="btn-icon" aria-label="Toggle theme">🌙</button><button class="btn-icon mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Open menu">☰</button></div>
         </div>
     </header>
+    <div class="mobile-nav-overlay" id="mobile-nav-overlay"></div>
+    <nav class="mobile-nav" id="mobile-nav"><button class="mobile-nav-close" id="mobile-nav-close" aria-label="Close menu">✕</button><a href="/" class="nav-link">🏠 Compare</a><a href="/compatibility.html" class="nav-link">🔬 Materials</a><a href="/calculator.html" class="nav-link">🧮 Calculator</a><a href="/blog/" class="nav-link">📝 Blog</a></nav>
 
-    <main class="policy-page">
-        <h2>Privacy Policy</h2>
-        <p><strong>Last updated:</strong> February 2026</p>
+    <nav class="page-breadcrumb"><a href="/">Home</a><span class="sep">›</span><span class="current">Privacy Policy</span></nav>
 
-        <h3>Information We Collect</h3>
-        <p>We do not collect personal information directly. However, third-party services on this site may collect data
-            as described below.</p>
+    <main class="article-wrapper">
+        <header class="article-header">
+            <h1>Privacy Policy</h1>
+            <p><strong>Last updated:</strong> February 2026</p>
+        </header>
+        <div class="article-content">
+            <h2>Information We Collect</h2>
+            <p>We do not collect personal information directly. However, third-party services on this site may collect data
+                as described below.</p>
 
-        <h3>Google AdSense</h3>
-        <p>We use Google AdSense to display advertisements. Google may use cookies and web beacons to serve ads based on
-            your prior visits to this or other websites. You can opt out of personalized advertising by visiting <a
-                href="https://www.google.com/settings/ads" target="_blank" rel="noopener">Google Ads Settings</a>.</p>
+            <h2>Google AdSense</h2>
+            <p>We use Google AdSense to display advertisements. Google may use cookies and web beacons to serve ads based on
+                your prior visits to this or other websites. You can opt out of personalized advertising by visiting <a
+                    href="https://www.google.com/settings/ads" target="_blank" rel="noopener">Google Ads Settings</a>.</p>
 
-        <h3>Cookies</h3>
-        <p>This site uses cookies for:</p>
-        <ul>
-            <li>Storing your theme preference (dark/light mode)</li>
-            <li>Third-party advertising (Google AdSense)</li>
-            <li>Analytics purposes</li>
-        </ul>
+            <h2>Cookies</h2>
+            <p>This site uses cookies for:</p>
+            <ul>
+                <li>Storing your theme preference (dark/light mode)</li>
+                <li>Third-party advertising (Google AdSense)</li>
+                <li>Analytics purposes</li>
+            </ul>
 
-        <h3>Amazon Affiliate</h3>
-        <p>Product links on this site may direct you to Amazon. We may earn a commission from qualifying purchases made
-            through these links at no additional cost to you.</p>
+            <h2>Amazon Affiliate</h2>
+            <p>Product links on this site may direct you to Amazon. We may earn a commission from qualifying purchases made
+                through these links at no additional cost to you.</p>
 
-        <h3>Data Sources</h3>
-        <p>Product data including names, prices, and ratings is collected from publicly available Amazon product
-            listings. This data is used solely for price comparison purposes.</p>
+            <h2>Data Sources</h2>
+            <p>Product data including names, prices, and ratings is collected from publicly available Amazon product
+                listings. This data is used solely for price comparison purposes.</p>
 
-        <h3>Contact</h3>
-        <p>For privacy-related questions, please contact us through the site.</p>
+            <h2>Contact</h2>
+            <p>For privacy-related questions, please contact us through the site.</p>
+        </div>
     </main>
 
-    <footer class="footer">
-        <p><a href="/">← Back to Home</a></p>
-        <p class="footer-links"><a href="/privacy.html">Privacy Policy</a> · <a href="/terms.html">Terms of Service</a>
-        </p>
-    </footer>
+    <footer class="site-footer"><div class="footer-content"><a href="/methodology.html">Methodology</a><span class="footer-divider">·</span><a href="/blog/">Blog</a><span class="footer-divider">·</span><a href="/privacy.html">Privacy</a><span class="footer-divider">·</span><a href="/terms.html">Terms</a><span class="footer-divider">·</span><span>© 2026 3D Printer Prices</span></div></footer>
+
+    <script>
+        const saved = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', saved);
+        document.getElementById('theme-toggle')?.addEventListener('click', () => { const c = document.documentElement.getAttribute('data-theme'); const n = c === 'dark' ? 'light' : 'dark'; document.documentElement.setAttribute('data-theme', n); localStorage.setItem('theme', n); document.getElementById('theme-toggle').textContent = n === 'dark' ? '☀️' : '🌙'; });
+        document.getElementById('theme-toggle').textContent = saved === 'dark' ? '☀️' : '🌙';
+        document.getElementById('mobile-menu-toggle')?.addEventListener('click', () => { document.getElementById('mobile-nav').classList.add('open'); document.getElementById('mobile-nav-overlay').classList.add('open'); });
+        document.getElementById('mobile-nav-close')?.addEventListener('click', () => { document.getElementById('mobile-nav').classList.remove('open'); document.getElementById('mobile-nav-overlay').classList.remove('open'); });
+        document.getElementById('mobile-nav-overlay')?.addEventListener('click', () => { document.getElementById('mobile-nav').classList.remove('open'); document.getElementById('mobile-nav-overlay').classList.remove('open'); });
+    </script>
 </body>
 
 </html>

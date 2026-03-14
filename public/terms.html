@@ -13,54 +13,64 @@
 <body>
     <header class="header">
         <div class="header-content">
-            <div class="logo">
-                <a href="/" style="display:flex;align-items:center;gap:0.75rem;text-decoration:none;color:inherit">
-                    <span class="logo-icon">🖨️</span>
-                    <h1>3D Printer Prices</h1>
-                </a>
-            </div>
+            <a href="/" class="logo"><span class="logo-icon">🖨️</span><div><h1>3D Printer Prices</h1><p class="tagline">Compare prices & find the best deals</p></div></a>
+            <nav class="nav-desktop"><a href="/" class="nav-link">Compare</a><a href="/compatibility.html" class="nav-link">Materials</a><a href="/calculator.html" class="nav-link">Calculator</a><a href="/blog/" class="nav-link">Blog</a></nav>
+            <div class="header-actions"><button id="theme-toggle" class="btn-icon" aria-label="Toggle theme">🌙</button><button class="btn-icon mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Open menu">☰</button></div>
         </div>
     </header>
+    <div class="mobile-nav-overlay" id="mobile-nav-overlay"></div>
+    <nav class="mobile-nav" id="mobile-nav"><button class="mobile-nav-close" id="mobile-nav-close" aria-label="Close menu">✕</button><a href="/" class="nav-link">🏠 Compare</a><a href="/compatibility.html" class="nav-link">🔬 Materials</a><a href="/calculator.html" class="nav-link">🧮 Calculator</a><a href="/blog/" class="nav-link">📝 Blog</a></nav>
 
-    <main class="policy-page">
-        <h2>Terms of Service</h2>
-        <p><strong>Last updated:</strong> February 2026</p>
+    <nav class="page-breadcrumb"><a href="/">Home</a><span class="sep">›</span><span class="current">Terms of Service</span></nav>
 
-        <h3>Use of Service</h3>
-        <p>3D Printer Prices is a free price comparison tool. By using this site, you agree to these terms.</p>
+    <main class="article-wrapper">
+        <header class="article-header">
+            <h1>Terms of Service</h1>
+            <p><strong>Last updated:</strong> February 2026</p>
+        </header>
+        <div class="article-content">
+            <h2>Use of Service</h2>
+            <p>3D Printer Prices is a free price comparison tool. By using this site, you agree to these terms.</p>
 
-        <h3>Accuracy of Information</h3>
-        <p>Product prices, ratings, and availability are collected from Amazon and may not reflect real-time data. We
-            make no warranties about the accuracy, completeness, or timeliness of the information provided. Always
-            verify prices on the retailer's website before making a purchase.</p>
+            <h2>Accuracy of Information</h2>
+            <p>Product prices, ratings, and availability are collected from Amazon and may not reflect real-time data. We
+                make no warranties about the accuracy, completeness, or timeliness of the information provided. Always
+                verify prices on the retailer's website before making a purchase.</p>
 
-        <h3>Amazon Links</h3>
-        <p>This site contains links to Amazon product pages. We are not responsible for the content, practices, or
-            availability of Amazon or any third-party websites. Purchases made through these links are subject to
-            Amazon's own terms and conditions.</p>
+            <h2>Amazon Links</h2>
+            <p>This site contains links to Amazon product pages. We are not responsible for the content, practices, or
+                availability of Amazon or any third-party websites. Purchases made through these links are subject to
+                Amazon's own terms and conditions.</p>
 
-        <h3>Intellectual Property</h3>
-        <p>Product names, images, and trademarks belong to their respective owners. The compilation and presentation of
-            price comparison data is our original work.</p>
+            <h2>Intellectual Property</h2>
+            <p>Product names, images, and trademarks belong to their respective owners. The compilation and presentation of
+                price comparison data is our original work.</p>
 
-        <h3>Limitation of Liability</h3>
-        <p>This site is provided "as is" without warranties of any kind. We are not liable for any damages arising from
-            the use of this site or reliance on the information provided.</p>
+            <h2>Limitation of Liability</h2>
+            <p>This site is provided "as is" without warranties of any kind. We are not liable for any damages arising from
+                the use of this site or reliance on the information provided.</p>
 
-        <h3>Advertisements</h3>
-        <p>This site displays advertisements served by Google AdSense. Ad content is determined by Google and is not
-            endorsed by us.</p>
+            <h2>Advertisements</h2>
+            <p>This site displays advertisements served by Google AdSense. Ad content is determined by Google and is not
+                endorsed by us.</p>
 
-        <h3>Changes to Terms</h3>
-        <p>We reserve the right to update these terms at any time. Continued use of the site constitutes acceptance of
-            any changes.</p>
+            <h2>Changes to Terms</h2>
+            <p>We reserve the right to update these terms at any time. Continued use of the site constitutes acceptance of
+                any changes.</p>
+        </div>
     </main>
 
-    <footer class="footer">
-        <p><a href="/">← Back to Home</a></p>
-        <p class="footer-links"><a href="/privacy.html">Privacy Policy</a> · <a href="/terms.html">Terms of Service</a>
-        </p>
-    </footer>
+    <footer class="site-footer"><div class="footer-content"><a href="/methodology.html">Methodology</a><span class="footer-divider">·</span><a href="/blog/">Blog</a><span class="footer-divider">·</span><a href="/privacy.html">Privacy</a><span class="footer-divider">·</span><a href="/terms.html">Terms</a><span class="footer-divider">·</span><span>© 2026 3D Printer Prices</span></div></footer>
+
+    <script>
+        const saved = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', saved);
+        document.getElementById('theme-toggle')?.addEventListener('click', () => { const c = document.documentElement.getAttribute('data-theme'); const n = c === 'dark' ? 'light' : 'dark'; document.documentElement.setAttribute('data-theme', n); localStorage.setItem('theme', n); document.getElementById('theme-toggle').textContent = n === 'dark' ? '☀️' : '🌙'; });
+        document.getElementById('theme-toggle').textContent = saved === 'dark' ? '☀️' : '🌙';
+        document.getElementById('mobile-menu-toggle')?.addEventListener('click', () => { document.getElementById('mobile-nav').classList.add('open'); document.getElementById('mobile-nav-overlay').classList.add('open'); });
+        document.getElementById('mobile-nav-close')?.addEventListener('click', () => { document.getElementById('mobile-nav').classList.remove('open'); document.getElementById('mobile-nav-overlay').classList.remove('open'); });
+        document.getElementById('mobile-nav-overlay')?.addEventListener('click', () => { document.getElementById('mobile-nav').classList.remove('open'); document.getElementById('mobile-nav-overlay').classList.remove('open'); });
+    </script>
 </body>
 
 </html>

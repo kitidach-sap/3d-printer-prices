@@ -153,7 +153,7 @@ function renderRankings(products) {
                     </h2>
                     
                     <div class="rank-price">$${p.price?.toFixed(2) || '---'} 
-                        <span style="font-size:1rem; color:var(--text-muted); font-weight:normal; margin-left: 0.5rem;">⭐ ${p.rating || 'N/A'} (${p.review_count || 0})</span>
+                        <span style="font-size:1rem; color:var(--text-muted); font-weight:normal; margin-left: var(--sp-2);">⭐ ${p.rating || 'N/A'} (${p.review_count || 0})</span>
                     </div>
                     
                     <div class="rank-specs">
@@ -183,9 +183,9 @@ function renderRankings(products) {
                         </ul>
                     </div>
                     
-                    <div class="rank-actions">
-                        <a href="${p.amazon_url}" target="_blank" class="btn btn-primary" style="text-decoration:none; text-align:center; flex:1;">View Best Deal on Amazon ↗</a>
-                        <a href="/product.html?id=${p.id}" class="btn btn-outline" style="text-decoration:none; text-align:center; flex:0.5;">Read Full Review</a>
+                    <div class="rank-actions-grid">
+                        <a href="${p.amazon_url ? (p.amazon_url.includes('?') ? p.amazon_url + '&tag=kiti09-20' : p.amazon_url + '?tag=kiti09-20') : '#'}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-lg w-full">Check Price</a>
+                        <a href="/product.html?id=${p.id}" class="btn btn-secondary btn-md w-full" style="display:flex; align-items:center; justify-content:center;">View Details</a>
                     </div>
                 </div>
             </article>

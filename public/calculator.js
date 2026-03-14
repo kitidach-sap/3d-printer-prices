@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     
     // Elements
-    const typeToggleBtns = document.querySelectorAll('#printer-type-toggle .toggle-btn');
+    const typeToggleBtns = document.querySelectorAll('.segmented-btn');
     const resinSpecificDiv = document.getElementById('resin-specific');
     const outConsumablesLabel = document.getElementById('out-consumables-label');
     
@@ -17,12 +17,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentType = 'FDM';
 
-    // Type Toggle Logic
+    // Type Toggle Logic (Segmented Control)
+    const primaryCta = document.getElementById('primary-cta-link');
+    const materialLabel = document.getElementById('out-material-label');
+    const inputMaterialLabel = document.getElementById('material-price-label');
+
     typeToggleBtns.forEach(btn => {
         btn.addEventListener('click', (e) => {
-            // Update active state
-            typeToggleBtns.forEach(b => b.classList.remove('active'));
-            e.target.classList.add('active');
+            // Update active state (Visual & ARIA)
+            typeToggleBtns.forEach(b => {
+                b.setAttribute('aria-pressed', 'false');
+                b.setAttribute('aria-checked', 'false');
+            });
+            e.target.setAttribute('aria-pressed', 'true');
+            e.target.setAttribute('aria-checked', 'true');
             
             // Switch current type
             currentType = e.target.dataset.type;
@@ -30,13 +38,20 @@ document.addEventListener('DOMContentLoaded', () => {
             // UI Adjustments based on Type
             if (currentType === 'Resin') {
                 resinSpecificDiv.style.display = 'block';
-                outConsumablesLabel.textContent = "FEP, Screens & IPA Wash";
-                // Default adjustments for Resin assumptions
-                inputs.matPrice.value = 30; // Resin is usually bit pricier per bottle
+                outConsumablesLabel.textContent = "FEP, Screens & Wash";
+                materialLabel.textContent = "Material (Resin) - 1 Year";
+                inputMaterialLabel.textContent = "Material Price (per Liter) ($)";
+                inputs.matPrice.value = 30; // Default Resin assumption
+                primaryCta.textContent = "Find a Resin Printer";
+                primaryCta.href = "/best.html?type=resin-detail";
             } else {
                 resinSpecificDiv.style.display = 'none';
-                outConsumablesLabel.textContent = "Nozzles, Belts & Adhesives";
-                inputs.matPrice.value = 20; 
+                outConsumablesLabel.textContent = "Nozzles, Belts & PEI";
+                materialLabel.textContent = "Material (Filament) - 1 Year";
+                inputMaterialLabel.textContent = "Material Price (per kg) ($)";
+                inputs.matPrice.value = 20; // Default PLA assumption
+                primaryCta.textContent = "Find an FDM Printer";
+                primaryCta.href = "/best.html?type=beginners";
             }
             
             calculate();

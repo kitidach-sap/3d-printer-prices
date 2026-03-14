@@ -181,7 +181,7 @@ async function loadRecommendedGear(product) {
                                 ${rating ? ` ⭐ ${Number(rating).toFixed(1)}` : ''}
                             </div>
                         </div>
-                        <span style="color:var(--accent);font-size:0.75rem;white-space:nowrap;flex-shrink:0;">View ↗</span>
+                        <span style="color:var(--accent);font-size:0.75rem;white-space:nowrap;flex-shrink:0;">Check Price ↗</span>
                     </a>
                 </li>
             `;
@@ -258,7 +258,7 @@ async function fetchAlternatives(currentProduct) {
                 grid.innerHTML = alts.map(p => `
                     <a href="/product.html?id=${p.id}" class="product-card" style="text-decoration:none;">
                         <div class="product-thumb">
-                            <img src="${p.image_url}" loading="lazy" onerror="this.style.display='none'">
+                            <img src="${p.image_url}" alt="${escapeHtml(p.product_name)}" loading="lazy" onerror="this.style.display='none'">
                         </div>
                         <div class="product-info">
                             <h3 class="product-title" style="-webkit-line-clamp: 2;">${escapeHtml(p.product_name)}</h3>
@@ -266,7 +266,7 @@ async function fetchAlternatives(currentProduct) {
                                 <span class="price-current">$${p.price.toFixed(2)}</span>
                             </div>
                             <div class="product-meta" style="margin-top:0.5rem; color:var(--text-muted); font-size:0.8rem;">
-                                ⭐ ${p.rating ? p.rating.toFixed(1) : ''} | ${p.brand || ''}
+                                ${p.rating ? '⭐ ' + p.rating.toFixed(1) : ''} ${p.brand ? '<span class="sep">|</span> ' + escapeHtml(p.brand) : ''}
                             </div>
                         </div>
                     </a>

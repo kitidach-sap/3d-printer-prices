@@ -17,202 +17,19 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 
-  <style>
-    .compat-hero {
-      text-align: center;
-      padding: 3rem 1.5rem 1.5rem;
-      max-width: 760px;
-      margin: 0 auto;
-    }
-    .compat-hero h1 {
-      font-size: 2rem;
-      margin-bottom: 0.5rem;
-      background: linear-gradient(135deg, #10b981, #06b6d4);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    .compat-hero p { color: var(--text-secondary); font-size: 1rem; line-height: 1.6; }
 
-    .compat-container { max-width: 1000px; margin: 0 auto; padding: 0 1.5rem 3rem; }
-
-    /* Mode Tabs */
-    .mode-tabs {
-      display: flex;
-      justify-content: center;
-      gap: 0.5rem;
-      margin-bottom: 2rem;
-    }
-    .mode-tab {
-      padding: 0.6rem 1.5rem;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: var(--card-bg);
-      color: var(--text-secondary);
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 0.9rem;
-      transition: all 0.2s;
-    }
-    .mode-tab:hover { border-color: var(--accent); color: var(--text-primary); }
-    .mode-tab.active {
-      background: rgba(16,185,129,0.15);
-      border-color: #10b981;
-      color: #10b981;
-    }
-
-    /* Material Grid */
-    .material-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 0.8rem;
-      margin-bottom: 2rem;
-    }
-    .material-card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 1rem;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .material-card:hover { transform: translateY(-2px); border-color: var(--accent); }
-    .material-card.active { background: rgba(16,185,129,0.1); border-color: #10b981; }
-    .material-card .emoji { font-size: 1.8rem; display: block; margin-bottom: 0.3rem; }
-    .material-card .name { font-weight: 700; font-size: 0.95rem; }
-    .material-card .count { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem; }
-    .material-card .diff {
-      font-size: 0.7rem; margin-top: 0.3rem; padding: 0.15rem 0.4rem;
-      border-radius: 4px; display: inline-block;
-    }
-    .diff-easy { background: rgba(16,185,129,0.15); color: #10b981; }
-    .diff-moderate { background: rgba(234,179,8,0.15); color: #eab308; }
-    .diff-hard { background: rgba(239,68,68,0.15); color: #ef4444; }
-
-    /* Info Panel */
-    .material-info {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
-      display: none;
-    }
-    .material-info.visible { display: block; }
-    .material-info h2 { font-size: 1.2rem; margin-bottom: 0.8rem; }
-    .material-info .specs-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 0.6rem;
-      margin-bottom: 1rem;
-    }
-    .spec-item {
-      background: rgba(255,255,255,0.03);
-      border-radius: 6px;
-      padding: 0.6rem;
-    }
-    .spec-item .label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
-    .spec-item .value { font-weight: 700; font-size: 0.9rem; margin-top: 0.15rem; }
-
-    /* Product List */
-    .product-list { display: flex; flex-direction: column; gap: 0.6rem; }
-    .compat-product {
-      display: flex;
-      align-items: center;
-      gap: 0.8rem;
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 0.6rem 0.8rem;
-      transition: all 0.2s;
-      text-decoration: none;
-      color: var(--text-primary);
-    }
-    .compat-product:hover { border-color: var(--accent); transform: translateX(4px); }
-    .compat-product img {
-      width: 48px; height: 48px;
-      object-fit: contain;
-      border-radius: 6px;
-      background: #fff;
-      flex-shrink: 0;
-    }
-    .compat-product .info { flex: 1; min-width: 0; }
-    .compat-product .title {
-      font-size: 0.82rem; font-weight: 600;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .compat-product .meta { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.15rem; }
-    .compat-product .price { font-weight: 700; font-size: 0.9rem; color: #10b981; white-space: nowrap; }
-
-    .results-count { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.8rem; }
-
-    /* Printer mode: printer selector */
-    .printer-search {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 1.5rem;
-    }
-    .printer-search input {
-      flex: 1;
-      padding: 0.6rem 1rem;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: var(--card-bg);
-      color: var(--text-primary);
-      font-size: 0.9rem;
-    }
-    .printer-search input:focus { border-color: var(--accent); outline: none; }
-
-    /* Compatibility table */
-    .compat-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
-    }
-    .compat-table th, .compat-table td {
-      padding: 0.6rem 0.8rem;
-      text-align: left;
-      border-bottom: 1px solid var(--border);
-      font-size: 0.82rem;
-    }
-    .compat-table th { color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; }
-    .compat-table .notes { font-size: 0.75rem; color: var(--text-muted); }
-
-    .empty-state {
-      text-align: center;
-      padding: 3rem 1rem;
-      color: var(--text-muted);
-    }
-    .empty-state .big { font-size: 2rem; margin-bottom: 0.5rem; }
-
-    @media (max-width: 600px) {
-      .compat-hero h1 { font-size: 1.4rem; }
-      .material-grid { grid-template-columns: repeat(3, 1fr); }
-      .mode-tabs { flex-direction: column; align-items: stretch; }
-    }
-  </style>
 </head>
 
 <body>
   <header class="header">
     <div class="header-content">
-      <a href="/" style="text-decoration:none;color:inherit">
-        <div class="logo">
-          <span class="logo-icon">🖨️</span>
-          <div>
-            <h1 style="font-size:1.2rem;margin:0">3D Printer Prices</h1>
-            <p class="tagline" style="margin:0;font-size:0.75rem">Find the perfect 3D printer for your needs & budget</p>
-          </div>
-        </div>
-      </a>
-      <div class="header-actions" style="display:flex; align-items:center;">
-        <a href="/" class="nav-link" style="font-size:0.82rem;margin-right:0.5rem">🏠 Home</a>
-        <a href="/calculator.html" class="nav-link" style="font-size:0.82rem;margin-right:0.5rem">🧮 Calculator</a>
-        <a href="/blog/" class="nav-link" style="font-size:0.82rem;margin-right:0.5rem">📝 Blog</a>
-      </div>
+      <a href="/" class="logo"><span class="logo-icon">🖨️</span><div><h1>3D Printer Prices</h1><p class="tagline">Compare prices & find the best deals</p></div></a>
+      <nav class="nav-desktop"><a href="/" class="nav-link">Compare</a><a href="/compatibility.html" class="nav-link active">Materials</a><a href="/calculator.html" class="nav-link">Calculator</a><a href="/blog/" class="nav-link">Blog</a></nav>
+      <div class="header-actions"><button id="theme-toggle" class="btn-icon" aria-label="Toggle theme">🌙</button><button class="btn-icon mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Open menu">☰</button></div>
     </div>
   </header>
+  <div class="mobile-nav-overlay" id="mobile-nav-overlay"></div>
+  <nav class="mobile-nav" id="mobile-nav"><button class="mobile-nav-close" id="mobile-nav-close" aria-label="Close menu">✕</button><a href="/" class="nav-link">🏠 Compare</a><a href="/compatibility.html" class="nav-link active">🔬 Materials</a><a href="/calculator.html" class="nav-link">🧮 Calculator</a><a href="/blog/" class="nav-link">📝 Blog</a></nav>
 
   <section class="compat-hero">
     <h1>🔬 Filament Compatibility Explorer</h1>
@@ -221,9 +38,9 @@
 
   <div class="compat-container">
     <!-- Mode Tabs -->
-    <div class="mode-tabs">
-      <button class="mode-tab active" data-mode="material" id="tab-material">🧵 Browse by Material</button>
-      <button class="mode-tab" data-mode="printer" id="tab-printer">🖨️ Browse by Printer</button>
+    <div class="segmented-control mode-tabs" style="max-width: 450px; margin: 0 auto var(--sp-8);" role="radiogroup" aria-label="Explorer Mode">
+      <button class="segmented-btn mode-tab" data-mode="material" id="tab-material" role="radio" aria-checked="true" aria-pressed="true">🧵 Browse by Material</button>
+      <button class="segmented-btn mode-tab" data-mode="printer" id="tab-printer" role="radio" aria-checked="false" aria-pressed="false">🖨️ Browse by Printer</button>
     </div>
 
     <!-- Material Mode -->
@@ -236,20 +53,16 @@
 
     <!-- Printer Mode -->
     <div id="mode-printer" style="display:none">
-      <div class="printer-search">
-        <input type="text" id="printer-search" placeholder="🔍 Search for a printer (e.g. Creality K1, Bambu Lab, Elegoo)...">
+      <div class="printer-search input-group">
+        <label for="printer-search" class="visually-hidden" style="display:none;">Search for a printer</label>
+        <input type="search" id="printer-search" aria-label="Search for a printer by name" placeholder="🔍 Search for a printer (e.g. Creality K1, Bambu Lab, Elegoo)...">
       </div>
       <div id="printer-results"></div>
       <div id="printer-compat" style="margin-top:1.5rem"></div>
     </div>
   </div>
 
-  <footer class="footer">
-    <p>Data sourced from Amazon. Updated periodically via automated scraping. Prices in USD.</p>
-    <p class="footer-links">
-      <a href="/">Home</a> · <a href="/blog/">Blog</a> · <a href="/methodology.html">Methodology</a> · <a href="/privacy.html">Privacy Policy</a> · <a href="/terms.html">Terms of Service</a>
-    </p>
-  </footer>
+  <footer class="site-footer"><div class="footer-content"><a href="/methodology.html">Methodology</a><span class="footer-divider">·</span><a href="/blog/">Blog</a><span class="footer-divider">·</span><a href="/privacy.html">Privacy</a><span class="footer-divider">·</span><a href="/terms.html">Terms</a><span class="footer-divider">·</span><span>© 2026 3D Printer Prices</span></div></footer>
 
   <script>
     const MATERIAL_META = {
@@ -507,8 +320,12 @@
     // Tab switching
     document.querySelectorAll('.mode-tab').forEach(tab => {
       tab.addEventListener('click', () => {
-        document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
+        document.querySelectorAll('.mode-tab').forEach(t => {
+          t.setAttribute('aria-pressed', 'false');
+          t.setAttribute('aria-checked', 'false');
+        });
+        tab.setAttribute('aria-pressed', 'true');
+        tab.setAttribute('aria-checked', 'true');
         const mode = tab.dataset.mode;
         document.getElementById('mode-material').style.display = mode === 'material' ? '' : 'none';
         document.getElementById('mode-printer').style.display = mode === 'printer' ? '' : 'none';
@@ -522,8 +339,14 @@
     }
 
     // Theme
-    const saved = localStorage.getItem('theme');
-    if (saved) document.documentElement.setAttribute('data-theme', saved);
+    const saved = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+    document.getElementById('theme-toggle')?.addEventListener('click', () => { const c = document.documentElement.getAttribute('data-theme'); const n = c === 'dark' ? 'light' : 'dark'; document.documentElement.setAttribute('data-theme', n); localStorage.setItem('theme', n); document.getElementById('theme-toggle').textContent = n === 'dark' ? '☀️' : '🌙'; });
+    document.getElementById('theme-toggle').textContent = saved === 'dark' ? '☀️' : '🌙';
+    // Mobile nav
+    document.getElementById('mobile-menu-toggle')?.addEventListener('click', () => { document.getElementById('mobile-nav').classList.add('open'); document.getElementById('mobile-nav-overlay').classList.add('open'); });
+    document.getElementById('mobile-nav-close')?.addEventListener('click', () => { document.getElementById('mobile-nav').classList.remove('open'); document.getElementById('mobile-nav-overlay').classList.remove('open'); });
+    document.getElementById('mobile-nav-overlay')?.addEventListener('click', () => { document.getElementById('mobile-nav').classList.remove('open'); document.getElementById('mobile-nav-overlay').classList.remove('open'); });
 
     // Init
     initPrinterSearch();

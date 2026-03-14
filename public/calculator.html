@@ -6,232 +6,107 @@
   <title>3D Printing True Cost Calculator - 3D Printer Prices</title>
   <meta name="description" content="Calculate the real 1-year cost of owning a 3D printer including electricity, filament, resin, and maintenance.">
   <link rel="stylesheet" href="style.css">
-  <style>
-    .calc-container {
-      max-width: 1000px;
-      margin: 2rem auto;
-      padding: 0 1rem;
-      display: grid;
-      gap: 2rem;
-    }
-    @media(min-width: 768px) {
-      .calc-container { grid-template-columns: 1fr 1fr; }
-    }
-    
-    .calc-panel {
-      background: var(--bg-card);
-      border-radius: var(--radius);
-      padding: 2rem;
-      box-shadow: var(--shadow);
-    }
-    
-    .calc-panel h2 {
-      margin-top: 0;
-      margin-bottom: 1.5rem;
-      color: var(--text-primary);
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 0.5rem;
-    }
-    
-    .input-group {
-      margin-bottom: 1.5rem;
-    }
-    .input-group label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-weight: 500;
-      color: var(--text-secondary);
-    }
-    .input-group input[type="number"], .input-group select {
-      width: 100%;
-      padding: 0.75rem;
-      background: var(--bg-primary);
-      color: var(--text-primary);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      font-size: 1rem;
-    }
-    
-    .toggle-group {
-      display: flex;
-      gap: 0.5rem;
-      background: var(--bg-primary);
-      padding: 0.25rem;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-    }
-    .toggle-btn {
-      flex: 1;
-      padding: 0.5rem;
-      text-align: center;
-      background: transparent;
-      border: none;
-      color: var(--text-secondary);
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .toggle-btn.active {
-      background: var(--accent);
-      color: #000;
-      font-weight: bold;
-    }
-    
-    .result-box {
-      background: var(--bg-primary);
-      border: 2px solid var(--accent);
-      border-radius: var(--radius);
-      padding: 2rem;
-      text-align: center;
-      margin-bottom: 1.5rem;
-    }
-    .result-box .total {
-      font-size: 3rem;
-      font-weight: 900;
-      color: var(--success);
-      margin: 1rem 0;
-    }
-    
-    .cost-breakdown {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-    .cost-item {
-      display: flex;
-      justify-content: space-between;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 0.5rem;
-    }
-    .cost-item.total-line {
-      font-weight: bold;
-      border-bottom: none;
-      border-top: 2px solid var(--text-muted);
-      padding-top: 1rem;
-      font-size: 1.2rem;
-    }
-    
-    .info-tooltip {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      margin-top: 0.25rem;
-      display: block;
-    }
-
-    #resin-specific { display: none; }
-  </style>
 </head>
 <body data-theme="dark">
 
   <header class="header">
     <div class="header-content">
-      <div class="logo">
-        <span class="logo-icon">🧮</span>
-        <div>
-          <a href="/" style="text-decoration:none; color:inherit;">
-            <h1>3D Printer Prices</h1>
-          </a>
-          <p class="tagline">True Cost of Ownership Calculator</p>
-        </div>
-      </div>
-      <div class="header-actions">
-        <a href="/" class="btn btn-outline" style="text-decoration:none;">&larr; Back to Catalog</a>
-      </div>
+      <a href="/" class="logo"><span class="logo-icon">🖨️</span><div><h1>3D Printer Prices</h1><p class="tagline">Compare prices & find the best deals</p></div></a>
+      <nav class="nav-desktop"><a href="/" class="nav-link">Compare</a><a href="/compatibility.html" class="nav-link">Materials</a><a href="/calculator.html" class="nav-link active">Calculator</a><a href="/blog/" class="nav-link">Blog</a></nav>
+      <div class="header-actions"><button id="theme-toggle" class="btn-icon" aria-label="Toggle theme">🌙</button><button class="btn-icon mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Open menu">☰</button></div>
     </div>
   </header>
+  <div class="mobile-nav-overlay" id="mobile-nav-overlay"></div>
+  <nav class="mobile-nav" id="mobile-nav"><button class="mobile-nav-close" id="mobile-nav-close" aria-label="Close menu">✕</button><a href="/" class="nav-link">🏠 Compare</a><a href="/compatibility.html" class="nav-link">🔬 Materials</a><a href="/calculator.html" class="nav-link active">🧮 Calculator</a><a href="/blog/" class="nav-link">📝 Blog</a></nav>
+
+  <nav class="page-breadcrumb"><a href="/">Home</a><span class="sep">›</span><span class="current">Cost Calculator</span></nav>
 
   <main class="calc-container">
     <!-- Input Panel -->
-    <div class="calc-panel">
+    <div class="calc-panel input-panel">
       <h2>Printer Setup</h2>
       
       <div class="input-group">
         <label>Printer Type</label>
-        <div class="toggle-group" id="printer-type-toggle">
-          <button type="button" class="toggle-btn active" data-type="FDM">FDM (Filament)</button>
-          <button type="button" class="toggle-btn" data-type="Resin">Resin (Liquid)</button>
+        <div class="segmented-control" role="radiogroup" aria-label="Printer Type Selection">
+          <button type="button" class="segmented-btn" data-type="FDM" role="radio" aria-checked="true" aria-pressed="true">FDM (Filament)</button>
+          <button type="button" class="segmented-btn" data-type="Resin" role="radio" aria-checked="false" aria-pressed="false">Resin (Liquid)</button>
         </div>
       </div>
 
       <div class="input-group">
         <label for="printer-price">Printer Cost ($)</label>
-        <input type="number" id="printer-price" value="300" min="0" step="10">
+        <input type="number" id="printer-price" value="300" min="0" step="10" required>
       </div>
 
-      <h2>Expected Usage</h2>
+      <h2 style="margin-top: var(--sp-8);">Expected Usage</h2>
 
       <div class="input-group">
         <label for="print-hours">Print Hours per Week</label>
-        <input type="number" id="print-hours" value="15" min="1" max="168">
+        <input type="number" id="print-hours" value="15" min="1" max="168" required>
         <span class="info-tooltip">Hobbyist: ~15 hrs | Power User: ~50 hrs | Farm: 100+ hrs</span>
       </div>
 
       <div class="input-group">
-        <label for="material-price">Material Price (per kg/Liter) ($)</label>
-        <input type="number" id="material-price" value="20" min="5" step="1">
+        <label for="material-price" id="material-price-label">Material Price (per kg) ($)</label>
+        <input type="number" id="material-price" value="20" min="5" step="1" required>
         <span class="info-tooltip">Basic PLA: ~$18-$22 | Standard Resin: ~$25-$35</span>
       </div>
       
       <div class="input-group">
         <label for="electricity-rate">Electricity Rate ($ per kWh)</label>
-        <input type="number" id="electricity-rate" value="0.15" min="0.01" step="0.01">
+        <input type="number" id="electricity-rate" value="0.15" min="0.01" step="0.01" required>
         <span class="info-tooltip">US Average is $0.15 - $0.20</span>
       </div>
 
       <div id="resin-specific">
-        <h2 style="margin-top: 1rem;">Resin Specific Costs</h2>
+        <h2 style="margin-top: var(--sp-8);">Resin Specific Costs</h2>
         <div class="input-group">
           <label for="ipa-cost">IPA / Wash Solvent Cost ($ per month)</label>
-          <input type="number" id="ipa-cost" value="10" min="0" step="1">
+          <input type="number" id="ipa-cost" value="10" min="0" step="1" required>
         </div>
         <div class="input-group">
           <label for="fep-cost">Screen/FEP Replacement ($ per year)</label>
-          <input type="number" id="fep-cost" value="45" min="0" step="1">
+          <input type="number" id="fep-cost" value="45" min="0" step="1" required>
         </div>
       </div>
     </div>
 
     <!-- Output Panel -->
-    <div class="calc-panel">
+    <div class="calc-panel result-panel">
       <h2>1-Year Total Cost Estimate</h2>
       
       <div class="result-box">
-        <p style="color:var(--text-secondary); margin:0;">Estimated 1st Year Cost</p>
-        <div class="total" id="total-cost">$---</div>
+        <p style="color:var(--text-secondary); margin:0; font-size:0.95rem; font-weight:500;">Estimated 1st Year Cost</p>
+        <div class="total" id="total-cost" aria-live="polite">$---</div>
       </div>
 
       <div class="cost-breakdown">
-        <div class="cost-item">
-          <span>Initial Printer Price</span>
-          <span id="out-printer">$---</span>
-        </div>
-        <div class="cost-item">
-          <span>Material (Filament/Resin) - 1 Year</span>
-          <span id="out-material">$---</span>
-        </div>
-        <div class="cost-item">
-          <span>Electricity - 1 Year</span>
-          <span id="out-power">$---</span>
-        </div>
-        <div class="cost-item">
-          <span id="out-consumables-label">Parts & Consumables</span>
-          <span id="out-consumables">$---</span>
-        </div>
-        <div class="cost-item total-line">
-          <span>Total 1-Year Investment</span>
-          <span id="out-total">$---</span>
-        </div>
+        <div class="cost-item"><span>Initial Printer Price</span><span id="out-printer">$---</span></div>
+        <div class="cost-item"><span id="out-material-label">Material (Filament) - 1 Year</span><span id="out-material">$---</span></div>
+        <div class="cost-item"><span>Electricity - 1 Year</span><span id="out-power">$---</span></div>
+        <div class="cost-item"><span id="out-consumables-label">Parts & Consumables</span><span id="out-consumables">$---</span></div>
+        <div class="cost-item total-line"><span>Total 1-Year Investment</span><span id="out-total">$---</span></div>
       </div>
       
-      <div style="margin-top:2rem; text-align:center;">
-          <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom: 1rem;">
-            Ready to jump in? Find a printer that matches your budget.
-          </p>
-          <a href="/" class="btn btn-primary" style="text-decoration:none; display:inline-block;">Browse Printers</a>
+      <div class="result-cta-area">
+          <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom: var(--sp-4);">Ready to jump in? Find a printer that matches your budget.</p>
+          <a href="/" id="primary-cta-link" class="btn btn-primary btn-lg w-full">Find an FDM Printer</a>
       </div>
     </div>
   </main>
 
+  <footer class="site-footer"><div class="footer-content"><a href="/methodology.html">Methodology</a><span class="footer-divider">·</span><a href="/blog/">Blog</a><span class="footer-divider">·</span><a href="/privacy.html">Privacy</a><span class="footer-divider">·</span><a href="/terms.html">Terms</a><span class="footer-divider">·</span><span>© 2026 3D Printer Prices</span></div></footer>
+
   <script src="calculator.js"></script>
+  <script>
+    const saved = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+    document.getElementById('theme-toggle')?.addEventListener('click', () => { const c = document.documentElement.getAttribute('data-theme'); const n = c === 'dark' ? 'light' : 'dark'; document.documentElement.setAttribute('data-theme', n); localStorage.setItem('theme', n); document.getElementById('theme-toggle').textContent = n === 'dark' ? '☀️' : '🌙'; });
+    document.getElementById('theme-toggle').textContent = saved === 'dark' ? '☀️' : '🌙';
+    document.getElementById('mobile-menu-toggle')?.addEventListener('click', () => { document.getElementById('mobile-nav').classList.add('open'); document.getElementById('mobile-nav-overlay').classList.add('open'); });
+    document.getElementById('mobile-nav-close')?.addEventListener('click', () => { document.getElementById('mobile-nav').classList.remove('open'); document.getElementById('mobile-nav-overlay').classList.remove('open'); });
+    document.getElementById('mobile-nav-overlay')?.addEventListener('click', () => { document.getElementById('mobile-nav').classList.remove('open'); document.getElementById('mobile-nav-overlay').classList.remove('open'); });
+  </script>
 </body>
 </html>

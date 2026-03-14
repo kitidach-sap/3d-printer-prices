@@ -56,7 +56,7 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
-    .product-title {
+    .pd-main-title {
       font-size: 2rem;
       margin: 0.5rem 0 1rem 0;
       color: var(--text-primary);
@@ -81,15 +81,7 @@
     .product-actions {
       margin-top: auto;
     }
-    .btn-buy-large {
-      display: block;
-      width: 100%;
-      text-align: center;
-      padding: 1rem;
-      font-size: 1.1rem;
-      text-decoration: none;
-    }
-    
+
     /* Structured Summary Section */
     .summary-grid {
       display: grid;
@@ -156,20 +148,15 @@
 <body data-theme="dark">
   <header class="header">
     <div class="header-content">
-      <div class="logo">
-        <span class="logo-icon">🖨️</span>
-        <div>
-          <a href="/" style="text-decoration:none; color:inherit;">
-            <h1>3D Printer Prices</h1>
-          </a>
-          <p class="tagline">Find the perfect 3D printer for your needs</p>
-        </div>
-      </div>
-      <div class="header-actions">
-        <a href="/" class="btn btn-outline" style="text-decoration:none;">&larr; Back to Catalog</a>
-      </div>
+      <a href="/" class="logo"><span class="logo-icon">🖨️</span><div><h1>3D Printer Prices</h1><p class="tagline">Compare prices & find the best deals</p></div></a>
+      <nav class="nav-desktop"><a href="/" class="nav-link">Compare</a><a href="/compatibility.html" class="nav-link">Materials</a><a href="/calculator.html" class="nav-link">Calculator</a><a href="/blog/" class="nav-link">Blog</a></nav>
+      <div class="header-actions"><button id="theme-toggle" class="btn-icon" aria-label="Toggle theme">🌙</button><button class="btn-icon mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Open menu">☰</button></div>
     </div>
   </header>
+  <div class="mobile-nav-overlay" id="mobile-nav-overlay"></div>
+  <nav class="mobile-nav" id="mobile-nav"><button class="mobile-nav-close" id="mobile-nav-close" aria-label="Close menu">✕</button><a href="/" class="nav-link">🏠 Compare</a><a href="/compatibility.html" class="nav-link">🔬 Materials</a><a href="/calculator.html" class="nav-link">🧮 Calculator</a><a href="/blog/" class="nav-link">📝 Blog</a></nav>
+
+  <nav class="page-breadcrumb"><a href="/">Home</a><span class="sep">›</span><span class="current" id="breadcrumb-name">Product Detail</span></nav>
 
   <main class="product-page-container">
     <div id="loader-wrapper" style="text-align:center; padding: 4rem;">
@@ -186,7 +173,7 @@
         
         <div class="product-info-container">
           <div id="pd-brand" class="product-brand"></div>
-          <h1 id="pd-title" class="product-title">Loading...</h1>
+          <h1 id="pd-title" class="pd-main-title">Loading...</h1>
           
           <div id="pd-badges" class="product-badges"></div>
           
@@ -200,8 +187,8 @@
           </div>
           
           <div class="product-actions" style="margin-top:1rem;">
-            <a id="pd-buy-btn" href="#" target="_blank" class="btn btn-primary btn-buy-large">
-              View on Amazon
+            <a id="pd-buy-btn" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-lg" style="width: 100%;">
+              Check Price
             </a>
             <p style="text-align:center; font-size:0.8rem; color:var(--text-muted); margin-top:0.75rem;">
               Prices are updated daily. Purchases made through our links may earn us an affiliate commission.
@@ -259,10 +246,17 @@
     </div>
   </main>
 
-  <!-- Theme script consistency -->
+  <footer class="site-footer"><div class="footer-content"><a href="/methodology.html">Methodology</a><span class="footer-divider">·</span><a href="/blog/">Blog</a><span class="footer-divider">·</span><a href="/privacy.html">Privacy</a><span class="footer-divider">·</span><a href="/terms.html">Terms</a><span class="footer-divider">·</span><span>© 2026 3D Printer Prices</span></div></footer>
+
   <script>
     const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
     document.body.setAttribute('data-theme', savedTheme);
+    document.getElementById('theme-toggle')?.addEventListener('click', () => { const c = document.documentElement.getAttribute('data-theme'); const n = c === 'dark' ? 'light' : 'dark'; document.documentElement.setAttribute('data-theme', n); document.body.setAttribute('data-theme', n); localStorage.setItem('theme', n); document.getElementById('theme-toggle').textContent = n === 'dark' ? '☀️' : '🌙'; });
+    document.getElementById('theme-toggle').textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+    document.getElementById('mobile-menu-toggle')?.addEventListener('click', () => { document.getElementById('mobile-nav').classList.add('open'); document.getElementById('mobile-nav-overlay').classList.add('open'); });
+    document.getElementById('mobile-nav-close')?.addEventListener('click', () => { document.getElementById('mobile-nav').classList.remove('open'); document.getElementById('mobile-nav-overlay').classList.remove('open'); });
+    document.getElementById('mobile-nav-overlay')?.addEventListener('click', () => { document.getElementById('mobile-nav').classList.remove('open'); document.getElementById('mobile-nav-overlay').classList.remove('open'); });
   </script>
   <script src="product.js"></script>
 </body>

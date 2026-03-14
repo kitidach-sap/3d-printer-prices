@@ -30,145 +30,11 @@
 
         .ranking-container {
             max-width: 1000px;
-            margin: 3rem auto;
-            padding: 0 1rem;
+            margin: var(--sp-12) auto;
+            padding: 0 var(--sp-4);
             display: flex;
             flex-direction: column;
-            gap: 2rem;
-        }
-        
-        .rank-card {
-            display: flex;
-            flex-direction: column;
-            background: var(--bg-card);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            overflow: hidden;
-            position: relative;
-        }
-        
-        @media(min-width: 768px) {
-            .rank-card {
-                flex-direction: row;
-            }
-        }
-        
-        .rank-badge {
-            position: absolute;
-            top: 0;
-            left: 0;
-            background: var(--accent);
-            color: #000;
-            font-weight: 800;
-            font-size: 1.5rem;
-            padding: 0.5rem 1rem;
-            border-bottom-right-radius: var(--radius);
-            z-index: 2;
-        }
-        
-        .rank-image-col {
-            flex: 0 0 300px;
-            background: var(--bg-primary);
-            padding: 2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            border-bottom: 1px solid var(--border);
-        }
-        
-        @media(min-width: 768px) {
-            .rank-image-col {
-                border-bottom: none;
-                border-right: 1px solid var(--border);
-            }
-        }
-        
-        .rank-image-col img {
-            max-width: 100%;
-            max-height: 250px;
-            object-fit: contain;
-        }
-        
-        .rank-details-col {
-            flex: 1;
-            padding: 2rem;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .rank-title {
-            font-size: 1.75rem;
-            margin-top: 0;
-            margin-bottom: 0.5rem;
-        }
-        
-        .rank-title a {
-            color: var(--text-primary);
-            text-decoration: none;
-        }
-        .rank-title a:hover {
-            color: var(--accent);
-        }
-        
-        .rank-price {
-            font-size: 2rem;
-            color: var(--success);
-            font-weight: 700;
-            margin-bottom: 1.5rem;
-        }
-        
-        .rank-specs {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            background: var(--bg-primary);
-            padding: 1rem;
-            border-radius: var(--radius-sm);
-        }
-        
-        .rank-spec-item {
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .rank-spec-item span:first-child {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-        }
-        
-        .rank-spec-item span:last-child {
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-        }
-        
-        .rank-pros {
-            margin-bottom: 2rem;
-            color: var(--text-secondary);
-        }
-        
-        .rank-pros ul {
-            padding-left: 1.5rem;
-            margin: 0.5rem 0 0 0;
-        }
-        
-        .rank-pros li {
-            margin-bottom: 0.25rem;
-        }
-        
-        .rank-actions {
-            margin-top: auto;
-            display: flex;
-            gap: 1rem;
-        }
-        
-        @media(max-width: 768px) {
-            .rank-actions {
-                flex-direction: column;
-            }
+            gap: var(--sp-8);
         }
     </style>
 </head>
@@ -176,20 +42,15 @@
 
   <header class="header">
     <div class="header-content">
-      <div class="logo">
-        <span class="logo-icon">🏆</span>
-        <div>
-          <a href="/" style="text-decoration:none; color:inherit;">
-            <h1>3D Printer Prices</h1>
-          </a>
-          <p class="tagline">Data-Driven Recommendations</p>
-        </div>
-      </div>
-      <div class="header-actions">
-        <a href="/" class="btn btn-outline" style="text-decoration:none;">&larr; Show All Printers</a>
-      </div>
+      <a href="/" class="logo"><span class="logo-icon">🖨️</span><div><h1>3D Printer Prices</h1><p class="tagline">Compare prices & find the best deals</p></div></a>
+      <nav class="nav-desktop"><a href="/" class="nav-link">Compare</a><a href="/compatibility.html" class="nav-link">Materials</a><a href="/calculator.html" class="nav-link">Calculator</a><a href="/blog/" class="nav-link">Blog</a></nav>
+      <div class="header-actions"><button id="theme-toggle" class="btn-icon" aria-label="Toggle theme">🌙</button><button class="btn-icon mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Open menu">☰</button></div>
     </div>
   </header>
+  <div class="mobile-nav-overlay" id="mobile-nav-overlay"></div>
+  <nav class="mobile-nav" id="mobile-nav"><button class="mobile-nav-close" id="mobile-nav-close" aria-label="Close menu">✕</button><a href="/" class="nav-link">🏠 Compare</a><a href="/compatibility.html" class="nav-link">🔬 Materials</a><a href="/calculator.html" class="nav-link">🧮 Calculator</a><a href="/blog/" class="nav-link">📝 Blog</a></nav>
+
+  <nav class="page-breadcrumb"><a href="/">Home</a><span class="sep">›</span><span class="current">Top Picks</span></nav>
 
   <section class="best-hero">
       <h1 id="hero-title">Best 3D Printers for [Use Case]</h1>
@@ -197,21 +58,34 @@
   </section>
 
   <main class="ranking-container">
-    <div id="loader-wrapper" style="text-align:center; padding: 4rem;">
+    <div id="loader-wrapper" style="text-align:center; padding: var(--sp-12);">
       <div class="loader" style="margin:0 auto;"></div>
-      <p style="margin-top:1rem; color:var(--text-muted);">Calculating rankings...</p>
+      <p style="margin-top:var(--sp-4); color:var(--text-muted);">Calculating rankings...</p>
     </div>
     
-    <div id="rankings-content" style="display:none; display: flex; flex-direction: column; gap: 2rem;">
+    <div id="rankings-content" style="display:none; flex-direction: column; gap: var(--sp-8);">
         <!-- Dynamically populated by best.js -->
     </div>
     
-    <div id="empty-state" style="display:none; text-align:center; padding: 4rem;">
-        <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">No products found for this category.</h2>
-        <a href="/" class="btn btn-primary" style="text-decoration:none; display:inline-block; padding: 1rem 2rem;">Browse All Printers</a>
+    <div id="empty-state" class="empty-state" style="display:none; text-align:center; padding: var(--sp-12);">
+        <span style="font-size: 3rem; margin-bottom: var(--sp-4); display: block;">📭</span>
+        <h2 style="font-size: 1.5rem; margin-bottom: var(--sp-4);">No products found for this category.</h2>
+        <p style="color:var(--text-muted); margin-bottom: var(--sp-8); max-width: 500px; margin-left: auto; margin-right: auto; line-height: 1.6;">Try browsing our full catalog to find what you're looking for, or check back later as we update our rankings.</p>
+        <a href="/" class="btn btn-primary btn-lg">Browse All Printers</a>
     </div>
   </main>
 
+  <footer class="site-footer"><div class="footer-content"><a href="/methodology.html">Methodology</a><span class="footer-divider">·</span><a href="/blog/">Blog</a><span class="footer-divider">·</span><a href="/privacy.html">Privacy</a><span class="footer-divider">·</span><a href="/terms.html">Terms</a><span class="footer-divider">·</span><span>© 2026 3D Printer Prices</span></div></footer>
+
   <script src="best.js"></script>
+  <script>
+    const saved = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+    document.getElementById('theme-toggle')?.addEventListener('click', () => { const c = document.documentElement.getAttribute('data-theme'); const n = c === 'dark' ? 'light' : 'dark'; document.documentElement.setAttribute('data-theme', n); localStorage.setItem('theme', n); document.getElementById('theme-toggle').textContent = n === 'dark' ? '☀️' : '🌙'; });
+    document.getElementById('theme-toggle').textContent = saved === 'dark' ? '☀️' : '🌙';
+    document.getElementById('mobile-menu-toggle')?.addEventListener('click', () => { document.getElementById('mobile-nav').classList.add('open'); document.getElementById('mobile-nav-overlay').classList.add('open'); });
+    document.getElementById('mobile-nav-close')?.addEventListener('click', () => { document.getElementById('mobile-nav').classList.remove('open'); document.getElementById('mobile-nav-overlay').classList.remove('open'); });
+    document.getElementById('mobile-nav-overlay')?.addEventListener('click', () => { document.getElementById('mobile-nav').classList.remove('open'); document.getElementById('mobile-nav-overlay').classList.remove('open'); });
+  </script>
 </body>
 </html>

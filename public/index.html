@@ -59,22 +59,39 @@
   <!-- Header -->
   <header class="header">
     <div class="header-content">
-      <div class="logo">
+      <a href="/" class="logo">
         <span class="logo-icon">🖨️</span>
         <div>
           <h1>3D Printer Prices</h1>
-          <p class="tagline">Find the perfect 3D printer for your needs & budget</p>
+          <p class="tagline">Compare prices & find the best deals</p>
         </div>
-      </div>
-      <div class="header-actions" style="display:flex; align-items:center;">
-        <a href="/compatibility.html" class="nav-link" style="font-size:0.82rem;margin-right:0.5rem">🔬 Materials</a>
-        <a href="/calculator.html" class="nav-link" style="font-size:0.82rem;margin-right:0.5rem">🧮 Calculator</a>
-        <button id="take-quiz-btn" class="quiz-btn">🎯 Find My Printer</button>
-        <a href="/blog/" class="nav-link" style="font-size:0.82rem;margin-right:0.5rem">📝 Blog</a>
+      </a>
+      <nav class="nav-desktop">
+        <a href="/" class="nav-link active">Compare</a>
+        <a href="/compatibility.html" class="nav-link">Materials</a>
+        <a href="/calculator.html" class="nav-link">Calculator</a>
+        <a href="/blog/" class="nav-link">Blog</a>
+      </nav>
+      <div class="header-actions">
         <button id="theme-toggle" class="btn-icon" aria-label="Toggle theme">🌙</button>
+        <button class="btn-icon mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Open menu">☰</button>
       </div>
     </div>
   </header>
+
+  <!-- Mobile Navigation -->
+  <div class="mobile-nav-overlay" id="mobile-nav-overlay"></div>
+  <nav class="mobile-nav" id="mobile-nav">
+    <button class="mobile-nav-close" id="mobile-nav-close" aria-label="Close menu">✕</button>
+    <a href="/" class="nav-link active">🏠 Compare Prices</a>
+    <a href="/compatibility.html" class="nav-link">🔬 Materials</a>
+    <a href="/calculator.html" class="nav-link">🧮 Calculator</a>
+    <a href="/best.html" class="nav-link">🏆 Top Picks</a>
+    <a href="/blog/" class="nav-link">📝 Blog</a>
+    <hr style="border-color:var(--border);margin:0.5rem 0;">
+    <a href="/methodology.html" class="nav-link">📊 Methodology</a>
+    <a href="/admin.html" class="nav-link">⚙️ Admin</a>
+  </nav>
 
   <!-- Ad: Top Banner (Leaderboard 728x90) -->
   <div class="ad-container ad-banner">
@@ -83,54 +100,63 @@
     <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
   </div>
 
-  <!-- Stats Bar -->
-  <section class="stats-bar" id="stats-bar">
-    <div class="stat-card">
-      <span class="stat-value" id="stat-total">—</span>
-      <span class="stat-label">Total Products</span>
+  <!-- Hero Section -->
+  <section class="page-title-section hero-section">
+    <h1>Find Your Perfect 3D Printer</h1>
+    <p>Compare prices, specs, and features across hundreds of 3D printers and materials. Updated daily to help you find the best deals.</p>
+    
+    <!-- Simplified Horizontal Stats -->
+    <div class="hero-stats" id="hero-stats">
+      <div class="hero-stat-item"><strong id="stat-total" class="stat-value-inline">—</strong> <span>Products</span></div>
+      <div class="hero-stat-divider"></div>
+      <div class="hero-stat-item"><strong id="stat-printers" class="stat-value-inline">—</strong> <span>Printers</span></div>
+      <div class="hero-stat-divider"></div>
+      <div class="hero-stat-item"><strong id="stat-filament" class="stat-value-inline">—</strong> <span>Filaments</span></div>
+      <div class="hero-stat-divider"></div>
+      <div class="hero-stat-item"><strong id="stat-updated" class="stat-value-inline">—</strong> <span class="stat-label-light">Updated</span></div>
     </div>
-    <div class="stat-card">
-      <span class="stat-value" id="stat-printers">—</span>
-      <span class="stat-label">3D Printers</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-value" id="stat-filament">—</span>
-      <span class="stat-label">Filaments</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-value" id="stat-brands">—</span>
-      <span class="stat-label">Brands</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-value" id="stat-updated">—</span>
-      <span class="stat-label">Last Updated</span>
+
+    <!-- Primary CTA -->
+    <div class="hero-cta">
+      <button id="take-quiz-btn-hero" class="btn btn-primary btn-lg">🎯 Find Your Printer</button>
     </div>
   </section>
 
-  <!-- Top Picks Links -->
-  <section class="use-cases" id="best-picks" style="margin-bottom: 0;">
-    <div class="use-case-row">
-      <span class="uc-label" style="color:var(--accent);">🏆 Top Picks:</span>
-      <a href="/best.html?type=beginners" class="use-case-chip" style="text-decoration:none; background:var(--bg-card); border-color:var(--accent);">🎓 Best for Beginners</a>
-      <a href="/best.html?type=budget" class="use-case-chip" style="text-decoration:none; background:var(--bg-card); border-color:var(--accent);">💰 Best Under $300</a>
-      <a href="/best.html?type=resin-detail" class="use-case-chip" style="text-decoration:none; background:var(--bg-card); border-color:var(--accent);">💧 Best Resin for Miniatures</a>
-      <a href="/best.html?type=speed" class="use-case-chip" style="text-decoration:none; background:var(--bg-card); border-color:var(--accent);">⚡ Fastest CoreXY Printers</a>
-    </div>
-  </section>
+    <!-- Top Picks (Best For) Links -->
+    <section class="top-picks-section">
+      <h2 class="section-title">🏆 Top Picks for 2026</h2>
+      <div class="top-picks-grid">
+        <a href="/best.html?type=beginners" class="top-pick-card">
+          <span class="icon">🎓</span>
+          <h3>Beginners</h3>
+          <p>Easy to use & reliable</p>
+        </a>
+        <a href="/best.html?type=budget" class="top-pick-card">
+          <span class="icon">💰</span>
+          <h3>Under $300</h3>
+          <p>Best value for money</p>
+        </a>
+        <a href="/best.html?type=resin-detail" class="top-pick-card">
+          <span class="icon">💧</span>
+          <h3>Resin</h3>
+          <p>High detail & miniatures</p>
+        </a>
+        <a href="/best.html?type=speed" class="top-pick-card">
+          <span class="icon">⚡</span>
+          <h3>High-Speed</h3>
+          <p>Fastest prototyping</p>
+        </a>
+      </div>
+    </section>
 
-  <!-- Use-Case Chips -->
-  <section class="use-cases" id="use-cases">
-    <div class="use-case-row">
-      <span class="uc-label">Quick filter:</span>
-      <button class="use-case-chip" data-filter='{"category":"3d_printer","max_price":"300"}'>🎮 Hobby &
-        Beginner</button>
-      <button class="use-case-chip" data-filter='{"category":"3d_printer","min_price":"300"}'>🏗️ Pro
-        Prototyping</button>
-      <button class="use-case-chip" data-filter='{"category":"3d_printer","search":"resin"}'>🎨 Miniatures &
-        Detail</button>
-      <button class="use-case-chip" data-filter='{"category":"3d_pen"}'>✏️ Kids & Fun</button>
+    <!-- Consolidated Quick Filters -->
+    <section class="use-cases consolidated-filters" id="consolidated-filters">
+      <div class="use-case-row">
+        <span class="uc-label">⚡ Quick filter:</span>
+      <button class="use-case-chip" data-filter='{"category":"3d_printer","max_price":"300"}'>🎮 Hobby</button>
+      <button class="use-case-chip" data-filter='{"category":"3d_printer","min_price":"300"}'>🏗️ Pro</button>
+      <button class="use-case-chip" data-filter='{"category":"3d_pen"}'>✏️ Pen</button>
       <button class="use-case-chip" data-filter='{"category":"filament,resin"}'>🧵 Materials</button>
-      <button class="use-case-chip" data-filter='{"category":"accessories"}'>🔧 Accessories</button>
     </div>
   </section>
 
@@ -140,7 +166,7 @@
     <aside class="sidebar" id="sidebar">
       <div class="filter-section">
         <h3>🔍 Search</h3>
-        <input type="text" id="search-input" placeholder="Search products..." class="filter-input">
+        <input type="text" id="search-input" aria-label="Search products" placeholder="Search products..." class="filter-input">
       </div>
 
       <div class="filter-section">
@@ -161,9 +187,9 @@
       <div class="filter-section">
         <h3>💰 Price Range</h3>
         <div class="price-range">
-          <input type="number" id="min-price" placeholder="Min $" class="filter-input small">
-          <span>—</span>
-          <input type="number" id="max-price" placeholder="Max $" class="filter-input small">
+          <input type="number" id="min-price" aria-label="Minimum price in USD" placeholder="Min $" class="filter-input small">
+          <span class="price-sep">-</span>
+          <input type="number" id="max-price" aria-label="Maximum price in USD" placeholder="Max $" class="filter-input small">
         </div>
       </div>
 
@@ -224,9 +250,9 @@
 
       <!-- Pagination -->
       <div class="pagination" id="pagination">
-        <button id="prev-page" class="btn btn-sm" disabled>← Previous</button>
+        <button id="prev-page" class="btn btn-secondary btn-sm" disabled>← Previous</button>
         <span id="page-info">Page 1</span>
-        <button id="next-page" class="btn btn-sm">Next →</button>
+        <button id="next-page" class="btn btn-secondary btn-sm">Next →</button>
       </div>
     </section>
   </main>
@@ -234,7 +260,7 @@
   <!-- Quiz Modal -->
   <div id="quiz-modal" class="modal-overlay" style="display:none;">
     <div class="modal-content quiz-modal">
-      <button class="modal-close" id="close-quiz">&times;</button>
+      <button class="modal-close" id="close-quiz" aria-label="Close">&times;</button>
       <div class="quiz-header">
         <h2>🎯 Find My Perfect Printer</h2>
         <p>Answer 3 quick questions to get personalized recommendations.</p>
@@ -288,12 +314,18 @@
     <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
   </div>
 
-  <footer class="footer">
-    <p>Data sourced from Amazon. Updated periodically via automated scraping. Prices in USD.</p>
-    <p class="footer-links">
-      <a href="/blog/">Blog</a> · <a href="/methodology.html">Methodology</a> · <a href="/privacy.html">Privacy Policy</a> · <a href="/terms.html">Terms of
-        Service</a>
-    </p>
+  <footer class="site-footer">
+    <div class="footer-content">
+      <a href="/methodology.html">Methodology</a>
+      <span class="footer-divider">·</span>
+      <a href="/blog/">Blog</a>
+      <span class="footer-divider">·</span>
+      <a href="/privacy.html">Privacy Policy</a>
+      <span class="footer-divider">·</span>
+      <a href="/terms.html">Terms of Service</a>
+      <span class="footer-divider">·</span>
+      <span>© 2026 3D Printer Prices. Data from Amazon.</span>
+    </div>
   </footer>
 
   <script src="app.js"></script>

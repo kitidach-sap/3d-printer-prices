@@ -62,11 +62,13 @@ function renderComparison(products) {
     
     const rows = [
         { label: '', key: 'header', render: (p) => `
-            <img src="${p.image_url}" class="compare-img" onerror="this.style.display='none'">
+            <img src="${p.image_url}" class="compare-img" alt="${escapeHtml(p.product_name)}" onerror="this.style.display='none'">
             <div class="compare-title"><a href="/product.html?id=${p.id}" target="_blank" style="color:inherit; text-decoration:none;">${escapeHtml(p.display_name || p.product_name)}</a></div>
             <div class="compare-price">$${p.price?.toFixed(2) || '---'}</div>
-            <a href="${p.amazon_url}" target="_blank" class="btn btn-primary" style="text-decoration:none; display:inline-block; margin-bottom: 0.5rem; width:100%; box-sizing:border-box;">View on Amazon</a><br>
-            <button class="compare-remove" onclick="removeCompareItem('${p.id}')">Remove</button>
+            <div style="display: flex; flex-direction: column; gap: var(--sp-2);">
+                <a href="${p.amazon_url ? (p.amazon_url.includes('?') ? p.amazon_url + '&tag=kiti09-20' : p.amazon_url + '?tag=kiti09-20') : '#'}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-md w-full">Check Price</a>
+                <button class="btn btn-tertiary btn-sm text-danger w-full" onclick="removeCompareItem('${p.id}')">Remove</button>
+            </div>
         `},
         { label: 'Type', key: 'category', render: (p) => `<span style="text-transform:uppercase; font-size:0.9rem; font-weight:600; color:var(--accent);">${escapeHtml(p.category === '3d_printer' ? (p.printer_type && p.printer_type !== 'Unknown' ? p.printer_type : 'FDM / Resin') : (p.category ? p.category.replace('_', ' ') : p.product_type || '—'))}</span>` },
         { label: 'Rating', key: 'rating', render: (p) => `⭐ ${p.rating || 'N/A'} <span style="font-size:0.8rem;color:var(--text-muted);">(${p.review_count || 0} revs)</span>` },
