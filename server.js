@@ -1892,6 +1892,299 @@ CRITICAL: Return ONLY valid JSON array, no markdown.`;
 });
 // END NEW AI PRODUCT ENRICHMENT SCRIPT
 
+// ============================================
+// DETAIL PAGE SCRAPER
+// ============================================
+app.post('/api/admin/fetch-details', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
+
+    const cheerio = require('cheerio');
+    const AFFILIATE_TAG = 'kiti09-20';
+    const FETCH_TIMEOUT = 15000; // 15 seconds per product
+
+    try {
+        console.log("🔍 Starting detail page scraper...");
+
+        // Load ScraperAPI key
+        let scraperApiKey = process.env.SCRAPER_API_KEY || null;
+        if (!scraperApiKey) {
+            try {
+                const { data } = await supabase.from('settings').select('value').eq('key', 'scraper_api_key').single();
+                if (data?.value && data.value.length > 10) scraperApiKey = data.value;
+            } catch (e) { /* no key */ }
+        }
+
+        if (!scraperApiKey) {
+            return res.status(400).json({ error: "ScraperAPI key not configured. Set it in Admin settings or .env." });
+        }
+
+        // Atomic row claiming via RPC (FOR UPDATE SKIP LOCKED)
+        const { data: batch, error: claimErr } = await supabase.rpc('claim_detail_scrape_batch', { batch_size: 5 });
+
+        if (claimErr) {
+            console.error("Claim error:", claimErr);
+            return res.status(500).json({ error: "Failed to claim batch: " + claimErr.message });
+        }
+
+        if (!batch || batch.length === 0) {
+            // Count remaining
+            const { count } = await supabase.from('products').select('*', { count: 'exact', head: true })
+                .is('detail_scraped_at', null)
+                .not('amazon_asin', 'is', null);
+            return res.json({ success: true, message: "No eligible products for detail scrape.", processed: 0, remaining: count || 0 });
+        }
+
+        console.log(`   📦 Claimed ${batch.length} products for detail scraping`);
+
+        const results = { success: 0, failed: 0, skipped: 0, details: [] };
+
+        for (const product of batch) {
+            const asin = product.amazon_asin;
+            if (!asin) {
+                // Mark as skipped
+                await supabase.from('products').update({
+                    detail_scrape_status: 'skipped',
+                    detail_last_error: 'Missing ASIN'
+                }).eq('id', product.id);
+                results.skipped++;
+                continue;
+            }
+
+            const detailUrl = `https://www.amazon.com/dp/${asin}`;
+            const scraperUrl = `http://api.scraperapi.com?api_key=${scraperApiKey}&url=${encodeURIComponent(detailUrl)}&render=false`;
+
+            try {
+                console.log(`   🌐 Fetching: ${asin}...`);
+
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
+
+                const response = await fetch(scraperUrl, { signal: controller.signal });
+                clearTimeout(timeout);
+
+                const httpStatus = response.status;
+
+                if (!response.ok) {
+                    throw { type: 'fetch', httpStatus, message: `HTTP ${httpStatus}` };
+                }
+
+                const html = await response.text();
+                const $ = cheerio.load(html);
+
+                // --- Parse each field with fallback ---
+
+                // Title
+                let detailTitle = $('#productTitle').text().trim() || $('#title').text().trim() || null;
+
+                // Brand
+                let detailBrand = null;
+                const bylineEl = $('#bylineInfo a, #bylineInfo span').first();
+                if (bylineEl.length) {
+                    detailBrand = bylineEl.text().replace(/^(Visit the |Brand: )/i, '').trim();
+                }
+                if (!detailBrand) {
+                    // Fallback: product details table
+                    $('#productDetails_techSpec_section_1 tr, #productDetails_detailBullets_sections1 tr, #detailBullets_feature_div li').each((_, el) => {
+                        const text = $(el).text();
+                        if (text.match(/brand/i) && !detailBrand) {
+                            detailBrand = text.replace(/.*brand[:\s]*/i, '').trim();
+                        }
+                    });
+                }
+
+                // Image
+                let imageUrl = null;
+                const landingImg = $('#landingImage, #imgTagWrapperId img, #imgBlkFront').first();
+                if (landingImg.length) {
+                    // Prefer data-old-hires (highest res), then src
+                    imageUrl = landingImg.attr('data-old-hires') || landingImg.attr('src') || null;
+                }
+
+                // Price
+                let price = null;
+                const priceEl = $('.a-price .a-offscreen, #priceblock_ourprice, #corePrice_feature_div .a-offscreen').first();
+                if (priceEl.length) {
+                    const priceText = priceEl.text().replace(/[^0-9.,]/g, '').replace(/,/g, '');
+                    price = parseFloat(priceText) || null;
+                }
+
+                // Original price
+                let originalPrice = null;
+                const origPriceEl = $('.a-text-price .a-offscreen, #priceblock_dealprice, .basisPrice .a-offscreen').first();
+                if (origPriceEl.length) {
+                    const origText = origPriceEl.text().replace(/[^0-9.,]/g, '').replace(/,/g, '');
+                    originalPrice = parseFloat(origText) || null;
+                }
+
+                // Rating
+                let rating = null;
+                const ratingEl = $('#acrPopover .a-icon-alt, .a-star-4-5, .a-star-4, .a-star-5').first();
+                if (ratingEl.length) {
+                    const ratingText = ratingEl.text() || ratingEl.attr('title') || '';
+                    const ratingMatch = ratingText.match(/([\d.]+)/);
+                    if (ratingMatch) rating = parseFloat(ratingMatch[1]);
+                }
+
+                // Review count
+                let reviewCount = null;
+                const reviewEl = $('#acrCustomerReviewText, #ratings-summary .a-size-base').first();
+                if (reviewEl.length) {
+                    const reviewText = reviewEl.text().replace(/[,.\s]/g, '');
+                    const reviewMatch = reviewText.match(/(\d+)/);
+                    if (reviewMatch) reviewCount = parseInt(reviewMatch[1]);
+                }
+
+                // Feature bullets
+                let features = [];
+                $('#feature-bullets ul li span.a-list-item, .a-unordered-list .a-list-item').each((_, el) => {
+                    const text = $(el).text().trim();
+                    if (text.length > 10 && text.length < 500 && !text.includes('Make sure this fits')) {
+                        features.push(text);
+                    }
+                });
+
+                // Tech specs table → specs_json
+                let specsFromPage = {};
+                $('#productDetails_techSpec_section_1 tr').each((_, el) => {
+                    const key = $(el).find('th').text().trim();
+                    const val = $(el).find('td').text().trim();
+                    if (key && val) specsFromPage[key] = val;
+                });
+                // Fallback: detail bullets
+                if (Object.keys(specsFromPage).length === 0) {
+                    $('#detailBullets_feature_div li, #productDetails_detailBullets_sections1 li').each((_, el) => {
+                        const text = $(el).text().trim();
+                        const parts = text.split(/\s*[:\u200F]\s*/);
+                        if (parts.length >= 2) {
+                            specsFromPage[parts[0].trim()] = parts.slice(1).join(':').trim();
+                        }
+                    });
+                }
+
+                // Extract build volume from specs or features
+                let buildVolume = null;
+                const bvSpec = specsFromPage['Build Volume'] || specsFromPage['Print Size'] || specsFromPage['Printing Size'];
+                if (bvSpec) {
+                    buildVolume = bvSpec;
+                } else {
+                    for (const f of features) {
+                        const bvMatch = f.match(/(\d+\s*[xX×]\s*\d+\s*[xX×]\s*\d+\s*mm)/);
+                        if (bvMatch) { buildVolume = bvMatch[1]; break; }
+                    }
+                }
+
+                // --- Build update object with per-field merge rules ---
+                const updateObj = {
+                    detail_scrape_status: 'success',
+                    detail_scraped_at: new Date().toISOString(),
+                    detail_http_status: httpStatus,
+                    detail_last_error: null,
+                    detail_page_url: detailUrl,
+                    detail_title: detailTitle,
+                    detail_brand: detailBrand,
+                    price_last_seen_at: new Date().toISOString(),
+                };
+
+                // Display name: overwrite if source is NOT 'manual'
+                if (detailTitle) {
+                    const existingNameSource = product.display_name_source;
+                    if (existingNameSource !== 'manual') {
+                        // Use detail title as display_name (it's usually cleaner)
+                        // But still keep it as-is from Amazon detail page — conservative approach
+                        updateObj.display_name = detailTitle;
+                        updateObj.display_name_source = 'detail';
+                    }
+                }
+
+                // Brand: overwrite if source is NOT 'manual' or 'detail' (already)
+                if (detailBrand && detailBrand.trim() !== '') {
+                    const existingBrandSource = product.brand_source;
+                    if (existingBrandSource !== 'manual') {
+                        updateObj.brand = detailBrand.trim();
+                        updateObj.brand_source = 'detail';
+                    }
+                }
+
+                // Image: overwrite if current is NULL or placeholder
+                if (imageUrl && (!product.image_url || product.image_url.includes('placeholder'))) {
+                    updateObj.image_url = imageUrl;
+                }
+
+                // Price: update if we got a valid one
+                if (price && price > 0) {
+                    updateObj.price = price;
+                }
+                if (originalPrice && originalPrice > 0) {
+                    updateObj.original_price = originalPrice;
+                    if (price && price > 0) {
+                        updateObj.discount_percent = Math.round(((originalPrice - price) / originalPrice) * 100);
+                    }
+                }
+
+                // Rating & reviews: always update (latest is best)
+                if (rating) updateObj.rating = rating;
+                if (reviewCount) updateObj.review_count = reviewCount;
+
+                // Build volume: overwrite if current is NULL
+                if (buildVolume && !product.build_volume) {
+                    updateObj.build_volume = buildVolume;
+                }
+
+                // Specs: merge field-by-field
+                if (Object.keys(specsFromPage).length > 0) {
+                    const existingSpecs = product.specs_json || {};
+                    updateObj.specs_json = { ...existingSpecs, ...specsFromPage };
+                }
+
+                await supabase.from('products').update(updateObj).eq('id', product.id);
+                results.success++;
+                results.details.push({ asin, status: 'success', title: detailTitle, brand: detailBrand });
+                console.log(`   ✅ ${asin}: "${detailTitle}" (${detailBrand})`);
+
+            } catch (err) {
+                // Per-product error isolation
+                const isAbort = err.name === 'AbortError';
+                const errorType = err.type === 'fetch' ? 'fetch' : (isAbort ? 'timeout' : 'parse');
+                const errorMsg = isAbort ? 'Request timed out (15s)' : (err.message || String(err));
+                const httpStatus = err.httpStatus || null;
+
+                await supabase.from('products').update({
+                    detail_scrape_status: 'failed',
+                    detail_scrape_retries: (product.detail_scrape_retries || 0) + 1,
+                    detail_http_status: httpStatus,
+                    detail_last_error: `${errorType}: ${errorMsg}`,
+                }).eq('id', product.id);
+
+                results.failed++;
+                results.details.push({ asin, status: 'failed', error: `${errorType}: ${errorMsg}` });
+                console.error(`   ❌ ${asin}: ${errorType} - ${errorMsg}`);
+            }
+
+            // Small delay between requests to be polite
+            await new Promise(r => setTimeout(r, 1500));
+        }
+
+        // Count remaining
+        const { count: remaining } = await supabase.from('products').select('*', { count: 'exact', head: true })
+            .is('detail_scraped_at', null)
+            .not('amazon_asin', 'is', null);
+
+        console.log(`🏁 Detail scrape batch done: ${results.success} success, ${results.failed} failed, ${results.skipped} skipped`);
+
+        res.json({
+            success: true,
+            processed: batch.length,
+            results,
+            remaining: remaining || 0,
+            hasMore: (remaining || 0) > 0,
+        });
+
+    } catch (err) {
+        console.error("Detail scraper error:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.post('/api/admin/system/x-post-status', async (req, res) => {
     if (!verifyAdmin(req, res)) return;
     try {

@@ -742,6 +742,10 @@
                             onclick="enrichProducts()">
                             🤖 Enrich Data (AI)
                         </button>
+                        <button class="btn btn-primary" id="btn-fetch-details" style="font-size:0.75rem;padding:0.35rem 0.6rem;background:var(--success)"
+                            onclick="fetchProductDetails()">
+                            🕷️ Fetch Details
+                        </button>
                         <span style="font-size:0.75rem;color:var(--text-muted)" id="pm-count">— products</span>
                     </div>
                 </div>
@@ -751,6 +755,13 @@
                     <span class="blinking-dot"
                         style="background:var(--accent);display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px"></span>
                     Enriching products with AI... (<span id="enrich-remaining">0</span> remaining)
+                </div>
+
+                <div id="detail-scrape-msg"
+                    style="margin-bottom:0.75rem;font-size:0.8rem;color:var(--text-muted);display:none">
+                    <span class="blinking-dot"
+                        style="background:var(--success);display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px"></span>
+                    Fetching product details... (<span id="detail-remaining">0</span> remaining)
                 </div>
 
                 <!-- Search & Filter Bar -->
@@ -1791,6 +1802,42 @@
                 msgBox.innerHTML = `<span style="color:var(--danger)">❌ Error: ${e.message}</span>`;
                 btn.disabled = false;
                 btn.innerHTML = '🤖 Retry Enrich';
+            }
+        }
+
+        async function fetchProductDetails() {
+            const btn = document.getElementById('btn-fetch-details');
+            const msgBox = document.getElementById('detail-scrape-msg');
+            const remainText = document.getElementById('detail-remaining');
+            btn.disabled = true;
+            btn.innerHTML = '🕷️ Fetching...';
+            msgBox.style.display = 'block';
+            try {
+                const res = await fetch('/api/admin/fetch-details', { method: 'POST', headers: apiHeaders() });
+                const data = await res.json();
+                if (data.success) {
+                    remainText.textContent = data.remaining || 0;
+                    const r = data.results || {};
+                    msgBox.innerHTML = `<span style="color:var(--success)">✅ Batch: ${r.success || 0} success, ${r.failed || 0} failed. ${data.remaining || 0} remaining.</span>`;
+                    if (data.hasMore) {
+                        btn.disabled = false;
+                        btn.innerHTML = '🕷️ Fetch More';
+                    } else {
+                        btn.innerHTML = '🕷️ All Done!';
+                        setTimeout(() => {
+                            msgBox.style.display = 'none';
+                            btn.innerHTML = '🕷️ Fetch Details';
+                            btn.disabled = false;
+                        }, 5000);
+                    }
+                    if (typeof loadProductManagement === 'function') loadProductManagement();
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (e) {
+                msgBox.innerHTML = `<span style="color:var(--danger)">❌ Error: ${e.message}</span>`;
+                btn.disabled = false;
+                btn.innerHTML = '🕷️ Retry';
             }
         }
 
