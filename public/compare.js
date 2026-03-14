@@ -63,7 +63,7 @@ function renderComparison(products) {
     const rows = [
         { label: '', key: 'header', render: (p) => `
             <img src="${p.image_url}" class="compare-img" onerror="this.style.display='none'">
-            <div class="compare-title"><a href="/product.html?id=${p.id}" target="_blank" style="color:inherit; text-decoration:none;">${escapeHtml(p.product_name)}</a></div>
+            <div class="compare-title"><a href="/product.html?id=${p.id}" target="_blank" style="color:inherit; text-decoration:none;">${escapeHtml(p.display_name || p.product_name)}</a></div>
             <div class="compare-price">$${p.price?.toFixed(2) || '---'}</div>
             <a href="${p.amazon_url}" target="_blank" class="btn btn-primary" style="text-decoration:none; display:inline-block; margin-bottom: 0.5rem; width:100%; box-sizing:border-box;">View on Amazon</a><br>
             <button class="compare-remove" onclick="removeCompareItem('${p.id}')">Remove</button>

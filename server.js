@@ -202,6 +202,10 @@ app.get('/api/products', async (req, res) => {
             query = query.eq('printer_type', printer_type);
         }
 
+        // Visibility rule: hide junk-title products unless recovered
+        // Show if: is_junk_title = false OR (is_junk_title = true AND display_name IS NOT NULL)
+        query = query.or('is_junk_title.eq.false,is_junk_title.is.null,display_name.not.is.null');
+
         // Sorting
         const validSortFields = ['price', 'product_name', 'brand', 'created_at', 'rating', 'review_count', 'beginner_score'];
         const sortField = validSortFields.includes(sort_by) ? sort_by : 'price';
@@ -1693,7 +1697,8 @@ app.post('/api/admin/enrich-products', async (req, res) => {
             .from('products')
             .select('*')
             .or('printer_type.is.null,printer_type.eq.Unknown')
-            .limit(10); // Process 10 at a time to avoid timeouts
+            .order('created_at', { ascending: false })
+            .limit(10);
 
         if (error) {
             console.error("Error fetching products:", error);
@@ -1707,31 +1712,43 @@ app.post('/api/admin/enrich-products', async (req, res) => {
         const enrichedResults = [];
 
         // Build the prompt request for all chunked items
-        const promptsList = productsToEnrich.map(p => `ID: ${p.amazon_asin}\nProduct Name: ${p.product_name}\nCategory: ${p.category}\n---`).join('\n');
+        const promptsList = productsToEnrich.map(p => `ID: ${p.amazon_asin}\nProduct Name: ${p.product_name}\nCurrent Category: ${p.category}\nCurrent Brand: ${p.brand || 'unknown'}\nPrice: $${p.price || 'unknown'}\n---`).join('\n');
 
         const systemPrompt = `You are an expert 3D printing e-commerce data specialist.
-Your task is to analyze the following product names to correctly categorize them and extract structured data.
-You MUST be 100% accurate, especially regarding the 'category' field.
+Analyze each product and return structured data. You MUST be 100% accurate.
 
-Analyze the products to determine:
-1. "category": MUST be exactly one of: "3d_printer", "filament", "resin", "accessories", "3d_pen", "scanner", or "other". 
-   - CRITICAL RULES: 
-   - A spool of wire/plastic = "filament".
-   - A bottle of liquid = "resin".
-   - Parts, nozzles, build plates, extruders, tools, cleaning kits = "accessories".
-   - ONLY an actual machine that prints is a "3d_printer" or "3d_pen" or "scanner".
-2. "printer_type": If category is "3d_printer", specify "FDM" or "Resin". If category is "accessories", describe the accessory brief type (e.g., "Nozzle", "Hotend", "Build Plate", "Wash/Cure Station"). Otherwise, leave empty.
-3. "labels": An array of 1-3 string badges suitable for a UI tag. Valid examples: "Best for Beginners", "High Speed", "Large Build Volume", "Budget Pick", "Multi-Color", "Ultra Detail". 
-4. "beginner_score": Int from 1 to 10. (e.g. Bambu Lab A1 = 9, Ender 3 = 6, complex Resin printers = 4). If accessory/filament, return 0.
-5. "speed_score": Int from 1 to 10 based on typical printing speed for its category. (e.g. CoreXY = 9-10, traditional bedslingers = 5-7).
-6. "maintenance_score": Int from 1 to 10 based on reliability and ease of maintenance. (10 = practically zero maintenance, 1 = constant tinkering required).
-7. "material_support": Array of strings representing supported materials (e.g. ["PLA", "PETG", "TPU"]).
-8. "specs_json": A key-value object of extracted specs (e.g., {"Speed": "500mm/s", "Connectivity": "WiFi"}).
+ANTI-HALLUCINATION RULES (CRITICAL):
+- Do NOT guess specs that are not explicitly in the product title.
+- If you cannot determine the brand, return brand as null.
+- If unsure about the model name, shorten conservatively — do NOT invent details.
+- Focus on NORMALIZE, not INVENT.
+- Do NOT add dimensions, speeds, or features that are not in the title.
+- Only remove duplicate brand prefixes (e.g. "Creality Creality K1" → "Creality K1").
+- Never remove the only brand mention from a title.
 
-Return the response as a valid JSON Array, where each object has:
-{ "amazon_asin": "string", "category": "string", "printer_type": "string", "labels": [], "beginner_score": number, "speed_score": number, "maintenance_score": number, "material_support": [], "specs_json": {} }
+For each product, determine:
+1. "clean_name": A short, correct product name. Extract Brand + Model only.
+   - Example: "Official Creality Ender 3 V3 KE 3D Printer High Speed..." → "Creality Ender 3 V3 KE"
+   - Example: "ELEGOO Neptune 4 Pro FDM 3D Printer..." → "ELEGOO Neptune 4 Pro"
+   - Example: "JAYO PLA 3D Printer Filament 1.75mm 1KG Spool..." → "JAYO PLA Filament 1kg"
+   - If title is gibberish/junk (e.g. "Check each product page for other buying options"), return clean_name as null.
+2. "brand": The verified brand name. If cannot be determined from title, return null.
+3. "is_junk_title": true ONLY if the raw title is NOT a real product name (e.g. "Check each product page...", nonsensical text, placeholder text). Normal long Amazon titles are NOT junk — just messy.
+4. "category": Exactly one of: "3d_printer", "filament", "resin", "accessories", "3d_pen", "scanner", "other".
+   - Spool of plastic/wire = "filament". Bottle of liquid = "resin".
+   - Parts/nozzles/build plates/tools = "accessories". Machine that prints = "3d_printer".
+5. "printer_type": If "3d_printer" → "FDM" or "Resin". If "accessories" → brief type (e.g. "Nozzle"). Otherwise empty string.
+6. "labels": Array of 1-3 UI badges. Valid: "Best for Beginners", "High Speed", "Large Build Volume", "Budget Pick", "Multi-Color", "Ultra Detail".
+7. "beginner_score": Int 1-10. Accessories/filament = 0.
+8. "speed_score": Int 1-10.
+9. "maintenance_score": Int 1-10.
+10. "material_support": Array of material strings.
+11. "specs_json": Key-value specs extracted ONLY from what is in the title. Do not invent.
 
-CRITICAL: Return ONLY valid JSON, no markdown formatting (\`\`\`json) outside of the array.`;
+Return as JSON Array:
+{ "amazon_asin": "string", "clean_name": "string|null", "brand": "string|null", "is_junk_title": boolean, "category": "string", "printer_type": "string", "labels": [], "beginner_score": number, "speed_score": number, "maintenance_score": number, "material_support": [], "specs_json": {} }
+
+CRITICAL: Return ONLY valid JSON array, no markdown.`;
 
         let rawResponse = '';
 
@@ -1773,7 +1790,7 @@ CRITICAL: Return ONLY valid JSON, no markdown formatting (\`\`\`json) outside of
                             { role: "system", content: systemPrompt },
                             { role: "user", content: promptsList }
                         ],
-                        response_format: { type: "json_object" } // Using object or array mapping
+                        response_format: { type: "json_object" }
                     });
                     rawResponse = completion.choices[0].message.content;
                 } else {
@@ -1784,39 +1801,71 @@ CRITICAL: Return ONLY valid JSON, no markdown formatting (\`\`\`json) outside of
             // Parse response
             let parsedData = [];
             try {
-                // remove any potential markdown
                 let cleanStr = rawResponse.replace(/```json/g, '').replace(/```/g, '').trim();
-                // if OpenAI returns an object wrapping the array, handling needed.
                 const jsonDoc = JSON.parse(cleanStr);
                 parsedData = Array.isArray(jsonDoc) ? jsonDoc : (jsonDoc.products || jsonDoc.items || Object.values(jsonDoc)[0]);
-
                 if (!Array.isArray(parsedData)) throw new Error("Parsed data is not an array");
-
             } catch (e) {
                 console.error("Failed to parse AI response:", rawResponse);
                 throw new Error("Invalid JSON from AI generation");
             }
 
-            // Update DB
-            for (let structuredInfo of parsedData) {
-                if (!structuredInfo.amazon_asin) continue;
+            // Update DB with source-aware overwrite rules
+            for (let ai of parsedData) {
+                if (!ai.amazon_asin) continue;
+
+                // Find the original product for source-aware decisions
+                const original = productsToEnrich.find(p => p.amazon_asin === ai.amazon_asin);
+                if (!original) continue;
+
+                // Build update object
+                const updateObj = {
+                    category: ai.category || original.category,
+                    printer_type: ai.printer_type || 'Unknown',
+                    labels: ai.labels || [],
+                    beginner_score: ai.beginner_score || 0,
+                    speed_score: ai.speed_score || null,
+                    maintenance_score: ai.maintenance_score || null,
+                    material_support: ai.material_support || [],
+                    specs_json: ai.specs_json || {},
+                    is_junk_title: ai.is_junk_title === true,
+                    last_enriched_at: new Date().toISOString(),
+                };
+
+                // --- Brand overwrite decision tree ---
+                const existingBrandSource = original.brand_source;
+                const aiBrand = ai.brand;
+                // Only write if AI returned a non-empty brand
+                if (aiBrand && aiBrand.trim() !== '') {
+                    if (!existingBrandSource || existingBrandSource === 'unknown' || existingBrandSource === 'ai') {
+                        // Safe to overwrite: no trusted source exists
+                        updateObj.brand = aiBrand.trim();
+                        updateObj.brand_source = 'ai';
+                    }
+                    // If brand_source is 'manual', 'detail', or 'trusted_seed' → SKIP, never overwrite
+                }
+
+                // --- Display name overwrite decision tree ---
+                const existingNameSource = original.display_name_source;
+                const aiCleanName = ai.clean_name;
+                if (aiCleanName && aiCleanName.trim() !== '') {
+                    if (!existingNameSource || existingNameSource === 'raw' || existingNameSource === 'ai') {
+                        // Safe to overwrite: no 'manual' or 'detail' source
+                        updateObj.display_name = aiCleanName.trim();
+                        updateObj.display_name_source = 'ai';
+                    }
+                    // If display_name_source is 'manual' or 'detail' → SKIP
+                }
 
                 const { error: updateErr } = await supabase
                     .from('products')
-                    .update({
-                        category: structuredInfo.category || undefined,
-                        printer_type: structuredInfo.printer_type || 'Unknown',
-                        labels: structuredInfo.labels || [],
-                        beginner_score: structuredInfo.beginner_score || 0,
-                        speed_score: structuredInfo.speed_score || null,
-                        maintenance_score: structuredInfo.maintenance_score || null,
-                        material_support: structuredInfo.material_support || [],
-                        specs_json: structuredInfo.specs_json || {}
-                    })
-                    .eq('amazon_asin', structuredInfo.amazon_asin);
+                    .update(updateObj)
+                    .eq('amazon_asin', ai.amazon_asin);
 
                 if (!updateErr) {
-                    enrichedResults.push(structuredInfo.amazon_asin);
+                    enrichedResults.push(ai.amazon_asin);
+                } else {
+                    console.error(`Failed to update ${ai.amazon_asin}:`, updateErr.message);
                 }
             }
 
@@ -1835,7 +1884,6 @@ CRITICAL: Return ONLY valid JSON, no markdown formatting (\`\`\`json) outside of
             console.error("AI Generation Error:", genError);
             res.status(500).json({ error: "Failed to generate structured data from AI: " + genError.message });
         }
-
 
     } catch (err) {
         console.error("Enrichment Route Error:", err);

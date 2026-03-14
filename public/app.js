@@ -251,7 +251,7 @@ async function loadProducts() {
                     <a href="/product.html?id=${p.id}" class="product-name-link">
                         <img
                             src="${p.image_url || ''}"
-                            alt="${escapeHtml(p.product_name)}"
+                            alt="${escapeHtml(p.display_name || p.product_name)}"
                             class="product-thumb"
                             loading="lazy"
                             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
@@ -260,7 +260,7 @@ async function loadProducts() {
                             ${p.category === 'filament' ? '🧵' : p.category === 'resin' ? '💧' : p.category === '3d_pen' ? '✏️' : p.category === 'accessories' ? '🔧' : '🖨️'}
                         </span>
                         <div style="display:flex; flex-direction:column; gap:0.25rem;">
-                            <span class="product-title-text">${escapeHtml(p.product_name)}</span>
+                            <span class="product-title-text">${escapeHtml(p.display_name || p.product_name)}</span>
                             ${p.labels && p.labels.length > 0 ? `
                             <div class="ai-badges">
                                 ${p.labels.map(l => `<span class="${l.toLowerCase().includes('beginner') ? 'badge-beginner' : 'badge-feature'}">${escapeHtml(l)}</span>`).join('')}
@@ -270,7 +270,7 @@ async function loadProducts() {
                     </a>
                     <div style="margin-top:0.5rem; margin-left: calc(60px + 1rem); /* align with text */">
                         <label class="compare-checkbox-label" style="display:inline-flex; align-items:center; gap:0.3rem; font-size:0.75rem; color:var(--text-muted); cursor:pointer; font-weight: 500;">
-                            <input type="checkbox" onchange="toggleCompare('${p.id}', this.dataset.name, this.dataset.image, ${p.price || 0}, this.dataset.url)" data-name="${escapeHtml(p.product_name)}" data-image="${p.image_url || ''}" data-url="${p.amazon_url}" ${compareList.some(c => c.id === p.id) ? 'checked' : ''}>
+                            <input type="checkbox" onchange="toggleCompare('${p.id}', this.dataset.name, this.dataset.image, ${p.price || 0}, this.dataset.url)" data-name="${escapeHtml(p.display_name || p.product_name)}" data-image="${p.image_url || ''}" data-url="${p.amazon_url}" ${compareList.some(c => c.id === p.id) ? 'checked' : ''}>
                             ➕ Compare
                         </label>
                     </div>

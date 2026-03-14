@@ -60,11 +60,11 @@ function showError(msg) {
 
 function renderProduct(p) {
     // Basic Details
-    document.title = `${p.product_name} - Specs & Price`;
-    document.querySelector('meta[name="description"]').setAttribute('content', `Read specs, find alternatives, and check the latest price for the ${p.brand ? p.brand + ' ' : ''}${p.product_name}.`);
+    document.title = `${p.display_name || p.product_name} - Specs & Price`;
+    document.querySelector('meta[name="description"]').setAttribute('content', `Read specs, find alternatives, and check the latest price for the ${p.brand ? p.brand + ' ' : ''}${p.display_name || p.product_name}.`);
 
     document.getElementById('pd-image').src = p.image_url || '';
-    document.getElementById('pd-title').textContent = p.product_name;
+    document.getElementById('pd-title').textContent = p.display_name || p.product_name;
     document.getElementById('pd-brand').textContent = p.brand || p.category.replace('_', ' ');
     
     document.getElementById('pd-rating').textContent = p.rating ? p.rating.toFixed(1) : 'No Rating';
