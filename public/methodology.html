@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Our Methodology — How We Rank 3D Printers | 3D Printer Prices</title>
+  <meta name="description"
+    content="Learn how 3D Printer Prices collects data, ranks products, and assigns scores. Transparent methodology for unbiased 3D printer comparisons.">
+  <link rel="canonical" href="https://3d-printer-prices.com/methodology.html">
+
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Our Methodology — How We Rank 3D Printers">
+  <meta property="og:description" content="Transparent scoring methodology for 3D printer price comparison and recommendations.">
+  <meta property="og:url" content="https://3d-printer-prices.com/methodology.html">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+
+  <style>
+    .method-hero {
+      text-align: center;
+      padding: 3rem 1.5rem 2rem;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    .method-hero h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .method-hero p {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+      line-height: 1.7;
+    }
+
+    .method-container {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 0 1.5rem 3rem;
+    }
+
+    .method-section {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.8rem;
+      margin-bottom: 1.5rem;
+      transition: transform 0.2s;
+    }
+    .method-section:hover {
+      transform: translateY(-2px);
+    }
+
+    .method-section h2 {
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .method-section h2 .icon {
+      font-size: 1.4rem;
+    }
+
+    .method-section h3 {
+      font-size: 1rem;
+      margin: 1.2rem 0 0.5rem;
+      color: var(--accent);
+    }
+
+    .method-section p, .method-section li {
+      color: var(--text-secondary);
+      font-size: 0.92rem;
+      line-height: 1.7;
+    }
+
+    .method-section ul {
+      padding-left: 1.2rem;
+      margin: 0.5rem 0;
+    }
+    .method-section li {
+      margin-bottom: 0.4rem;
+    }
+
+    .pipeline-flow {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin: 1.2rem 0;
+    }
+    .pipeline-step {
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      border-radius: 8px;
+      padding: 0.6rem 1rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      text-align: center;
+      min-width: 110px;
+    }
+    .pipeline-arrow {
+      display: flex;
+      align-items: center;
+      color: var(--text-muted);
+      font-size: 1.2rem;
+    }
+
+    .score-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.8rem;
+      margin: 1rem 0;
+    }
+    .score-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+    }
+    .score-card .label {
+      font-weight: 700;
+      font-size: 0.85rem;
+      margin-bottom: 0.3rem;
+    }
+    .score-card .desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .trust-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+      margin: 1rem 0;
+    }
+    .trust-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      border-radius: 8px;
+      padding: 0.5rem 0.8rem;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: #10b981;
+    }
+
+    @media (max-width: 600px) {
+      .method-hero h1 { font-size: 1.5rem; }
+      .method-section { padding: 1.2rem; }
+      .pipeline-arrow { display: none; }
+      .pipeline-flow { flex-direction: column; align-items: center; }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="header">
+    <div class="header-content">
+      <a href="/" style="text-decoration:none;color:inherit">
+        <div class="logo">
+          <span class="logo-icon">🖨️</span>
+          <div>
+            <h1 style="font-size:1.2rem;margin:0">3D Printer Prices</h1>
+            <p class="tagline" style="margin:0;font-size:0.75rem">Find the perfect 3D printer for your needs & budget</p>
+          </div>
+        </div>
+      </a>
+      <div class="header-actions" style="display:flex; align-items:center;">
+        <a href="/" class="nav-link" style="font-size:0.82rem;margin-right:0.5rem">🏠 Home</a>
+        <a href="/calculator.html" class="nav-link" style="font-size:0.82rem;margin-right:0.5rem">🧮 Calculator</a>
+        <a href="/blog/" class="nav-link" style="font-size:0.82rem;margin-right:0.5rem">📝 Blog</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="method-hero">
+    <h1>📊 Our Methodology</h1>
+    <p>Transparency is important to us. Here's exactly how we collect data, score products, and make recommendations — so you can make informed decisions with confidence.</p>
+  </section>
+
+  <div class="method-container">
+
+    <!-- Data Collection -->
+    <div class="method-section">
+      <h2><span class="icon">🔍</span> How We Collect Data</h2>
+      <p>Our data comes directly from Amazon product listings, collected and verified through a multi-step pipeline:</p>
+      <div class="pipeline-flow">
+        <div class="pipeline-step">🛒 Amazon<br>Search Scrape</div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step">🤖 AI<br>Enrichment</div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step">🕷️ Detail Page<br>Verification</div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step">✅ Quality<br>Check</div>
+      </div>
+      <h3>Step 1: Automated Discovery</h3>
+      <p>Our scraper searches Amazon daily for 3D printers, filaments, and accessories across multiple categories (FDM, Resin/SLA, PLA filament, tools & accessories, 3D pens).</p>
+      <h3>Step 2: AI Enrichment</h3>
+      <p>Each product is analyzed by AI (Google Gemini) to extract a clean product name, identify the brand, classify the printer type, and flag low-quality listings. This step has strict anti-hallucination rules — the AI cannot guess specifications not present in the title.</p>
+      <h3>Step 3: Detail Verification</h3>
+      <p>Individual product pages are scraped to verify the actual brand, extract high-resolution images, current pricing, star rating, review count, and technical specifications.</p>
+      <h3>Step 4: Quality Gating</h3>
+      <p>Products flagged as "junk titles" (e.g., accessory bundles listed as printers, unclear product names) are hidden from the catalogue until verified data is available.</p>
+    </div>
+
+    <!-- Pricing -->
+    <div class="method-section">
+      <h2><span class="icon">💰</span> Pricing & Updates</h2>
+      <p>All prices shown are in <strong>USD</strong> and sourced from Amazon.com. Key pricing details:</p>
+      <ul>
+        <li><strong>Update frequency:</strong> Prices are refreshed daily via our automated scraper</li>
+        <li><strong>Discount calculation:</strong> We compare the current price against the listed original price to calculate discount percentages</li>
+        <li><strong>Price history:</strong> Every price update is timestamped so we can show when data was last verified</li>
+        <li><strong>Multiple sources:</strong> Prices from detail page scrapes always take priority over search result prices</li>
+      </ul>
+    </div>
+
+    <!-- Scoring -->
+    <div class="method-section">
+      <h2><span class="icon">⭐</span> How Scoring Works</h2>
+      <p>Products are evaluated on multiple dimensions. Each score is derived from real product specifications, reviews, and pricing — never from paid placement.</p>
+
+      <div class="score-grid">
+        <div class="score-card">
+          <div class="label">🎯 Value Score</div>
+          <div class="desc">Price relative to features and category average. Lower price + higher specs = better value.</div>
+        </div>
+        <div class="score-card">
+          <div class="label">👶 Beginner Score</div>
+          <div class="desc">Based on ease of assembly, auto-leveling features, enclosed build chamber, and community support.</div>
+        </div>
+        <div class="score-card">
+          <div class="label">⚡ Speed Score</div>
+          <div class="desc">Derived from max print speed, acceleration capabilities, and direct drive vs bowden setup.</div>
+        </div>
+        <div class="score-card">
+          <div class="label">🔧 Maintenance Score</div>
+          <div class="desc">Estimated maintenance burden based on printer type, enclosure, and build complexity.</div>
+        </div>
+        <div class="score-card">
+          <div class="label">📦 Build Volume</div>
+          <div class="desc">Actual print area dimensions (L × W × H) extracted from product specifications.</div>
+        </div>
+        <div class="score-card">
+          <div class="label">⭐ User Rating</div>
+          <div class="desc">Amazon star rating and review count. Higher rating with more reviews = higher confidence.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recommendation -->
+    <div class="method-section">
+      <h2><span class="icon">🎯</span> How Recommendations Are Made</h2>
+      <p>Our <strong>"Find My Printer"</strong> quiz uses AI to match your answers against our product database:</p>
+      <ul>
+        <li><strong>Budget:</strong> Your price range filters products within that range</li>
+        <li><strong>Experience level:</strong> Beginners get printers with auto-leveling, easy setup, and good community support</li>
+        <li><strong>Use case:</strong> Miniatures → resin printers; functional parts → FDM printers with high temp materials</li>
+      </ul>
+      <p style="margin-top:0.8rem"><strong>Important:</strong> Recommendations are based entirely on product specifications and user requirements. We do not accept payment for placement.</p>
+    </div>
+
+    <!-- Best-For Badges -->
+    <div class="method-section">
+      <h2><span class="icon">🏷️</span> "Best For" Badges</h2>
+      <p>Products earn badges based on objective, rule-based criteria — not editorial opinion:</p>
+      <ul>
+        <li><strong>🏆 Best for Beginners:</strong> High beginner score, auto bed leveling, under $500, 4+ star rating</li>
+        <li><strong>💰 Budget Pick:</strong> Under $250 with 4+ stars and solid feature set</li>
+        <li><strong>⚡ High Speed:</strong> Advertised print speed ≥ 300mm/s or direct drive with high acceleration</li>
+        <li><strong>🎨 Resin Detail:</strong> Resin/SLA printer with ≤ 50µm layer resolution</li>
+        <li><strong>📦 Large Build Volume:</strong> Build volume exceeding 300mm in any dimension</li>
+        <li><strong>🔥 Good for ABS:</strong> Enclosed build chamber with heated bed ≥ 100°C</li>
+      </ul>
+    </div>
+
+    <!-- Data Integrity -->
+    <div class="method-section">
+      <h2><span class="icon">🛡️</span> Data Integrity & Trust</h2>
+      <p>We take data accuracy seriously. Here's how we prevent errors:</p>
+
+      <div class="trust-badges">
+        <div class="trust-badge">✅ Source tracking for every data field</div>
+        <div class="trust-badge">✅ AI cannot overwrite verified data</div>
+        <div class="trust-badge">✅ Quality gate for junk listings</div>
+        <div class="trust-badge">✅ No paid placements</div>
+        <div class="trust-badge">✅ Daily automated updates</div>
+        <div class="trust-badge">✅ Multi-step verification pipeline</div>
+      </div>
+
+      <h3>Source Priority</h3>
+      <p>When multiple sources have data for the same field, we follow a strict priority chain:</p>
+      <ul>
+        <li><strong>Manual review</strong> (highest priority — never overwritten)</li>
+        <li><strong>Amazon detail page</strong> (direct from product page)</li>
+        <li><strong>Trusted seed data</strong> (verified reference data)</li>
+        <li><strong>AI analysis</strong> (lowest priority — can be overwritten by any above)</li>
+      </ul>
+    </div>
+
+    <!-- Affiliate Disclosure -->
+    <div class="method-section">
+      <h2><span class="icon">💡</span> Affiliate Disclosure</h2>
+      <p>This site participates in the <strong>Amazon Associates Program</strong>. When you click a product link and make a purchase, we may earn a small commission at no extra cost to you.</p>
+      <p style="margin-top:0.5rem"><strong>This does not influence our rankings or recommendations in any way.</strong> Products are scored and ranked by the same algorithm regardless of affiliate status. All products on our site have the same affiliate tag.</p>
+    </div>
+
+  </div>
+
+  <footer class="footer">
+    <p>Data sourced from Amazon. Updated periodically via automated scraping. Prices in USD.</p>
+    <p class="footer-links">
+      <a href="/">Home</a> · <a href="/blog/">Blog</a> · <a href="/methodology.html">Methodology</a> · <a href="/privacy.html">Privacy Policy</a> · <a href="/terms.html">Terms of Service</a>
+    </p>
+  </footer>
+
+  <script>
+    // Theme toggle
+    const saved = localStorage.getItem('theme');
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+  </script>
+</body>
+
+</html>
