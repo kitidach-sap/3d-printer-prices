@@ -1,19 +1,5 @@
 {
     "version": 2,
-    "functions": {
-        "server.js": {
-            "maxDuration": 60
-        },
-        "api/cron/scrape.js": {
-            "maxDuration": 60
-        },
-        "api/cron/blog.js": {
-            "maxDuration": 60
-        },
-        "api/cron/twitter.js": {
-            "maxDuration": 60
-        }
-    },
     "builds": [
         {
             "src": "server.js",
