@@ -764,6 +764,10 @@
                     Fetching product details... (<span id="detail-remaining">0</span> remaining)
                 </div>
 
+                <!-- Live Progress Log -->
+                <div id="pipeline-log" style="display:none; margin-bottom:0.75rem; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:0.5rem; max-height:200px; overflow-y:auto; font-family:monospace; font-size:0.72rem; line-height:1.6">
+                </div>
+
                 <!-- Search & Filter Bar -->
                 <div style="display:flex;gap:0.4rem;margin-bottom:0.6rem;flex-wrap:wrap">
                     <input type="text" class="form-input" id="pm-search" placeholder="🔍 Search product name..."
@@ -1766,6 +1770,20 @@
             }
         }
 
+        // --- Live Progress Logger ---
+        let _pipelineTotal = { enriched: 0, detailOk: 0, detailFail: 0 };
+        function pipeLog(msg, type = 'info') {
+            const log = document.getElementById('pipeline-log');
+            log.style.display = 'block';
+            const ts = new Date().toLocaleTimeString();
+            const colors = { info: '#8b949e', success: '#3fb950', error: '#f85149', warn: '#d29922' };
+            const line = document.createElement('div');
+            line.style.color = colors[type] || colors.info;
+            line.textContent = `[${ts}] ${msg}`;
+            log.appendChild(line);
+            log.scrollTop = log.scrollHeight;
+        }
+
         async function enrichProducts() {
             const btn = document.getElementById('btn-enrich');
             const msgBox = document.getElementById('enrich-msg');
@@ -1774,31 +1792,47 @@
             btn.disabled = true;
             btn.innerHTML = '⏳ Processing...';
             msgBox.style.display = 'block';
+            pipeLog('🤖 Starting AI enrichment batch...', 'info');
 
             try {
+                const startTime = Date.now();
                 const res = await fetch('/api/admin/enrich-products', { method: 'POST', headers: apiHeaders() });
+
+                // Check HTTP status first
+                if (!res.ok) {
+                    const text = await res.text();
+                    pipeLog(`HTTP ${res.status}: ${text.substring(0, 200)}`, 'error');
+                    throw new Error(`HTTP ${res.status}`);
+                }
+
                 const data = await res.json();
+                const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
 
                 if (data.success) {
-                    remainText.textContent = data.remainingCount;
+                    _pipelineTotal.enriched += (data.count || 0);
+                    remainText.textContent = data.remainingCount ?? '?';
+                    pipeLog(`✅ Batch done in ${elapsed}s — ${data.count || 0} enriched (total: ${_pipelineTotal.enriched}), ${data.remainingCount ?? '?'} remaining`, 'success');
+
                     pmLoadProducts(pmPage); // Refresh table
 
                     if (data.activeEnrichment) {
-                        // Automatically fire again if there's more to process
-                        setTimeout(enrichProducts, 1000);
+                        setTimeout(enrichProducts, 1500);
                     } else {
                         btn.disabled = false;
                         btn.innerHTML = '🤖 Enriched (Done)';
                         msgBox.innerHTML = '<span style="color:var(--success)">✅ All products enriched!</span>';
+                        pipeLog(`🏁 All enrichment complete! Total: ${_pipelineTotal.enriched} products`, 'success');
                         setTimeout(() => {
                             msgBox.style.display = 'none';
                             btn.innerHTML = '🤖 Enrich Data (AI)';
                         }, 5000);
                     }
                 } else {
-                    throw new Error(data.error);
+                    pipeLog(`❌ API returned error: ${data.error || JSON.stringify(data)}`, 'error');
+                    throw new Error(data.error || 'Unknown API error');
                 }
             } catch (e) {
+                pipeLog(`❌ Enrichment failed: ${e.message}`, 'error');
                 msgBox.innerHTML = `<span style="color:var(--danger)">❌ Error: ${e.message}</span>`;
                 btn.disabled = false;
                 btn.innerHTML = '🤖 Retry Enrich';
@@ -1812,18 +1846,48 @@
             btn.disabled = true;
             btn.innerHTML = '🕷️ Fetching...';
             msgBox.style.display = 'block';
+            pipeLog('🕷️ Starting detail page scrape batch...', 'info');
+
             try {
+                const startTime = Date.now();
                 const res = await fetch('/api/admin/fetch-details', { method: 'POST', headers: apiHeaders() });
+
+                if (!res.ok) {
+                    const text = await res.text();
+                    pipeLog(`HTTP ${res.status}: ${text.substring(0, 200)}`, 'error');
+                    throw new Error(`HTTP ${res.status}`);
+                }
+
                 const data = await res.json();
+                const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+
                 if (data.success) {
                     remainText.textContent = data.remaining || 0;
                     const r = data.results || {};
+
+                    // Log each product result
+                    if (r.details && r.details.length > 0) {
+                        r.details.forEach(d => {
+                            if (d.status === 'success') {
+                                _pipelineTotal.detailOk++;
+                                pipeLog(`  ✅ ${d.asin}: "${d.title || '?'}" (${d.brand || 'no brand'})`, 'success');
+                            } else {
+                                _pipelineTotal.detailFail++;
+                                pipeLog(`  ❌ ${d.asin}: ${d.error || 'unknown error'}`, 'error');
+                            }
+                        });
+                    }
+
+                    pipeLog(`📦 Batch done in ${elapsed}s — ${r.success || 0}✅ ${r.failed || 0}❌ (total: ${_pipelineTotal.detailOk}✅ ${_pipelineTotal.detailFail}❌) | ${data.remaining || 0} remaining`, r.failed > 0 ? 'warn' : 'success');
+
                     msgBox.innerHTML = `<span style="color:var(--success)">✅ Batch: ${r.success || 0} success, ${r.failed || 0} failed. ${data.remaining || 0} remaining.</span>`;
+
                     if (data.hasMore) {
                         btn.disabled = false;
                         btn.innerHTML = '🕷️ Fetch More';
                     } else {
                         btn.innerHTML = '🕷️ All Done!';
+                        pipeLog(`🏁 All detail scraping complete! Total: ${_pipelineTotal.detailOk}✅ ${_pipelineTotal.detailFail}❌`, 'success');
                         setTimeout(() => {
                             msgBox.style.display = 'none';
                             btn.innerHTML = '🕷️ Fetch Details';
@@ -1832,9 +1896,11 @@
                     }
                     if (typeof loadProductManagement === 'function') loadProductManagement();
                 } else {
+                    pipeLog(`❌ API returned error: ${data.error || JSON.stringify(data)}`, 'error');
                     throw new Error(data.error);
                 }
             } catch (e) {
+                pipeLog(`❌ Detail scrape failed: ${e.message}`, 'error');
                 msgBox.innerHTML = `<span style="color:var(--danger)">❌ Error: ${e.message}</span>`;
                 btn.disabled = false;
                 btn.innerHTML = '🕷️ Retry';
