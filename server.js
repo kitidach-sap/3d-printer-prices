@@ -2922,6 +2922,259 @@ app.get('/api/admin/system/x-post-history', async (req, res) => {
     }
 });
 
+
+// ============================================
+// COMMUNITY & RETENTION APIs
+// ============================================
+
+// --- Email Subscribers ---
+app.post('/api/subscribe', async (req, res) => {
+    try {
+        const { email, name, interests, source } = req.body;
+        if (!email || !email.includes('@')) return res.status(400).json({ error: 'Valid email required' });
+
+        const { data, error } = await supabase.from('email_subscribers')
+            .upsert({ email: email.toLowerCase().trim(), name, interests: interests || ['deals', 'new-products'], source: source || 'website', is_active: true, updated_at: new Date().toISOString() }, { onConflict: 'email' })
+            .select().single();
+        if (error) throw error;
+        res.json({ success: true, subscriber: data });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/unsubscribe', async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) return res.status(400).json({ error: 'Email required' });
+        await supabase.from('email_subscribers').update({ is_active: false }).eq('email', email.toLowerCase().trim());
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- Price Alerts ---
+app.post('/api/price-alerts', async (req, res) => {
+    try {
+        const { email, product_id, target_price } = req.body;
+        if (!email || !product_id) return res.status(400).json({ error: 'Email and product_id required' });
+
+        // Get current price
+        const { data: product } = await supabase.from('products').select('price').eq('id', product_id).single();
+
+        const { data, error } = await supabase.from('price_alerts').insert({
+            email: email.toLowerCase().trim(),
+            product_id,
+            target_price: target_price || (product?.price ? product.price * 0.9 : null),
+            current_price: product?.price
+        }).select().single();
+        if (error) throw error;
+
+        // Auto-subscribe email
+        await supabase.from('email_subscribers')
+            .upsert({ email: email.toLowerCase().trim(), interests: ['price-alerts'], source: 'price-alert', is_active: true }, { onConflict: 'email' });
+
+        res.json({ success: true, alert: data });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/price-alerts', async (req, res) => {
+    try {
+        const { email } = req.query;
+        if (!email) return res.status(400).json({ error: 'Email required' });
+
+        const { data, error } = await supabase.from('price_alerts')
+            .select('*, product:products(id, product_name, display_name, price, image_url, amazon_url)')
+            .eq('email', email.toLowerCase().trim())
+            .eq('is_triggered', false)
+            .order('created_at', { ascending: false });
+        if (error) throw error;
+        res.json({ alerts: data || [] });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/price-alerts/:id', async (req, res) => {
+    try {
+        await supabase.from('price_alerts').delete().eq('id', req.params.id);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- Shared Setups ---
+function generateSlug() {
+    return Math.random().toString(36).substring(2, 8) + Date.now().toString(36).slice(-4);
+}
+
+app.post('/api/shared-setups', async (req, res) => {
+    try {
+        const { title, description, use_case, creator_name, creator_email, items } = req.body;
+        if (!title || !items || items.length === 0) return res.status(400).json({ error: 'Title and items required' });
+
+        // Calculate total cost
+        let totalCost = 0;
+        for (const item of items) {
+            if (item.custom_price) totalCost += Number(item.custom_price);
+            else if (item.product_id) {
+                const { data: p } = await supabase.from('products').select('price').eq('id', item.product_id).single();
+                if (p?.price) totalCost += Number(p.price);
+            }
+        }
+
+        const { data, error } = await supabase.from('shared_setups').insert({
+            slug: generateSlug(),
+            title, description, use_case,
+            creator_name: creator_name || 'Anonymous',
+            creator_email,
+            items,
+            total_cost: totalCost
+        }).select().single();
+        if (error) throw error;
+        res.json({ success: true, setup: data, share_url: `/setup/${data.slug}` });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/shared-setups', async (req, res) => {
+    try {
+        const { use_case, sort } = req.query;
+        let query = supabase.from('shared_setups')
+            .select('*')
+            .eq('is_published', true);
+        if (use_case) query = query.eq('use_case', use_case);
+        query = query.order(sort === 'popular' ? 'upvotes' : 'created_at', { ascending: false }).limit(20);
+
+        const { data, error } = await query;
+        if (error) throw error;
+        res.json({ setups: data || [] });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/shared-setups/:slug', async (req, res) => {
+    try {
+        const { data, error } = await supabase.from('shared_setups')
+            .select('*')
+            .eq('slug', req.params.slug)
+            .eq('is_published', true)
+            .single();
+        if (error) throw error;
+
+        // Increment views
+        await supabase.from('shared_setups').update({ views: (data.views || 0) + 1 }).eq('id', data.id);
+
+        // Resolve product details for items
+        const resolvedItems = [];
+        for (const item of (data.items || [])) {
+            if (item.product_id) {
+                const { data: p } = await supabase.from('products')
+                    .select('id, product_name, display_name, brand, price, image_url, amazon_url, rating')
+                    .eq('id', item.product_id).single();
+                resolvedItems.push({ ...item, product: p });
+            } else {
+                resolvedItems.push(item);
+            }
+        }
+
+        res.json({ ...data, items: resolvedItems });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/shared-setups/:slug/upvote', async (req, res) => {
+    try {
+        const { data } = await supabase.from('shared_setups').select('upvotes').eq('slug', req.params.slug).single();
+        if (data) {
+            await supabase.from('shared_setups').update({ upvotes: (data.upvotes || 0) + 1 }).eq('slug', req.params.slug);
+        }
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- Print Farm Planner ---
+app.post('/api/farm-planner', async (req, res) => {
+    try {
+        const { title, printers, settings, creator_email } = req.body;
+        if (!printers || printers.length === 0) return res.status(400).json({ error: 'At least one printer required' });
+
+        const s = {
+            electricity_cost: settings?.electricity_cost || 0.12,  // $/kWh
+            filament_cost_per_kg: settings?.filament_cost_per_kg || 20,
+            avg_print_weight_g: settings?.avg_print_weight_g || 50,
+            avg_print_time_h: settings?.avg_print_time_h || 4,
+            sell_price: settings?.sell_price || 15,
+            failure_rate: settings?.failure_rate || 0.05,
+            hours_per_day: settings?.hours_per_day || 12,
+            power_watts: settings?.power_watts || 200
+        };
+
+        // Calculate for each printer
+        let totalPrinterCost = 0;
+        let totalMonthlyPrints = 0;
+
+        for (const p of printers) {
+            const qty = p.quantity || 1;
+            const hpd = p.hours_per_day || s.hours_per_day;
+            const printsPerDay = (hpd / s.avg_print_time_h) * qty;
+            totalMonthlyPrints += printsPerDay * 30;
+            if (p.price) totalPrinterCost += p.price * qty;
+        }
+
+        const successfulPrints = totalMonthlyPrints * (1 - s.failure_rate);
+        const monthlyRevenue = successfulPrints * s.sell_price;
+        const monthlyFilamentCost = (totalMonthlyPrints * s.avg_print_weight_g / 1000) * s.filament_cost_per_kg;
+        const monthlyElectricity = (totalMonthlyPrints * s.avg_print_time_h * s.power_watts / 1000) * s.electricity_cost;
+        const monthlyProfit = monthlyRevenue - monthlyFilamentCost - monthlyElectricity;
+        const roiMonths = monthlyProfit > 0 ? Math.ceil(totalPrinterCost / monthlyProfit) : null;
+
+        const results = {
+            total_printer_cost: Math.round(totalPrinterCost),
+            monthly_prints: Math.round(totalMonthlyPrints),
+            successful_prints: Math.round(successfulPrints),
+            monthly_revenue: Math.round(monthlyRevenue),
+            monthly_filament_cost: Math.round(monthlyFilamentCost),
+            monthly_electricity: Math.round(monthlyElectricity),
+            monthly_profit: Math.round(monthlyProfit),
+            roi_months: roiMonths,
+            break_even_prints: monthlyProfit > 0 ? Math.ceil(totalPrinterCost / (s.sell_price - (s.avg_print_weight_g / 1000 * s.filament_cost_per_kg))) : null
+        };
+
+        const { data, error } = await supabase.from('farm_plans').insert({
+            slug: generateSlug(),
+            title: title || 'My Print Farm',
+            printers, settings: s, results,
+            creator_email
+        }).select().single();
+        if (error) throw error;
+
+        res.json({ success: true, plan: data, share_url: `/farm/${data.slug}` });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/farm-planner/:slug', async (req, res) => {
+    try {
+        const { data, error } = await supabase.from('farm_plans')
+            .select('*').eq('slug', req.params.slug).single();
+        if (error) throw error;
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Start server
 // Start server (only when running locally, not on Vercel)
 if (process.env.VERCEL !== '1') {

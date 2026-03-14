@@ -66,11 +66,11 @@ This living document tracks our journey from being a simple affiliate catalog to
 - [x] Build printer-material-upgrade knowledge graph: `compatibility_graph` table with 537 entries linking printers ↔ upgrades. API: `/api/compatibility-graph/:id`.
 
 **Community & Retention**
-- [ ] Add saved lists and price alerts (Start with localStorage, later add Auth + Email capture).
+- [x] Add saved lists and price alerts: `price_alerts` table + full CRUD API (`/api/price-alerts`). Auto-subscribes email on alert creation.
 - [ ] Add owner notes / user-submitted settings (recommended slicer settings, common problems, successful materials).
-- [ ] Add shared setup pages: Allow users to save and share a beginner / budget / cosplay / miniatures setup.
-- [ ] Add print farm planner: Estimate economics for multiple printers and production use.
-- [ ] Add email capture for watchlists and buyer guides.
+- [x] Add shared setup pages: `shared_setups` table with slug sharing, upvotes, views. APIs: POST/GET/upvote `/api/shared-setups`.
+- [x] Add print farm planner: `farm_plans` table with ROI calculator (revenue, costs, break-even). API: `/api/farm-planner`.
+- [x] Add email capture: `email_subscribers` table with interests, source tracking. APIs: `/api/subscribe`, `/api/unsubscribe`.
 
 ---
 
