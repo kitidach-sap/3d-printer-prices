@@ -482,8 +482,8 @@ select:focus-visible {
 .use-case-chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.4rem 0.85rem;
+  gap: var(--sp-1);
+  padding: var(--sp-2) var(--sp-3);
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -572,7 +572,7 @@ select:focus-visible {
 .filter-group {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: var(--sp-1);
   max-height: 200px;
   overflow-y: auto;
 }
@@ -580,11 +580,11 @@ select:focus-visible {
 .filter-group label {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--sp-2);
   font-size: 0.82rem;
   color: var(--text-secondary);
   cursor: pointer;
-  padding: 0.2rem 0;
+  padding: var(--sp-1) 0;
 }
 
 .filter-group label:hover {
