@@ -1341,24 +1341,24 @@ td.loading {
 }
 
 .quiz-step h3 {
-  font-size: 1.1rem;
-  margin-bottom: 1.2rem;
+  font-size: var(--text-lg);
+  margin-bottom: var(--sp-5);
   text-align: center;
 }
 
 .quiz-options {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--sp-3);
 }
 
 .quiz-option {
   background: var(--bg-primary);
   border: 1px solid var(--border);
   color: var(--text-primary);
-  padding: 1rem;
+  padding: var(--sp-4);
   border-radius: var(--radius-sm);
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   font-weight: 500;
   text-align: left;
   cursor: pointer;
