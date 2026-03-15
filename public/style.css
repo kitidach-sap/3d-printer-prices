@@ -177,7 +177,7 @@ select:focus-visible {
   align-self: flex-end;
   background: none;
   border: none;
-  font-size: 1.5rem;
+  font-size: var(--text-2xl);
   cursor: pointer;
   color: var(--text-muted);
   padding: var(--sp-2);
@@ -289,7 +289,7 @@ select:focus-visible {
 .header {
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
-  padding: 1rem 2rem;
+  padding: var(--sp-4) var(--sp-6);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -307,11 +307,11 @@ select:focus-visible {
 .logo {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--sp-3);
 }
 
 .logo-icon {
-  font-size: 2rem;
+  font-size: var(--text-3xl);
 }
 
 .logo h1 {
@@ -329,8 +329,8 @@ select:focus-visible {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 0.5rem;
-  font-size: 1.2rem;
+  padding: var(--sp-2);
+  font-size: var(--text-xl);
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -389,7 +389,7 @@ select:focus-visible {
 }
 
 .stat-value-inline {
-  font-size: 1.5rem;
+  font-size: var(--text-2xl);
   font-weight: 700;
   color: var(--accent);
 }
@@ -456,13 +456,13 @@ select:focus-visible {
 .use-cases {
   max-width: 1600px;
   margin: 0 auto;
-  padding: 0.5rem 2rem 0.75rem;
+  padding: var(--sp-2) var(--sp-6) var(--sp-3);
 }
 
 .use-case-row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--sp-2);
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -517,8 +517,8 @@ select:focus-visible {
   margin: 0 auto;
   display: grid;
   grid-template-columns: 260px 1fr;
-  gap: 1.5rem;
-  padding: 0 2rem 2rem;
+  gap: var(--sp-5);
+  padding: 0 var(--sp-6) var(--sp-6);
 }
 
 /* ============================================
@@ -532,26 +532,26 @@ select:focus-visible {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--sp-4);
 }
 
 .filter-section {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 1rem;
+  padding: var(--sp-4);
 }
 
 .filter-section h3 {
   font-size: 0.85rem;
   font-weight: 600;
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--sp-3);
   color: var(--text-secondary);
 }
 
 .filter-input {
   width: 100%;
-  padding: 0.5rem 0.75rem;
+  padding: var(--sp-2) var(--sp-3);
   background: var(--bg-primary);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -598,7 +598,7 @@ select:focus-visible {
 .price-range {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--sp-2);
 }
 
 .price-range span {
@@ -699,9 +699,9 @@ select:focus-visible {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--sp-3);
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: var(--sp-2);
 }
 
 #result-count {
@@ -712,7 +712,7 @@ select:focus-visible {
 .sort-controls {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--sp-2);
 }
 
 .sort-controls label {
@@ -746,7 +746,7 @@ table {
 
 thead th {
   background: var(--bg-card);
-  padding: 0.75rem 1rem;
+  padding: var(--sp-3) var(--sp-4);
   text-align: left;
   font-weight: 600;
   color: var(--text-secondary);
@@ -789,7 +789,7 @@ td {
 .product-name-link {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--sp-3);
   color: var(--text-primary);
   text-decoration: none;
 }
@@ -837,7 +837,7 @@ td {
 }
 
 .orig-price {
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   color: var(--text-muted);
   text-decoration: line-through;
   font-weight: 400;
@@ -859,7 +859,7 @@ td {
   background: var(--accent-glow);
   border: 1px solid var(--accent);
   border-radius: 999px;
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   font-weight: 500;
   color: var(--accent);
   white-space: nowrap;
@@ -876,7 +876,7 @@ td {
   padding: 0.15rem 0.5rem;
   background: var(--bg-primary);
   border-radius: var(--radius-sm);
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   color: var(--text-muted);
   text-transform: uppercase;
   white-space: nowrap;
@@ -892,7 +892,7 @@ td {
 
 td.loading {
   text-align: center;
-  padding: 3rem;
+  padding: var(--sp-8);
   color: var(--text-muted);
   font-style: italic;
 }
@@ -904,8 +904,8 @@ td.loading {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 1rem;
-  padding: 1.25rem 0;
+  gap: var(--sp-4);
+  padding: var(--sp-5) 0;
 }
 
 #page-info {
@@ -924,7 +924,7 @@ td.loading {
 }
 
 .ad-banner {
-  padding: 0.5rem 2rem;
+  padding: var(--sp-2) var(--sp-6);
   min-height: 90px;
 }
 
@@ -955,19 +955,19 @@ td.loading {
 .policy-page {
   max-width: 800px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: var(--sp-6);
   line-height: 1.8;
 }
 
 .policy-page h2 {
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
+  font-size: var(--text-2xl);
+  margin-bottom: var(--sp-2);
 }
 
 .policy-page h3 {
   font-size: 1.05rem;
-  margin-top: 1.5rem;
-  margin-bottom: 0.5rem;
+  margin-top: var(--sp-5);
+  margin-bottom: var(--sp-2);
   color: var(--accent);
 }
 
