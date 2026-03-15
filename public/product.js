@@ -55,7 +55,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function showError(msg) {
-    document.getElementById('loader-wrapper').innerHTML = `<p style="color:var(--danger); font-size:1.2rem;">${msg}</p><a href="/" style="color:var(--accent);">Return to Homepage</a>`;
+    document.getElementById('loader-wrapper').style.display = 'none';
+    document.getElementById('product-content').style.display = 'none';
+    document.getElementById('error-state').style.display = 'block';
+    if (msg) {
+        document.querySelector('#error-state p').textContent = msg;
+    }
 }
 
 function renderProduct(p) {

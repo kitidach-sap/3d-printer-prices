@@ -163,7 +163,17 @@
       <div class="loader" style="margin:0 auto;"></div>
       <p style="margin-top:1rem; color:var(--text-muted);">Loading product details...</p>
     </div>
-    
+
+    <div id="error-state" class="empty-state" style="display:none; text-align:center; padding: 4rem;">
+        <span style="font-size: 3rem; margin-bottom: 1rem; display: block;">⚠️</span>
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">Product not available</h2>
+        <p id="error-message" style="color:var(--text-muted); margin-bottom: 2rem; max-width: 500px; margin-left: auto; margin-right: auto; line-height: 1.6;">We couldn't load this product. It may have been removed or the link may be incorrect.</p>
+        <div style="display: flex; gap: var(--sp-3); justify-content: center; flex-wrap: wrap;">
+            <a href="/" class="btn btn-primary btn-lg">Browse Printers</a>
+            <button class="btn btn-tertiary btn-lg" onclick="location.reload()">Try Again</button>
+        </div>
+    </div>
+
     <div id="product-content" style="display:none;">
       <!-- Hero Product Section -->
       <section class="product-header-section">
