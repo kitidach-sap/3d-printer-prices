@@ -1190,7 +1190,7 @@ td.loading {
   /* Footer */
   .footer {
     font-size: 0.7rem;
-    padding: 1rem;
+    padding: var(--sp-4);
   }
 
   .footer-links {
@@ -1499,7 +1499,7 @@ td.loading {
   border-radius: 50%;
   width: 20px;
   height: 20px;
-  font-size: 14px;
+  font-size: var(--text-sm);
   line-height: 1;
   cursor: pointer;
   display: flex;
