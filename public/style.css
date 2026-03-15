@@ -1848,7 +1848,7 @@ td.loading {
   color: var(--text-primary);
   border-bottom: 1px solid var(--border);
   padding-bottom: var(--sp-3);
-  font-size: 1.5rem;
+  font-size: var(--text-2xl);
 }
 
 .input-group {
@@ -1873,7 +1873,7 @@ td.loading {
   color: var(--text-primary);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  font-size: 1rem;
+  font-size: var(--text-base);
   transition: all 0.2s ease;
   outline: none;
 }
@@ -2024,14 +2024,14 @@ td.loading {
   margin: 0 auto;
 }
 .compat-hero h1 {
-  font-size: 2rem;
+  font-size: var(--text-3xl);
   margin-bottom: var(--sp-2);
   background: linear-gradient(135deg, var(--success), #06b6d4);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
-.compat-hero p { color: var(--text-secondary); font-size: 1rem; line-height: 1.6; }
+.compat-hero p { color: var(--text-secondary); font-size: var(--text-base); line-height: 1.6; }
 
 .compat-container { max-width: 1000px; margin: 0 auto; padding: 0 var(--sp-6) var(--sp-12); }
 
@@ -2066,7 +2066,7 @@ td.loading {
 }
 .material-card .emoji { font-size: 1.8rem; display: block; margin-bottom: var(--sp-1); }
 .material-card .name { font-weight: 700; font-size: 0.95rem; color: var(--text-primary); }
-.material-card .count { font-size: 0.75rem; color: var(--text-muted); margin-top: var(--sp-1); }
+.material-card .count { font-size: var(--text-xs); color: var(--text-muted); margin-top: var(--sp-1); }
 .material-card .diff {
   font-size: 0.7rem; margin-top: var(--sp-1); padding: 0.15rem 0.4rem;
   border-radius: var(--radius-sm); display: inline-block;
@@ -2133,7 +2133,7 @@ td.loading {
   font-size: 0.85rem; font-weight: 600; color: var(--text-primary);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.compat-product .meta { font-size: 0.75rem; color: var(--text-muted); margin-top: var(--sp-1); }
+.compat-product .meta { font-size: var(--text-xs); color: var(--text-muted); margin-top: var(--sp-1); }
 .compat-product .price { font-weight: 700; font-size: 0.9rem; color: var(--success); white-space: nowrap; }
 
 .results-count { font-size: 0.85rem; color: var(--text-muted); margin-bottom: var(--sp-3); font-weight: 500;}
@@ -2164,7 +2164,7 @@ td.loading {
 .compat-table .notes { font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; }
 
 @media (max-width: 600px) {
-  .compat-hero h1 { font-size: 1.5rem; }
+  .compat-hero h1 { font-size: var(--text-2xl); }
   .material-grid { grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); }
   .compat-product { padding: var(--sp-2); }
 }
