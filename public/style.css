@@ -2417,7 +2417,7 @@ td.loading {
 .article-content {
   width: 100%;
   max-width: 760px; /* Constrained reading column */
-  font-size: 1.05rem;
+  font-size: var(--text-base);
   line-height: 1.75;
   color: var(--text-secondary);
 }
