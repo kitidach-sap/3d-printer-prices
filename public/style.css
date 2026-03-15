@@ -1401,7 +1401,7 @@ td.loading {
   background: var(--bg-card);
   border-top: 1px solid var(--border);
   box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
-  padding: 1rem;
+  padding: var(--sp-4);
   z-index: 900;
   transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
@@ -1422,12 +1422,12 @@ td.loading {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 1.5rem;
+  gap: var(--sp-5);
 }
 
 .compare-items {
   display: flex;
-  gap: 1rem;
+  gap: var(--sp-4);
   flex: 1;
 }
 
@@ -1436,10 +1436,10 @@ td.loading {
   min-width: 0;
   border: 1px dashed var(--border);
   border-radius: var(--radius-sm);
-  padding: 0.5rem;
+  padding: var(--sp-2);
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--sp-3);
   height: 60px;
   position: relative;
   background: var(--bg-primary);
@@ -1538,7 +1538,7 @@ td.loading {
 .empty-state h3 {
   color: var(--text-primary);
   margin-bottom: var(--sp-2);
-  font-size: 1.25rem;
+  font-size: var(--text-xl);
 }
 .empty-state p {
   margin-bottom: var(--sp-6);
@@ -1625,7 +1625,7 @@ td.loading {
   background: var(--accent);
   color: #000;
   font-weight: 800;
-  font-size: 1.5rem;
+  font-size: var(--text-2xl);
   padding: var(--sp-2) var(--sp-4);
   border-bottom-right-radius: var(--radius);
   z-index: 2;
@@ -1685,7 +1685,7 @@ td.loading {
 }
 
 .rank-price {
-  font-size: 2rem;
+  font-size: var(--text-3xl);
   color: var(--success);
   font-weight: 700;
   margin-bottom: var(--sp-6);
@@ -1718,7 +1718,7 @@ td.loading {
 }
 
 .rank-spec-item span:last-child {
-  font-size: 1rem;
+  font-size: var(--text-base);
   font-weight: 600;
   color: var(--text-secondary);
 }
@@ -1759,7 +1759,7 @@ td.loading {
 }
 
 .section-title {
-  font-size: 1.25rem;
+  font-size: var(--text-xl);
   color: var(--text-primary);
   margin-bottom: var(--sp-6);
   font-weight: 600;
