@@ -148,9 +148,12 @@
           },
           "error": {
             "description": "Failed to load product data.",
-            "triggers_on_entry": [],
-            "ui_feedback": ["Error message"],
-            "transitions": {}
+            "triggers_on_entry": ["showError(msg)"],
+            "ui_feedback": ["#error-state div with ⚠️ icon", "'Unable to load comparison' heading", "Contextual error message", "'Browse Printers' primary CTA", "'Try Again' tertiary CTA"],
+            "transitions": {
+              "browse_click": "→ index.html",
+              "retry_click": "loading (page reload)"
+            }
           }
         }
       },
@@ -188,7 +191,12 @@
           },
           "error": {
             "description": "API call failed.",
-            "transitions": {}
+            "triggers_on_entry": ["showError(msg)"],
+            "ui_feedback": ["#error-state div with ⚠️ icon", "'Unable to load rankings' heading", "Contextual error message", "'Browse Printers' primary CTA", "'Try Again' tertiary CTA"],
+            "transitions": {
+              "browse_click": "→ index.html",
+              "retry_click": "loading (page reload)"
+            }
           }
         }
       },
@@ -304,9 +312,13 @@
             }
           },
           "error": {
-            "description": "API fetch failed.",
-            "ui_feedback": ["Error message"],
-            "transitions": {}
+            "description": "API fetch failed or no product ID specified.",
+            "triggers_on_entry": ["showError(msg)"],
+            "ui_feedback": ["#error-state div with ⚠️ icon", "'Product not available' heading", "Contextual error message", "'Browse Printers' primary CTA", "'Try Again' tertiary CTA"],
+            "transitions": {
+              "browse_click": "→ index.html",
+              "retry_click": "loading (page reload)"
+            }
           }
         }
       },
