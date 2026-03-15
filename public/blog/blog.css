@@ -2,40 +2,20 @@
    Blog Styles
    ============================================ */
 
-.logo-link {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    text-decoration: none;
-    color: inherit;
-}
+/* Logo link inherits from main .logo class in style.css */
 
-.nav-link {
-    color: var(--accent);
-    text-decoration: none;
-    font-size: 0.85rem;
-    font-weight: 500;
-    padding: 0.4rem 0.8rem;
-    border: 1px solid var(--accent);
-    border-radius: 999px;
-    transition: all 0.2s;
-}
-
-.nav-link:hover {
-    background: var(--accent);
-    color: #fff;
-}
+/* Nav link styles inherited from main style.css */
 
 /* Blog List */
 .blog-list {
     max-width: 800px;
     margin: 0 auto;
-    padding: 2rem;
+    padding: var(--sp-6);
 }
 
 .blog-list-title {
     font-size: 1.3rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: var(--sp-5);
 }
 
 .blog-card {
@@ -43,11 +23,11 @@
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 1.5rem;
+    padding: var(--sp-5);
     text-decoration: none;
     color: inherit;
     transition: all 0.3s;
-    margin-bottom: 1rem;
+    margin-bottom: var(--sp-4);
 }
 
 .blog-card:hover {
@@ -66,12 +46,12 @@
     background: var(--accent-glow);
     padding: 0.2rem 0.6rem;
     border-radius: 999px;
-    margin-bottom: 0.75rem;
+    margin-bottom: var(--sp-3);
 }
 
 .blog-card h3 {
     font-size: 1.15rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: var(--sp-2);
     line-height: 1.4;
 }
 
@@ -79,20 +59,20 @@
     font-size: 0.88rem;
     color: var(--text-secondary);
     line-height: 1.6;
-    margin-bottom: 0.75rem;
+    margin-bottom: var(--sp-3);
 }
 
 .blog-card-meta {
     display: flex;
-    gap: 1rem;
-    font-size: 0.75rem;
+    gap: var(--sp-4);
+    font-size: var(--text-xs);
     color: var(--text-muted);
 }
 
 /* Article Page */
 .article-meta {
     display: flex;
-    gap: 1rem;
+    gap: var(--sp-4);
     font-size: 0.8rem;
     color: var(--text-muted);
 }
@@ -102,8 +82,8 @@
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 1.25rem;
-    margin: 1.5rem 0;
+    padding: var(--sp-5);
+    margin: var(--sp-5) 0;
     position: relative;
 }
 
@@ -125,7 +105,7 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--accent);
-    margin-bottom: 0.5rem;
+    margin-bottom: var(--sp-2);
 }
 
 .product-pick h4 {
@@ -136,10 +116,10 @@
 .pick-details {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.75rem;
+    gap: var(--sp-3);
     font-size: 0.82rem;
     color: var(--text-muted);
-    margin-bottom: 0.75rem;
+    margin-bottom: var(--sp-3);
 }
 
 .pick-price {
@@ -172,13 +152,13 @@
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 1rem 1.25rem;
-    margin-bottom: 2rem;
+    padding: var(--sp-4) var(--sp-5);
+    margin-bottom: var(--sp-6);
 }
 
 .toc h4 {
     font-size: 0.85rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: var(--sp-2);
     color: var(--text-muted);
 }
 
@@ -205,7 +185,7 @@
 .comparison-table {
     width: 100%;
     border-collapse: collapse;
-    margin: 1.5rem 0;
+    margin: var(--sp-5) 0;
     font-size: 0.85rem;
 }
 
@@ -229,7 +209,7 @@
 /* Responsive */
 @media (max-width: 600px) {
     .blog-list {
-        padding: 1rem;
+        padding: var(--sp-4);
     }
 
 
