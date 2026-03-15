@@ -25,7 +25,18 @@ document.addEventListener('DOMContentLoaded', () => {
 function showEmpty() {
     document.getElementById('loader-wrapper').style.display = 'none';
     document.getElementById('compare-content').style.display = 'none';
+    document.getElementById('error-state').style.display = 'none';
     document.getElementById('empty-state').style.display = 'block';
+}
+
+function showError(msg) {
+    document.getElementById('loader-wrapper').style.display = 'none';
+    document.getElementById('compare-content').style.display = 'none';
+    document.getElementById('empty-state').style.display = 'none';
+    document.getElementById('error-state').style.display = 'block';
+    if (msg) {
+        document.querySelector('#error-state p').textContent = msg;
+    }
 }
 
 async function fetchComparisonData(ids) {
@@ -50,7 +61,7 @@ async function fetchComparisonData(ids) {
         
     } catch (err) {
         console.error('Error fetching comparison details:', err);
-        showEmpty();
+        showError("We couldn't load the comparison data right now.");
     }
 }
 

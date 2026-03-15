@@ -158,6 +158,16 @@
         <p style="color:var(--text-muted); margin-bottom: 2rem; max-width: 500px; margin-left: auto; margin-right: auto; line-height: 1.6;">Comparing printers side-by-side makes it easier to spot differences in specs, supported materials, and value for money. Add up to 3 printers from the catalog to get started.</p>
         <a href="/" class="btn btn-primary btn-lg">Browse Printers</a>
     </div>
+
+    <div id="error-state" class="empty-state" style="display:none; text-align:center; padding: 4rem;">
+        <span style="font-size: 3rem; margin-bottom: 1rem; display: block;">⚠️</span>
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">Unable to load comparison</h2>
+        <p id="error-message" style="color:var(--text-muted); margin-bottom: 2rem; max-width: 500px; margin-left: auto; margin-right: auto; line-height: 1.6;">Something went wrong while loading this comparison. Please try again.</p>
+        <div style="display: flex; gap: var(--sp-3); justify-content: center; flex-wrap: wrap;">
+            <a href="/" class="btn btn-primary btn-lg">Browse Printers</a>
+            <button class="btn btn-tertiary btn-lg" onclick="location.reload()">Try Again</button>
+        </div>
+    </div>
   </main>
 
   <footer class="site-footer">
