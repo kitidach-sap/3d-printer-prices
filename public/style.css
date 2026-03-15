@@ -1188,13 +1188,9 @@ td.loading {
   }
 
   /* Footer */
-  .footer {
+  .site-footer {
     font-size: 0.7rem;
     padding: var(--sp-4);
-  }
-
-  .footer-links {
-    gap: 0.3rem;
   }
 }
 /* ============================================
