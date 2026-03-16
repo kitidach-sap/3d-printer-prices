@@ -146,25 +146,26 @@
   </style>
 </head>
 <body data-theme="dark">
+  <a href="#main-content" class="skip-link">Skip to main content</a>
   <header class="header">
     <div class="header-content">
-      <a href="/" class="logo"><span class="logo-icon">🖨️</span><div><h1>3D Printer Prices</h1><p class="tagline">Compare prices & find the best deals</p></div></a>
-      <nav class="nav-desktop"><a href="/" class="nav-link">Compare</a><a href="/compatibility.html" class="nav-link">Materials</a><a href="/calculator.html" class="nav-link">Calculator</a><a href="/blog/" class="nav-link">Blog</a></nav>
+      <a href="/" class="logo"><span class="logo-icon" aria-hidden="true">🖨️</span><div><h1>3D Printer Prices</h1><p class="tagline">Compare prices &amp; find the best deals</p></div></a>
+      <nav class="nav-desktop" aria-label="Main navigation"><a href="/" class="nav-link">Compare</a><a href="/compatibility.html" class="nav-link">Materials</a><a href="/calculator.html" class="nav-link">Calculator</a><a href="/blog/" class="nav-link">Blog</a></nav>
       <div class="header-actions"><button id="theme-toggle" class="btn-icon" aria-label="Toggle theme">🌙</button><button class="btn-icon mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Open menu">☰</button></div>
     </div>
   </header>
   <div class="mobile-nav-overlay" id="mobile-nav-overlay"></div>
-  <nav class="mobile-nav" id="mobile-nav"><button class="mobile-nav-close" id="mobile-nav-close" aria-label="Close menu">✕</button><a href="/" class="nav-link">🏠 Compare</a><a href="/compatibility.html" class="nav-link">🔬 Materials</a><a href="/calculator.html" class="nav-link">🧮 Calculator</a><a href="/blog/" class="nav-link">📝 Blog</a></nav>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation"><button class="mobile-nav-close" id="mobile-nav-close" aria-label="Close menu">✕</button><a href="/" class="nav-link">🏠 Compare</a><a href="/compatibility.html" class="nav-link">🔬 Materials</a><a href="/calculator.html" class="nav-link">🧮 Calculator</a><a href="/blog/" class="nav-link">📝 Blog</a></nav>
 
   <nav class="page-breadcrumb"><a href="/">Home</a><span class="sep">›</span><span class="current" id="breadcrumb-name">Product Detail</span></nav>
 
-  <main class="product-page-container">
+  <main class="product-page-container" id="main-content">
     <div id="loader-wrapper" style="text-align:center; padding: 4rem;">
       <div class="loader" style="margin:0 auto;"></div>
       <p style="margin-top:1rem; color:var(--text-muted);">Loading product details...</p>
     </div>
 
-    <div id="error-state" class="empty-state" style="display:none; text-align:center; padding: 4rem;">
+    <div id="error-state" class="empty-state" style="display:none; text-align:center; padding: 4rem;" aria-live="assertive">
         <span style="font-size: 3rem; margin-bottom: 1rem; display: block;">⚠️</span>
         <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">Product not available</h2>
         <p id="error-message" style="color:var(--text-muted); margin-bottom: 2rem; max-width: 500px; margin-left: auto; margin-right: auto; line-height: 1.6;">We couldn't load this product. It may have been removed or the link may be incorrect.</p>

@@ -39,16 +39,17 @@
     </style>
 </head>
 <body data-theme="dark">
+  <a href="#main-content" class="skip-link">Skip to main content</a>
 
   <header class="header">
     <div class="header-content">
-      <a href="/" class="logo"><span class="logo-icon">🖨️</span><div><h1>3D Printer Prices</h1><p class="tagline">Compare prices & find the best deals</p></div></a>
-      <nav class="nav-desktop"><a href="/" class="nav-link">Compare</a><a href="/compatibility.html" class="nav-link">Materials</a><a href="/calculator.html" class="nav-link">Calculator</a><a href="/blog/" class="nav-link">Blog</a></nav>
+      <a href="/" class="logo"><span class="logo-icon" aria-hidden="true">🖨️</span><div><h1>3D Printer Prices</h1><p class="tagline">Compare prices &amp; find the best deals</p></div></a>
+      <nav class="nav-desktop" aria-label="Main navigation"><a href="/" class="nav-link">Compare</a><a href="/compatibility.html" class="nav-link">Materials</a><a href="/calculator.html" class="nav-link">Calculator</a><a href="/blog/" class="nav-link">Blog</a></nav>
       <div class="header-actions"><button id="theme-toggle" class="btn-icon" aria-label="Toggle theme">🌙</button><button class="btn-icon mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Open menu">☰</button></div>
     </div>
   </header>
   <div class="mobile-nav-overlay" id="mobile-nav-overlay"></div>
-  <nav class="mobile-nav" id="mobile-nav"><button class="mobile-nav-close" id="mobile-nav-close" aria-label="Close menu">✕</button><a href="/" class="nav-link">🏠 Compare</a><a href="/compatibility.html" class="nav-link">🔬 Materials</a><a href="/calculator.html" class="nav-link">🧮 Calculator</a><a href="/blog/" class="nav-link">📝 Blog</a></nav>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation"><button class="mobile-nav-close" id="mobile-nav-close" aria-label="Close menu">✕</button><a href="/" class="nav-link">🏠 Compare</a><a href="/compatibility.html" class="nav-link">🔬 Materials</a><a href="/calculator.html" class="nav-link">🧮 Calculator</a><a href="/blog/" class="nav-link">📝 Blog</a></nav>
 
   <nav class="page-breadcrumb"><a href="/">Home</a><span class="sep">›</span><span class="current">Top Picks</span></nav>
 
@@ -57,7 +58,7 @@
       <p id="hero-desc">We analyzed prices, ratings, and features across the market to find the top recommendations for this category.</p>
   </section>
 
-  <main class="ranking-container">
+  <main class="ranking-container" id="main-content">
     <div id="loader-wrapper" style="text-align:center; padding: var(--sp-12);">
       <div class="loader" style="margin:0 auto;"></div>
       <p style="margin-top:var(--sp-4); color:var(--text-muted);">Calculating rankings...</p>
@@ -67,14 +68,14 @@
         <!-- Dynamically populated by best.js -->
     </div>
     
-    <div id="empty-state" class="empty-state" style="display:none; text-align:center; padding: var(--sp-12);">
+    <div id="empty-state" class="empty-state" style="display:none; text-align:center; padding: var(--sp-12);" aria-live="polite">
         <span style="font-size: 3rem; margin-bottom: var(--sp-4); display: block;">📭</span>
         <h2 style="font-size: 1.5rem; margin-bottom: var(--sp-4);">No products found for this category.</h2>
         <p style="color:var(--text-muted); margin-bottom: var(--sp-8); max-width: 500px; margin-left: auto; margin-right: auto; line-height: 1.6;">Try browsing our full catalog to find what you're looking for, or check back later as we update our rankings.</p>
         <a href="/" class="btn btn-primary btn-lg">Browse All Printers</a>
     </div>
 
-    <div id="error-state" class="empty-state" style="display:none; text-align:center; padding: var(--sp-12);">
+    <div id="error-state" class="empty-state" style="display:none; text-align:center; padding: var(--sp-12);" aria-live="assertive">
         <span style="font-size: 3rem; margin-bottom: var(--sp-4); display: block;">⚠️</span>
         <h2 style="font-size: 1.5rem; margin-bottom: var(--sp-4);">Unable to load rankings</h2>
         <p id="error-message" style="color:var(--text-muted); margin-bottom: var(--sp-8); max-width: 500px; margin-left: auto; margin-right: auto; line-height: 1.6;">Something went wrong while loading the rankings. Please try again.</p>

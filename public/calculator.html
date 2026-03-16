@@ -8,20 +8,21 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body data-theme="dark">
+  <a href="#main-content" class="skip-link">Skip to main content</a>
 
   <header class="header">
     <div class="header-content">
-      <a href="/" class="logo"><span class="logo-icon">🖨️</span><div><h1>3D Printer Prices</h1><p class="tagline">Compare prices & find the best deals</p></div></a>
-      <nav class="nav-desktop"><a href="/" class="nav-link">Compare</a><a href="/compatibility.html" class="nav-link">Materials</a><a href="/calculator.html" class="nav-link active">Calculator</a><a href="/blog/" class="nav-link">Blog</a></nav>
+      <a href="/" class="logo"><span class="logo-icon" aria-hidden="true">🖨️</span><div><h1>3D Printer Prices</h1><p class="tagline">Compare prices &amp; find the best deals</p></div></a>
+      <nav class="nav-desktop" aria-label="Main navigation"><a href="/" class="nav-link">Compare</a><a href="/compatibility.html" class="nav-link">Materials</a><a href="/calculator.html" class="nav-link active">Calculator</a><a href="/blog/" class="nav-link">Blog</a></nav>
       <div class="header-actions"><button id="theme-toggle" class="btn-icon" aria-label="Toggle theme">🌙</button><button class="btn-icon mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Open menu">☰</button></div>
     </div>
   </header>
   <div class="mobile-nav-overlay" id="mobile-nav-overlay"></div>
-  <nav class="mobile-nav" id="mobile-nav"><button class="mobile-nav-close" id="mobile-nav-close" aria-label="Close menu">✕</button><a href="/" class="nav-link">🏠 Compare</a><a href="/compatibility.html" class="nav-link">🔬 Materials</a><a href="/calculator.html" class="nav-link active">🧮 Calculator</a><a href="/blog/" class="nav-link">📝 Blog</a></nav>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation"><button class="mobile-nav-close" id="mobile-nav-close" aria-label="Close menu">✕</button><a href="/" class="nav-link">🏠 Compare</a><a href="/compatibility.html" class="nav-link">🔬 Materials</a><a href="/calculator.html" class="nav-link active">🧮 Calculator</a><a href="/blog/" class="nav-link">📝 Blog</a></nav>
 
   <nav class="page-breadcrumb"><a href="/">Home</a><span class="sep">›</span><span class="current">Cost Calculator</span></nav>
 
-  <main class="calc-container">
+  <main class="calc-container" id="main-content">
     <!-- Input Panel -->
     <div class="calc-panel input-panel">
       <h2>Printer Setup</h2>

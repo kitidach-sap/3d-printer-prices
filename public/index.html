@@ -56,24 +56,25 @@
 </head>
 
 <body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
   <!-- Header -->
   <header class="header">
     <div class="header-content">
       <a href="/" class="logo">
-        <span class="logo-icon">🖨️</span>
+        <span class="logo-icon" aria-hidden="true">🖨️</span>
         <div>
           <h1>3D Printer Prices</h1>
           <p class="tagline">Compare prices & find the best deals</p>
         </div>
       </a>
-      <nav class="nav-desktop">
+      <nav class="nav-desktop" aria-label="Main navigation">
         <a href="/" class="nav-link active">Compare</a>
         <a href="/compatibility.html" class="nav-link">Materials</a>
         <a href="/calculator.html" class="nav-link">Calculator</a>
         <a href="/blog/" class="nav-link">Blog</a>
       </nav>
       <div class="header-actions">
-        <button id="theme-toggle" class="btn-icon" aria-label="Toggle theme">🌙</button>
+        <button id="theme-toggle" class="btn-icon" aria-label="Toggle theme"><span aria-hidden="true">🌙</span></button>
         <button class="btn-icon mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Open menu">☰</button>
       </div>
     </div>
@@ -81,7 +82,7 @@
 
   <!-- Mobile Navigation -->
   <div class="mobile-nav-overlay" id="mobile-nav-overlay"></div>
-  <nav class="mobile-nav" id="mobile-nav">
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
     <button class="mobile-nav-close" id="mobile-nav-close" aria-label="Close menu">✕</button>
     <a href="/" class="nav-link active">🏠 Compare Prices</a>
     <a href="/compatibility.html" class="nav-link">🔬 Materials</a>
@@ -161,7 +162,7 @@
   </section>
 
   <!-- Main Content -->
-  <main class="main-layout">
+  <main class="main-layout" id="main-content">
     <!-- Sidebar Filters -->
     <aside class="sidebar" id="sidebar">
       <div class="filter-section">
@@ -206,7 +207,7 @@
     <!-- Product Table -->
     <section class="content">
       <div class="table-header">
-        <span id="result-count">Loading...</span>
+        <span id="result-count" aria-live="polite">Loading...</span>
         <div class="sort-controls">
           <label>Sort by:</label>
           <select id="sort-select">
