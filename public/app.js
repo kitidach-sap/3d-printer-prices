@@ -143,29 +143,33 @@ async function loadStats() {
         const res = await fetch(`${API_BASE}/products/stats`);
         const stats = await res.json();
 
-        document.getElementById('stat-total').textContent = stats.total?.toLocaleString() || '0';
+        const elTotal = document.getElementById('stat-total');
+        if (elTotal) elTotal.textContent = stats.total?.toLocaleString() || '0';
 
         const printerCount = (stats.byCategory?.['3d_printer']?.count || 0);
-        document.getElementById('stat-printers').textContent = printerCount.toLocaleString();
+        const elPrinters = document.getElementById('stat-printers');
+        if (elPrinters) elPrinters.textContent = printerCount.toLocaleString();
 
         const filamentCount = (stats.byCategory?.['filament']?.count || 0) + (stats.byCategory?.['resin']?.count || 0);
-        document.getElementById('stat-filament').textContent = filamentCount.toLocaleString();
-
-        const brandCount = stats.topBrands?.length || 0;
-        document.getElementById('stat-brands').textContent = brandCount;
+        const elFilament = document.getElementById('stat-filament');
+        if (elFilament) elFilament.textContent = filamentCount.toLocaleString();
 
         // Fetch last scrape time
         try {
             const scrapeRes = await fetch(`${API_BASE}/scrape-status`);
             const scrapeData = await scrapeRes.json();
-            if (scrapeData.lastScrape) {
-                document.getElementById('stat-updated').textContent = timeAgo(scrapeData.lastScrape);
-                document.getElementById('stat-updated').title = new Date(scrapeData.lastScrape).toLocaleString();
-            } else {
-                document.getElementById('stat-updated').textContent = '—';
+            const elUpdated = document.getElementById('stat-updated');
+            if (elUpdated) {
+                if (scrapeData.lastScrape) {
+                    elUpdated.textContent = timeAgo(scrapeData.lastScrape);
+                    elUpdated.title = new Date(scrapeData.lastScrape).toLocaleString();
+                } else {
+                    elUpdated.textContent = '—';
+                }
             }
         } catch (e) {
-            document.getElementById('stat-updated').textContent = '—';
+            const elUpdated = document.getElementById('stat-updated');
+            if (elUpdated) elUpdated.textContent = '—';
         }
     } catch (err) {
         console.error('Stats error:', err);
