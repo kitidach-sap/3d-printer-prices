@@ -1122,9 +1122,9 @@ td.loading {
     padding: 0.25rem 0.5rem;
   }
 
-  /* Sidebar — single column on small phone */
+  /* Sidebar — single column on phone */
   .sidebar {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 0.5rem;
   }
 
@@ -1221,10 +1221,224 @@ td.loading {
 
   /* Footer */
   .site-footer {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     padding: var(--sp-4);
   }
+
+  /* ── Mobile Tap Targets (Batch 1) ── */
+
+  /* Fix 1: Small buttons meet 44px touch minimum */
+  .btn-sm {
+    min-height: 44px;
+    padding: 0 var(--sp-3);
+  }
+
+  /* Fix 2: Input font-size ≥ 16px prevents iOS Safari auto-zoom */
+  .filter-input,
+  input[type="text"],
+  input[type="number"],
+  input[type="search"],
+  select {
+    font-size: 1rem;
+  }
+
+  /* Fix 3: Use-case chips tap-friendly */
+  .use-case-chip {
+    min-height: 40px;
+    padding: 0.4rem 0.65rem;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* Fix 4: Typography floor — no text below 0.75rem (12px) */
+  .stat-label {
+    font-size: 0.75rem;
+  }
+  .brand-badge,
+  .type-badge {
+    font-size: 0.75rem;
+    padding: 0.15rem 0.4rem;
+  }
+
+  /* Fix 5: Pagination buttons ≥ 44px touch target */
+  .pagination button {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.4rem 0.85rem;
+    font-size: 0.82rem;
+  }
+
+  #page-info {
+    font-size: 0.8rem;
+  }
 }
+
+/* ============================================
+   Mobile Product Table → Card Layout (Batch 2)
+   ============================================ */
+@media (max-width: 600px) {
+  /* Remove min-width that forces horizontal scroll */
+  #products-table {
+    min-width: 0;
+    width: 100%;
+  }
+
+  /* Hide table headers on mobile */
+  #products-table thead {
+    display: none;
+  }
+
+  /* Convert each row to a card */
+  #products-table tbody tr {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    gap: 0.25rem;
+    position: relative;
+  }
+
+  /* Remove default table row border */
+  #products-table tbody tr:hover {
+    background: var(--bg-card);
+  }
+
+  /* Product name cell — full width, no table styling */
+  #products-table td.product-name {
+    display: block;
+    width: 100%;
+    padding: 0;
+    max-width: none;
+    min-width: 0;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Product name link — better layout */
+  #products-table .product-name-link {
+    flex-wrap: wrap;
+  }
+
+  /* Buttons inside product card — full width */
+  #products-table td.product-name .btn {
+    min-height: 44px;
+    flex: 1;
+    justify-content: center;
+  }
+
+  /* Data cells — grid layout for remaining fields */
+  #products-table td:not(.product-name):not(.price-cell):not(.rating-cell) {
+    display: block;
+    padding: 0.35rem 0;
+    font-size: 0.85rem;
+    width: 50%;
+    box-sizing: border-box;
+  }
+
+  /* Price cell — prominent */
+  #products-table td.price-cell {
+    display: block;
+    width: 50%;
+    padding: 0.35rem 0;
+    font-size: 1.1rem;
+  }
+
+  /* Rating cell */
+  #products-table td.rating-cell {
+    display: block;
+    width: 50%;
+    padding: 0.35rem 0;
+    font-size: 0.85rem;
+  }
+
+  /* Add labels via pseudo-elements */
+  #products-table td:nth-child(2)::before {
+    content: "Brand: ";
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  #products-table td:nth-child(3)::before {
+    content: "Price ";
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    display: block;
+  }
+
+  #products-table td:nth-child(4)::before {
+    content: "Build Volume: ";
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  #products-table td:nth-child(5)::before {
+    content: "Rating ";
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    display: block;
+  }
+
+  #products-table td:nth-child(6)::before {
+    content: "Type: ";
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  #products-table td:nth-child(7)::before {
+    content: "Condition: ";
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  /* Compare checkbox — adequate tap area */
+  .compare-checkbox-label {
+    min-height: 44px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    padding: 0.5rem 0 !important;
+  }
+
+  /* Loading state inside table */
+  #products-table td[colspan] {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 2rem 1rem;
+  }
+}
+
+/* ============================================
+   Narrow Mobile Sidebar (Batch 3, ≤ 480px)
+   ============================================ */
+@media (max-width: 480px) {
+  .sidebar {
+    grid-template-columns: 1fr;
+  }
+}
+
+
 /* ============================================
    AI Enrichment Badges
    ============================================ */
