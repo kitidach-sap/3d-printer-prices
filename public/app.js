@@ -88,6 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
     readUrlFilters();
     loadStats();
     loadFilters();
+    loadFeaturedCampaigns();
     loadProducts();
     setupEventListeners();
     setupTheme();
@@ -231,6 +232,51 @@ async function loadFilters() {
         });
     } catch (err) {
         console.error('Filters error:', err);
+    }
+}
+
+// ============================================
+// Load Featured Campaigns
+// ============================================
+async function loadFeaturedCampaigns() {
+    const container = document.getElementById('featured-campaigns-container');
+    if (!container) return;
+    
+    try {
+        const res = await fetch('/api/featured-campaigns');
+        const data = await res.json();
+        
+        if (data.success && data.campaigns && data.campaigns.length > 0) {
+            let html = '<h2 class="section-title" style="margin-bottom:1rem;font-size:1.25rem;">🔥 Featured Amazon Deals</h2>';
+            html += '<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:1rem;">';
+            
+            data.campaigns.forEach(c => {
+                html += `
+                    <div style="background:var(--card-bg);border:2px solid var(--primary);border-radius:var(--radius);padding:1rem;display:flex;gap:1rem;align-items:center;">
+                        <img src="${c.image_url}" alt="${c.product_name}" style="width:80px;height:80px;object-fit:contain;background:#fff;border-radius:4px;">
+                        <div>
+                            <div style="font-size:0.75rem;color:var(--primary);font-weight:bold;text-transform:uppercase;margin-bottom:0.25rem;">Special Offer</div>
+                            <h3 style="font-size:1rem;margin:0 0 0.5rem 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis;">
+                                <a href="${c.campaign_url}" target="_blank" rel="nofollow noopener" style="color:var(--text);text-decoration:none;">${c.product_name}</a>
+                            </h3>
+                            <div style="font-size:1.25rem;font-weight:bold;color:var(--success);">
+                                $${parseFloat(c.price).toFixed(2)} 
+                                ${c.commission_rate ? `<span style="font-size:0.75rem;color:var(--text-muted);font-weight:normal;">+ ${c.commission_rate}% creator bonus</span>` : ''}
+                            </div>
+                            <a href="${c.campaign_url}" target="_blank" rel="nofollow noopener" class="btn btn-primary btn-sm" style="margin-top:0.5rem;display:inline-block;">View Deal on Amazon</a>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+            container.style.display = 'block';
+        } else {
+            container.style.display = 'none';
+        }
+    } catch (e) {
+        console.error('Failed to load featured campaigns:', e);
     }
 }
 

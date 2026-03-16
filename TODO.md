@@ -21,10 +21,10 @@ This living document tracks our journey from being a simple affiliate catalog to
 ## ⚡ Now (Immediate Priorities)
 
 **Ops & Data**
-- [ ] Add Vercel env variables for X integration (`X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`, `X_ACCESS_TOKEN_SECRET`)
-- [ ] Test X auto-poster from Admin panel
+- [x] Add Vercel env variables for X integration (`X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`, `X_ACCESS_TOKEN_SECRET`)
+- [x] Test X auto-poster from Admin panel
 - [x] Complete product enrichment in Admin (Backend API and UI are built, user just needs to run it)
-- [ ] Verify all production cron jobs run reliably
+- [x] Verify all production cron jobs run reliably
 
 **UX & Features**
 - [x] Rewrite homepage hero copy to communicate decision value, not just price comparison.

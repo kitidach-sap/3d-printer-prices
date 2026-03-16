@@ -67,10 +67,10 @@ async function postTweet(text) {
 }
 
 // ─── Generate Tweet via GPT / Gemini ──────────────────────────────────────────
-async function generateTweet(product, style) {
+async function generateTweet(product, style, customLink) {
     const productUrl = `https://3d-printer-prices.com`;
     const productLink = `${productUrl}/?search=${encodeURIComponent(product.product_name.split(' ').slice(0, 3).join(' '))}`;
-    const amazonLink = product.amazon_url || `https://www.amazon.com/dp/${product.amazon_asin}?tag=${AFFILIATE_TAG}`;
+    const amazonLink = customLink || product.amazon_url || `https://www.amazon.com/dp/${product.amazon_asin}?tag=${AFFILIATE_TAG}`;
 
     const styles = {
         deal: `Write a short, exciting deal alert tweet (under 240 chars) for this 3D printer product targeting US hobbyists. Include price, 1-2 hashtags (#3DPrinting #3DPrinter), and this link: ${productLink}`,
@@ -155,61 +155,105 @@ module.exports = async function handler(req, res) {
     console.log('🐦 X auto-post starting...');
 
     try {
-        // Pick a random top-rated product not posted recently
-        const recentlyPosted = await supabase.from('x_posts')
-            .select('product_asin')
-            .eq('status', 'posted')
-            .gte('posted_at', new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString()); // last 7 days
+        let targetProduct = null;
+        let isCampaign = false;
+        let campaignDetails = null;
 
-        const recentAsins = (recentlyPosted.data || []).map(r => r.product_asin).filter(Boolean);
+        // 1. Try to pick a Creator Campaign that needs promotion
+        const { data: campaigns } = await supabase
+            .from('vw_campaigns_needing_promotion')
+            .select('*')
+            .limit(1);
 
-        let query = supabase.from('products')
-            .select('amazon_asin, product_name, brand, price, rating, review_count, amazon_url, image_url, category')
-            .eq('is_available', true)
-            .not('price', 'is', null)
-            .gte('rating', 4.0)
-            .order('rating', { ascending: false })
-            .limit(50);
+        if (campaigns && campaigns.length > 0) {
+            campaignDetails = campaigns[0];
+            const { data: cp } = await supabase.from('products').select('*').eq('id', campaignDetails.product_id).single();
+            if (cp) {
+                targetProduct = cp;
+                isCampaign = true;
+                console.log(`   🎯 Selected Creator Campaign: ${campaignDetails.id} (Urgency: ${campaignDetails.urgency_score})`);
+            }
+        }
 
-        const { data: products } = await query;
-        if (!products?.length) throw new Error('No suitable products found');
+        // 2. Fallback to normal product rotation if no campaign is matched
+        if (!targetProduct) {
+            const recentlyPosted = await supabase.from('x_posts')
+                .select('product_asin')
+                .eq('status', 'posted')
+                .gte('posted_at', new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString()); // last 7 days
 
-        // Filter out recently posted
-        const candidates = products.filter(p => !recentAsins.includes(p.amazon_asin));
-        const pool = candidates.length > 0 ? candidates : products;
+            const recentAsins = (recentlyPosted.data || []).map(r => r.product_asin).filter(Boolean);
 
-        // Pick random product
-        const product = pool[Math.floor(Math.random() * Math.min(pool.length, 10))];
+            let { data: products } = await supabase.from('products')
+                .select('amazon_asin, product_name, brand, price, rating, review_count, amazon_url, image_url, category')
+                .eq('is_available', true)
+                .not('price', 'is', null)
+                .gte('rating', 4.0)
+                .order('rating', { ascending: false })
+                .limit(50);
+
+            if (!products?.length) throw new Error('No suitable products found');
+
+            const candidates = products.filter(p => !recentAsins.includes(p.amazon_asin));
+            const pool = candidates.length > 0 ? candidates : products;
+            targetProduct = pool[Math.floor(Math.random() * Math.min(pool.length, 10))];
+        }
 
         // Pick style
         const styles = ['deal', 'tip', 'review'];
         const hour = new Date().getUTCHours();
         const style = styles[Math.floor(hour / 8) % 3]; // rotate by time of day
 
-        console.log(`   📦 Product: ${product.product_name} | $${product.price} | Style: ${style}`);
+        console.log(`   📦 Product: ${targetProduct.product_name} | $${targetProduct.price} | Style: ${style}`);
 
         // Generate tweet
-        const tweetText = await generateTweet(product, style);
+        const customLink = isCampaign ? campaignDetails.campaign_url : null;
+        const tweetText = await generateTweet(targetProduct, style, customLink);
         if (!tweetText || tweetText.length < 20) throw new Error('Generated tweet too short');
         console.log(`   📝 Tweet (${tweetText.length} chars): ${tweetText}`);
 
         // Post to X
         const tweetResult = await postTweet(tweetText);
         const tweetId = tweetResult?.data?.id;
+        const tweetUrl = `https://twitter.com/mybrandsave/status/${tweetId}`;
         console.log(`   ✅ Posted! tweet_id: ${tweetId}`);
 
         // Save to DB
-        await supabase.from('x_posts').insert({
-            tweet_id: tweetId,
-            content: tweetText,
-            product_asin: product.amazon_asin,
-            product_name: product.product_name,
-            product_url: product.amazon_url,
-            status: 'posted',
-            posted_at: new Date().toISOString(),
-        });
+        if (isCampaign) {
+            await supabase.from('campaign_posts').insert({
+                campaign_id: campaignDetails.id,
+                platform: 'X',
+                platform_post_id: tweetId,
+                post_url: tweetUrl,
+                post_text: tweetText,
+                is_auto_posted: true,
+                proof_status: 'pending_submission'
+            });
 
-        res.json({ status: 'success', tweetId, product: product.product_name, content: tweetText });
+            await supabase.from('creator_campaigns')
+                .update({ last_promoted_at: new Date().toISOString() })
+                .eq('id', campaignDetails.id);
+            
+            await supabase.from('campaign_events').insert({
+                campaign_id: campaignDetails.id,
+                event_type: 'auto_post_success',
+                actor_id: null,
+                notes: `Auto-posted to X. Tweet ID: ${tweetId}`
+            });
+            
+            res.json({ status: 'success', tweetId, product: targetProduct.product_name, content: tweetText, isCampaign: true });
+        } else {
+            await supabase.from('x_posts').insert({
+                tweet_id: tweetId,
+                content: tweetText,
+                product_asin: targetProduct.amazon_asin,
+                product_name: targetProduct.product_name,
+                product_url: targetProduct.amazon_url,
+                status: 'posted',
+                posted_at: new Date().toISOString(),
+            });
+            res.json({ status: 'success', tweetId, product: targetProduct.product_name, content: tweetText });
+        }
 
     } catch (err) {
         console.error('❌ X post failed:', err.message);
