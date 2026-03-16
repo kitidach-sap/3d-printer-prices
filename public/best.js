@@ -155,7 +155,7 @@ function renderRankings(products) {
                 <div class="rank-badge">#${rank}</div>
                 
                 <div class="rank-image-col">
-                    <img src="${p.image_url}" alt="${escapeHtml(p.product_name)}" onerror="this.style.display='none'">
+                    <img src="${p.image_url}" alt="${escapeHtml(p.product_name)}" loading="lazy" onerror="this.style.display='none'">
                 </div>
                 
                 <div class="rank-details-col">

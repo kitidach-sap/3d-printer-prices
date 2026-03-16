@@ -73,7 +73,7 @@ function renderComparison(products) {
     
     const rows = [
         { label: '', key: 'header', render: (p) => `
-            <img src="${p.image_url}" class="compare-img" alt="${escapeHtml(p.product_name)}" onerror="this.style.display='none'">
+            <img src="${p.image_url}" class="compare-img" alt="${escapeHtml(p.product_name)}" loading="lazy" onerror="this.style.display='none'">
             <div class="compare-title"><a href="/product.html?id=${p.id}" target="_blank" style="color:inherit; text-decoration:none;">${escapeHtml(p.display_name || p.product_name)}</a></div>
             <div class="compare-price">$${p.price?.toFixed(2) || '---'}</div>
             <div style="display: flex; flex-direction: column; gap: var(--sp-2);">
