@@ -52,6 +52,7 @@
             <button class="admin-tab" data-tab="blog" role="tab" aria-selected="false" aria-controls="tab-blog">📝 Blog</button>
             <button class="admin-tab" data-tab="schedule" role="tab" aria-selected="false" aria-controls="tab-schedule">⏰ Schedule</button>
             <button class="admin-tab" data-tab="xpost" role="tab" aria-selected="false" aria-controls="tab-xpost">🐦 X Auto-Post</button>
+            <button class="admin-tab" data-tab="marketing" role="tab" aria-selected="false" aria-controls="tab-marketing">📢 Marketing</button>
             <button class="admin-tab" data-tab="settings" role="tab" aria-selected="false" aria-controls="tab-settings">⚙️ Settings</button>
         </div>
 
@@ -804,6 +805,143 @@
             </div>
         </div>
 
+        <!-- ==================== MARKETING TAB ==================== -->
+        <div class="tab-content" id="tab-marketing" role="tabpanel" tabindex="0">
+            <div class="admin-card">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+                    <h3 style="margin:0">📢 Creator Connections (Campaigns)</h3>
+                    <button class="btn btn-primary" onclick="openCampaignModal()">➕ New Campaign</button>
+                </div>
+                
+                <div class="admin-table-wrapper">
+                    <table class="admin-table" style="font-size:0.75rem">
+                        <thead>
+                            <tr>
+                                <th>Campaign / Product</th>
+                                <th>Duration / Rate</th>
+                                <th>Status</th>
+                                <th>Priority</th>
+                                <th>Posts</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="campaign-list-body">
+                            <tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Loading campaigns...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="admin-card" style="margin-top:1rem">
+                <h3>📝 Pending Proof Submissions</h3>
+                <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:1rem">Review auto-posted links and submit proof forms to Amazon.</p>
+                
+                <div class="admin-table-wrapper">
+                    <table class="admin-table" style="font-size:0.75rem">
+                        <thead>
+                            <tr>
+                                <th>Campaign</th>
+                                <th>Platform</th>
+                                <th>Post URL</th>
+                                <th>Posted At</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="proof-list-body">
+                            <tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Coming soon in Phase 3...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Campaign Modal -->
+        <div id="campaign-modal" class="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(2px)">
+            <div class="modal-box" role="dialog" aria-modal="true" style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:1.5rem;max-width:550px;width:90%;box-shadow:var(--shadow-lg);max-height:90vh;overflow-y:auto">
+                <h3 style="margin-top:0" id="campaign-modal-title">Create Campaign</h3>
+                
+                <form id="campaign-form" onsubmit="saveCampaign(event)">
+                    <input type="hidden" id="campaign-id">
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Amazon ASIN *</label>
+                            <input type="text" class="form-input" id="campaign-asin" required placeholder="e.g. B0C..." onchange="lookupProductByAsin()">
+                            <div id="asin-lookup-msg" style="font-size:0.68rem;margin-top:4px"></div>
+                        </div>
+                        <div class="form-group">
+                            <label>Product ID (from DB)</label>
+                            <input type="text" class="form-input" id="campaign-product-id" readonly placeholder="Auto-filled via ASIN" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Creator Connections URL *</label>
+                        <div style="display:flex;gap:0.3rem">
+                            <input type="url" class="form-input" id="campaign-url" style="flex:1" required placeholder="https://www.amazon.com/dp/B0...?campaignId=...">
+                            <button type="button" class="btn btn-warning" onclick="validateCampaignUrl()">Check URL</button>
+                        </div>
+                        <div id="url-validation-msg" style="font-size:0.68rem;margin-top:4px;word-break:break-all">Must contain campaignId & tag</div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Start Date *</label>
+                            <input type="date" class="form-input" id="campaign-start" required>
+                        </div>
+                        <div class="form-group">
+                            <label>End Date *</label>
+                            <input type="date" class="form-input" id="campaign-end" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Priority (1-100) *</label>
+                            <input type="number" class="form-input" id="campaign-priority" value="50" min="1" max="100" required>
+                            <div style="font-size:0.68rem;color:var(--text-muted);margin-top:4px">Higher posts first</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Cooldown (Hours) *</label>
+                            <input type="number" class="form-input" id="campaign-cooldown" value="24" min="1" required>
+                            <div style="font-size:0.68rem;color:var(--text-muted);margin-top:4px">Wait between X posts</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="campaign-featured" style="margin-right:0.3rem">
+                            🔥 Featured Homepage Slot
+                        </label>
+                        <div style="font-size:0.68rem;color:var(--text-muted);margin-top:4px;margin-bottom:0.5rem">Pins this campaign to the top of the frontend homepage.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Internal Notes / AI Prompt hint</label>
+                        <textarea class="form-input" id="campaign-notes" placeholder="Optional notes about this campaign..." rows="2" style="resize:vertical"></textarea>
+                    </div>
+                    
+                    <div class="form-group" id="campaign-status-group" style="display:none">
+                        <label>Status</label>
+                        <select class="form-select" id="campaign-status" disabled>
+                            <option value="draft">Draft - Waiting for approval</option>
+                            <option value="scheduled">Scheduled - Waiting for start date</option>
+                            <option value="active">Active - Promoting</option>
+                            <option value="paused">Paused</option>
+                            <option value="expired">Expired</option>
+                            <option value="archived">Archived</option>
+                        </select>
+                        <div style="font-size:0.68rem;color:var(--text-muted);margin-top:4px">Status is managed through the list actions.</div>
+                    </div>
+                    
+                    <div style="display:flex;justify-content:flex-end;gap:0.5rem;margin-top:1.5rem">
+                        <button type="button" class="btn" onclick="closeCampaignModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="btn-save-campaign">Save Campaign</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <!-- ==================== SETTINGS TAB ==================== -->
         <div class="tab-content" id="tab-settings" role="tabpanel" tabindex="0">
             <div class="admin-card">
@@ -1024,6 +1162,10 @@
                     loadXPostSettings();
                     loadXPostHistory();
                 }
+                if (tab.dataset.tab === 'marketing') {
+                    loadCampaigns();
+                    loadProofs();
+                }
             });
 
             // Keyboard navigation
@@ -1086,6 +1228,8 @@
             loadBlogPosts();
             loadXPostSettings(); // Load X Post settings on init
             loadXPostHistory(); // Load X Post history on init
+            loadCampaigns(); // Load Marketing Campaigns
+            loadProofs(); // Load Pending Proofs
             setInterval(checkRunning, 2000);
         }
 
@@ -2386,6 +2530,288 @@
             const d = document.createElement('div');
             d.textContent = s;
             return d.innerHTML;
+        }
+
+        // ===== Marketing (Campaigns) =====
+        async function loadCampaigns() {
+            try {
+                // Read filters if implemented later, currently just basic fetch
+                const res = await fetch('/api/admin/campaigns?sort=created_at&order=desc&limit=100', { headers: apiHeaders() });
+                const d = await res.json();
+                const tbody = document.getElementById('campaign-list-body');
+                
+                if (!d.ok) {
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--danger)">Error: ${d.error?.message || 'Unknown Error'}</td></tr>`;
+                    return;
+                }
+                
+                const campaigns = d.data;
+                if (!campaigns || campaigns.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">No campaigns found.</td></tr>';
+                    return;
+                }
+                
+                const statusColors = { active: 'var(--success)', draft: 'var(--text-muted)', scheduled: 'var(--accent)', paused: 'var(--warning)', expired: 'var(--danger)', archived: 'var(--border)' };
+                
+                tbody.innerHTML = campaigns.map(c => `
+                    <tr>
+                        <td style="max-width:250px">
+                            <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.products?.product_name || c.campaign_id_raw)}</div>
+                            <div style="font-size:0.65rem;color:var(--text-muted);margin-top:2px">
+                                ${c.featured_slot ? '🔥 Featured • ' : ''}Marketplace: ${c.amazon_marketplace}
+                            </div>
+                        </td>
+                        <td>
+                            <div style="font-size:0.7rem">${new Date(c.start_date).toLocaleDateString()} - ${new Date(c.end_date).toLocaleDateString()}</div>
+                            <div style="font-size:0.65rem;color:var(--text-muted);margin-top:2px">Cooldown: ${c.promotion_cooldown_hours}h</div>
+                        </td>
+                        <td>
+                            <span class="badge" style="background:${statusColors[c.status] || 'var(--bg-card)'};color:${c.status === 'draft' || c.status === 'archived' ? 'var(--text-primary)' : 'white'}">${c.status.toUpperCase()}</span>
+                        </td>
+                        <td>${c.priority_score}</td>
+                        <td>${c.post_count || 0}</td>
+                        <td class="actions-cell">
+                            <button class="btn btn-primary btn-sm" onclick='editCampaign(${JSON.stringify(c).replace(/'/g, "&#39;")})'>✏️</button>
+                            <select class="form-select btn-sm" style="width:auto;display:inline-block;padding:0.2rem" onchange="updateCampaignStatus('${c.id}', this.value)">
+                                <option value="">Status...</option>
+                                <option value="active" ${c.status === 'active' || c.status === 'archived' ? 'disabled' : ''}>Set Active</option>
+                                <option value="paused" ${c.status === 'paused' || c.status === 'archived' ? 'disabled' : ''}>Set Paused</option>
+                                <option value="archived" ${c.status === 'archived' ? 'disabled' : ''}>Archive</option>
+                            </select>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                const tbody = document.getElementById('campaign-list-body');
+                if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--danger)">Error loading campaigns</td></tr>`;
+            }
+        }
+
+        async function validateCampaignUrl() {
+            const urlInput = document.getElementById('campaign-url').value.trim();
+            const msgBox = document.getElementById('url-validation-msg');
+            
+            if (!urlInput) {
+                msgBox.innerHTML = '<span style="color:var(--warning)">Please enter a URL first.</span>';
+                return;
+            }
+            
+            msgBox.innerHTML = '<span style="color:var(--text-muted)">Validating...</span>';
+            
+            try {
+                const res = await fetch('/api/admin/campaigns/validate-url', {
+                    method: 'POST',
+                    headers: apiHeaders(),
+                    body: JSON.stringify({ campaign_url: urlInput })
+                });
+                const d = await res.json();
+                
+                if (d.ok) {
+                    msgBox.innerHTML = `<span style="color:var(--success)">✅ Valid URL! tag=${d.data.associate_tag}, id=${d.data.campaign_id_raw}</span>`;
+                } else {
+                    msgBox.innerHTML = `<span style="color:var(--danger)">❌ Invalid: ${d.error?.message}</span>`;
+                }
+            } catch (e) {
+                msgBox.innerHTML = `<span style="color:var(--danger)">❌ Error: ${e.message}</span>`;
+            }
+        }
+
+        function openCampaignModal() {
+            document.getElementById('campaign-form').reset();
+            document.getElementById('campaign-id').value = '';
+            document.getElementById('campaign-modal-title').textContent = 'Create Campaign';
+            document.getElementById('campaign-status-group').style.display = 'none';
+            document.getElementById('url-validation-msg').textContent = 'Must contain campaignId & tag';
+            document.getElementById('asin-lookup-msg').textContent = '';
+            document.getElementById('campaign-modal').style.display = 'flex';
+        }
+
+        function closeCampaignModal() {
+            document.getElementById('campaign-modal').style.display = 'none';
+        }
+
+        function editCampaign(campaign) {
+            document.getElementById('campaign-id').value = campaign.id;
+            
+            // Re-fetch product ASIN lookup logic (reverse lookup conceptually, but we don't have ASIN in campaign directly except via join. We'll leave it blank and ID read-only if they don't want to change it)
+            document.getElementById('campaign-asin').value = '';
+            document.getElementById('asin-lookup-msg').textContent = 'Leave ASIN blank to keep current product';
+            document.getElementById('campaign-asin').removeAttribute('required');
+            
+            document.getElementById('campaign-product-id').value = campaign.product_id || '';
+            document.getElementById('campaign-url').value = campaign.campaign_url || '';
+            document.getElementById('campaign-start').value = campaign.start_date ? campaign.start_date.split('T')[0] : '';
+            document.getElementById('campaign-end').value = campaign.end_date ? campaign.end_date.split('T')[0] : '';
+            document.getElementById('campaign-priority').value = campaign.priority_score || 50;
+            document.getElementById('campaign-cooldown').value = campaign.promotion_cooldown_hours || 24;
+            document.getElementById('campaign-featured').checked = !!campaign.featured_slot;
+            document.getElementById('campaign-notes').value = campaign.notes || '';
+            
+            document.getElementById('campaign-status').value = campaign.status || 'draft';
+            document.getElementById('campaign-status-group').style.display = 'block';
+            
+            document.getElementById('campaign-modal-title').textContent = 'Edit Campaign';
+            document.getElementById('url-validation-msg').textContent = '';
+            document.getElementById('campaign-modal').style.display = 'flex';
+        }
+        
+        async function lookupProductByAsin() {
+            const asin = document.getElementById('campaign-asin').value.trim();
+            const msg = document.getElementById('asin-lookup-msg');
+            const idField = document.getElementById('campaign-product-id');
+            
+            if (!asin) {
+                msg.textContent = ''; idField.value = ''; return;
+            }
+            
+            msg.innerHTML = '<span style="color:var(--text-muted)">Looking up...</span>';
+            try {
+                const res = await fetch(`/api/admin/products?search=${asin}&limit=1`, { headers: apiHeaders() });
+                const d = await res.json();
+                if (d.products && d.products.length > 0 && d.products[0].amazon_asin === asin) {
+                    idField.value = d.products[0].id;
+                    msg.innerHTML = `<span style="color:var(--success)">✅ Found: ${esc(d.products[0].product_name)}</span>`;
+                } else {
+                    idField.value = '';
+                    msg.innerHTML = '<span style="color:var(--danger)">❌ Product not found in database. Add it first.</span>';
+                }
+            } catch(e) {
+                msg.innerHTML = `<span style="color:var(--danger)">❌ ${e.message}</span>`;
+            }
+        }
+
+        async function saveCampaign(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-save-campaign');
+            const origText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+            
+            const id = document.getElementById('campaign-id').value || null;
+            
+            const payload = {
+                product_id: document.getElementById('campaign-product-id').value || null,
+                campaign_url: document.getElementById('campaign-url').value.trim(),
+                start_date: document.getElementById('campaign-start').value,
+                end_date: document.getElementById('campaign-end').value,
+                priority_score: parseInt(document.getElementById('campaign-priority').value) || 50,
+                promotion_cooldown_hours: parseInt(document.getElementById('campaign-cooldown').value) || 24,
+                featured_slot: document.getElementById('campaign-featured').checked,
+                notes: document.getElementById('campaign-notes').value.trim()
+            };
+            
+            if (!payload.product_id) {
+                alert("Please select a valid Amazon ASIN that exists in your database.");
+                btn.disabled = false;
+                btn.textContent = origText;
+                return;
+            }
+            
+            try {
+                const method = id ? 'PATCH' : 'POST';
+                const endpoint = id ? `/api/admin/campaigns/${id}` : '/api/admin/campaigns';
+                
+                const res = await fetch(endpoint, {
+                    method: method,
+                    headers: apiHeaders(),
+                    body: JSON.stringify(payload)
+                });
+                const d = await res.json();
+                if (d.ok) {
+                    closeCampaignModal();
+                    loadCampaigns();
+                } else {
+                    alert('Error saving campaign: ' + (d.error?.message || 'Unknown error'));
+                }
+            } catch(e) {
+                alert('Connection error: ' + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = origText;
+            }
+        }
+        
+        async function updateCampaignStatus(id, status) {
+            if (!status) return;
+            try {
+                const res = await fetch(`/api/admin/campaigns/${id}/status`, {
+                    method: 'PATCH',
+                    headers: apiHeaders(),
+                    body: JSON.stringify({ status })
+                });
+                const d = await res.json();
+                if (d.ok) {
+                    loadCampaigns();
+                } else {
+                    alert('Error updating status: ' + (d.error?.message || 'Unknown error'));
+                    loadCampaigns(); // reset dropdown
+                }
+            } catch (e) {
+                alert('Connection error: ' + e.message);
+            }
+        }
+        // ===== Creator Connections Proofs =====
+        async function loadProofs() {
+            try {
+                const res = await fetch('/api/admin/proofs', { headers: apiHeaders() });
+                const d = await res.json();
+                const tbody = document.getElementById('proof-list-body');
+                
+                if (!d.ok) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--danger)">Error: ${d.error?.message || 'Unknown Error'}</td></tr>`;
+                    return;
+                }
+                
+                const proofs = d.data;
+                if (!proofs || proofs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">No pending proofs.</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = proofs.map(p => `
+                    <tr>
+                        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">
+                            <div style="font-weight:bold">${esc(p.campaign_id_raw)}</div>
+                            <div style="font-size:0.65rem;color:var(--text-muted)">${esc(p.amazon_marketplace)}</div>
+                        </td>
+                        <td>
+                            <div>${esc(p.platform)}</div>
+                            ${p.post_url ? `<a href="${esc(p.post_url)}" target="_blank" style="font-size:0.65rem;color:var(--primary)">View Post</a>` : ''}
+                        </td>
+                        <td>${new Date(p.posted_at).toLocaleString()}</td>
+                        <td style="color:var(--warning)">${new Date(p.campaign_ends_at).toLocaleString()}</td>
+                        <td class="actions-cell">
+                            <button class="btn btn-success btn-sm" onclick="submitProof('${p.post_id}')">Submit Proof</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                const tbody = document.getElementById('proof-list-body');
+                if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--danger)">Error loading proofs</td></tr>`;
+            }
+        }
+        
+        async function submitProof(postId) {
+            const amazonRef = prompt("Enter the Amazon Associate proof submission reference ID:");
+            if (!amazonRef) return;
+            
+            try {
+                const res = await fetch(`/api/admin/proofs/${postId}/submit`, {
+                    method: 'POST',
+                    headers: apiHeaders(),
+                    body: JSON.stringify({ amazon_reference: amazonRef.trim() })
+                });
+                const d = await res.json();
+                if (d.ok) {
+                    alert("Proof submitted successfully!");
+                    loadProofs();
+                    loadCampaigns(); // Might affect post_count, though post_count isn't fully implemented yet
+                } else {
+                    alert('Error submitting proof: ' + (d.error?.message || 'Unknown error'));
+                }
+            } catch (e) {
+                alert('Connection error: ' + e.message);
+            }
         }
     </script>
 </body>

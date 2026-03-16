@@ -196,6 +196,22 @@ app.use(express.static(path.join(__dirname, 'public')));
 // API Routes
 // ============================================
 
+// GET /api/featured-campaigns — Fetch active featured Creator Connections
+app.get('/api/featured-campaigns', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('vw_frontend_featured_campaigns')
+            .select('*')
+            .limit(3);
+            
+        if (error) throw error;
+        
+        res.json({ success: true, campaigns: data || [] });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
 // GET /api/products — list products with filters
 app.get('/api/products', async (req, res) => {
     try {
@@ -1465,6 +1481,368 @@ app.get('/api/admin/update-prices-running', (req, res) => {
 // GET /api/admin/scrape-running — check if scraper is active
 app.get('/api/admin/scrape-running', (req, res) => {
     res.json({ running: scraperRunning });
+});
+
+// ===== Creator Connections (Marketing) =====
+
+// --- Creator Connections Shared Helpers ---
+function parseCreatorCampaignUrl(url) {
+    if (!url) return { valid: false, error: 'URL is required' };
+    try {
+        const u = new URL(url);
+        if (!u.hostname.includes('amazon.')) {
+            return { valid: false, error: 'Not a valid Amazon domain' };
+        }
+        
+        let campaignId = u.searchParams.get('campaignId');
+        let tag = u.searchParams.get('tag');
+        
+        // Sometimes campaignId is just in the URL path or query
+        if (!campaignId) {
+             const match = url.match(/campaignId=([^&]+)/);
+             if (match) campaignId = match[1];
+        }
+        
+        if (!campaignId) return { valid: false, error: 'Missing campaignId in URL' };
+        if (!tag) return { valid: false, error: 'Missing associate tag in URL' };
+        
+        return {
+            valid: true,
+            campaign_id_raw: campaignId,
+            associate_tag: tag,
+            amazon_marketplace: u.hostname.includes('amazon.co.uk') ? 'UK' : 
+                                u.hostname.includes('amazon.de') ? 'DE' : 
+                                u.hostname.includes('amazon.ca') ? 'CA' : 'US'
+        };
+    } catch (e) {
+        return { valid: false, error: 'Invalid URL format' };
+    }
+}
+
+function adminResponse(res, ok, dataOrError, message = '', meta = null) {
+    if (ok) {
+        return res.json({ ok: true, data: dataOrError, message, meta });
+    } else {
+        return res.status(400).json({ ok: false, error: { message: dataOrError } });
+    }
+}
+
+// 1. GET /api/admin/campaigns — list campaigns
+app.get('/api/admin/campaigns', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
+    try {
+        const { status, marketplace, featured_slot, search, product_id, sort = 'created_at', order = 'desc', page = 1, limit = 50 } = req.query;
+        
+        let query = supabase
+            .from('creator_campaigns')
+            .select(`
+                *,
+                products ( product_name, image_url, price )
+            `, { count: 'exact' });
+            
+        // Filters
+        if (status) query = query.eq('status', status);
+        if (marketplace) query = query.eq('amazon_marketplace', marketplace);
+        if (featured_slot !== undefined) query = query.eq('featured_slot', featured_slot === 'true');
+        if (product_id) query = query.eq('product_id', product_id);
+        if (search) {
+             query = query.or(`campaign_id_raw.ilike.%${search}%,associate_tag.ilike.%${search}%`);
+        }
+        
+        // Sorting & Pagination
+        const ascending = order === 'asc';
+        const pageNum = parseInt(page);
+        const limitNum = parseInt(limit);
+        
+        query = query.order(sort, { ascending });
+        query = query.range((pageNum - 1) * limitNum, pageNum * limitNum - 1);
+        
+        const { data, count, error } = await query;
+        if (error) throw error;
+        
+        // Also fetch post counts
+        const { data: postsData } = await supabase.from('campaign_posts').select('campaign_id');
+        const postCounts = {};
+        if (postsData) {
+            postsData.forEach(p => {
+                postCounts[p.campaign_id] = (postCounts[p.campaign_id] || 0) + 1;
+            });
+        }
+        
+        const campaignsWithCounts = data.map(c => ({
+            ...c,
+            post_count: postCounts[c.id] || 0
+        }));
+        
+        adminResponse(res, true, campaignsWithCounts, 'Campaigns loaded', {
+            total: count,
+            page: pageNum,
+            limit: limitNum,
+            totalPages: Math.ceil((count || 0) / limitNum)
+        });
+    } catch (e) {
+        adminResponse(res, false, e.message);
+    }
+});
+
+// 5. POST /api/admin/campaigns/validate-url — validate url before creation
+app.post('/api/admin/campaigns/validate-url', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
+    try {
+        const { campaign_url } = req.body;
+        const validation = parseCreatorCampaignUrl(campaign_url);
+        if (!validation.valid) {
+            return adminResponse(res, false, validation.error);
+        }
+        return adminResponse(res, true, validation, 'URL is valid');
+    } catch (e) {
+        adminResponse(res, false, e.message);
+    }
+});
+
+// 2. POST /api/admin/campaigns — create a campaign
+app.post('/api/admin/campaigns', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
+    try {
+        const {
+            product_id, amazon_marketplace, campaign_url, 
+            start_date, end_date, priority_score = 50, 
+            promotion_cooldown_hours = 24, featured_slot = false, notes
+        } = req.body;
+
+        if (!product_id || !campaign_url || !start_date || !end_date) {
+            return adminResponse(res, false, 'Missing required fields: product_id, campaign_url, start_date, end_date');
+        }
+        
+        if (new Date(end_date) <= new Date(start_date)) {
+            return adminResponse(res, false, 'end_date must be after start_date');
+        }
+
+        // Validate URL and extract
+        const urlValidation = parseCreatorCampaignUrl(campaign_url);
+        if (!urlValidation.valid) {
+            return adminResponse(res, false, urlValidation.error);
+        }
+
+        const payload = {
+            product_id,
+            amazon_marketplace: amazon_marketplace || urlValidation.amazon_marketplace,
+            campaign_id_raw: urlValidation.campaign_id_raw,
+            associate_tag: urlValidation.associate_tag,
+            campaign_url,
+            start_date,
+            end_date,
+            priority_score: parseInt(priority_score),
+            promotion_cooldown_hours: parseInt(promotion_cooldown_hours),
+            featured_slot: !!featured_slot,
+            notes,
+            status: 'draft', // Always force draft on creation
+            updated_at: new Date().toISOString()
+        };
+
+        // Enforce uniqueness
+        const { data: existing } = await supabase
+            .from('creator_campaigns')
+            .select('id')
+            .eq('amazon_marketplace', payload.amazon_marketplace)
+            .eq('campaign_id_raw', payload.campaign_id_raw)
+            .maybeSingle();
+            
+        if (existing) {
+            return adminResponse(res, false, `Campaign ID ${payload.campaign_id_raw} already exists for marketplace ${payload.amazon_marketplace}`);
+        }
+
+        const { data, error } = await supabase.from('creator_campaigns').insert(payload).select().single();
+        if (error) throw error;
+
+        // DB trigger handles logging, but we can do it explicitly as a fallback like the old code did if we want,
+        // but let's rely on the DB trigger for status change, or log a 'created' event explicitly.
+        await supabase.from('campaign_events').insert({
+            campaign_id: data.id,
+            event_type: 'created',
+            new_state: data,
+            actor_id: null,
+            notes: 'Campaign created via Admin Hub'
+        });
+
+        adminResponse(res, true, data, 'Campaign created successfully');
+    } catch (e) {
+        adminResponse(res, false, e.message);
+    }
+});
+
+// 3. PATCH /api/admin/campaigns/:id — update a campaign
+app.patch('/api/admin/campaigns/:id', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+        
+        // Prevent unsafe mutations
+        const forbiddenFields = ['id', 'status', 'created_at'];
+        forbiddenFields.forEach(f => delete updates[f]);
+        
+        if (updates.start_date && updates.end_date) {
+            if (new Date(updates.end_date) <= new Date(updates.start_date)) {
+                return adminResponse(res, false, 'end_date must be after start_date');
+            }
+        }
+
+        if (updates.campaign_url) {
+            const urlValidation = parseCreatorCampaignUrl(updates.campaign_url);
+            if (!urlValidation.valid) return adminResponse(res, false, urlValidation.error);
+            updates.campaign_id_raw = urlValidation.campaign_id_raw;
+            updates.associate_tag = urlValidation.associate_tag;
+            if (!updates.amazon_marketplace) updates.amazon_marketplace = urlValidation.amazon_marketplace;
+        }
+
+        updates.updated_at = new Date().toISOString();
+
+        // Check if updating raw ID creates a conflict
+        if (updates.campaign_id_raw && updates.amazon_marketplace) {
+            const { data: existing } = await supabase
+                .from('creator_campaigns')
+                .select('id')
+                .eq('amazon_marketplace', updates.amazon_marketplace)
+                .eq('campaign_id_raw', updates.campaign_id_raw)
+                .neq('id', id)
+                .maybeSingle();
+                
+            if (existing) {
+                return adminResponse(res, false, `Conflict: Campaign ID ${updates.campaign_id_raw} already exists.`);
+            }
+        }
+
+        const { data: oldData } = await supabase.from('creator_campaigns').select('*').eq('id', id).single();
+        
+        const { data, error } = await supabase.from('creator_campaigns').update(updates).eq('id', id).select().single();
+        if (error) throw error;
+
+        await supabase.from('campaign_events').insert({
+            campaign_id: id,
+            event_type: 'updated',
+            old_state: oldData,
+            new_state: data,
+            notes: 'Campaign updated via Admin Hub'
+        });
+
+        adminResponse(res, true, data, 'Campaign updated safely');
+    } catch (e) {
+        adminResponse(res, false, e.message);
+    }
+});
+
+// 4. PATCH /api/admin/campaigns/:id/status — update campaign status
+app.patch('/api/admin/campaigns/:id/status', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
+    try {
+        const { id } = req.params;
+        const { status: newStatus } = req.body;
+        const ALLOWED_STATUSES = ['draft', 'scheduled', 'active', 'paused', 'expired', 'archived'];
+        
+        if (!ALLOWED_STATUSES.includes(newStatus)) {
+            return adminResponse(res, false, `Invalid status. Must be one of: ${ALLOWED_STATUSES.join(', ')}`);
+        }
+        
+        const { data: campaign, error: fetchErr } = await supabase.from('creator_campaigns').select('*').eq('id', id).single();
+        if (fetchErr) throw fetchErr;
+        
+        const oldStatus = campaign.status;
+        
+        // Strict State Machine Rules
+        if (newStatus === 'scheduled' || newStatus === 'active') {
+            if (!campaign.campaign_url || !campaign.product_id || !campaign.start_date || !campaign.end_date) {
+                return adminResponse(res, false, `Cannot move to ${newStatus}: Missing required fields for activation.`);
+            }
+            if (new Date(campaign.end_date) <= new Date()) {
+                return adminResponse(res, false, `Cannot move to ${newStatus}: end_date is in the past.`);
+            }
+        }
+
+        if (oldStatus === 'archived') {
+            return adminResponse(res, false, 'Cannot change status of an archived campaign.');
+        }
+
+        const { data, error } = await supabase
+            .from('creator_campaigns')
+            .update({ status: newStatus, updated_at: new Date().toISOString() })
+            .eq('id', id)
+            .select()
+            .single();
+            
+        if (error) throw error;
+
+        await supabase.from('campaign_events').insert({
+            campaign_id: id,
+            event_type: 'status_changed',
+            old_state: { status: oldStatus },
+            new_state: { status: newStatus },
+            notes: `Admin transitioned status ${oldStatus} -> ${newStatus}`
+        });
+
+        adminResponse(res, true, data, `Status successfully changed from ${oldStatus} to ${newStatus}`);
+    } catch (e) {
+        adminResponse(res, false, e.message);
+    }
+});
+
+// ===== Creator Connections Proofs =====
+
+// GET /api/admin/proofs — list pending proofs
+app.get('/api/admin/proofs', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
+    try {
+        const { data, error } = await supabase
+            .from('vw_pending_proofs')
+            .select('*')
+            .order('posted_at', { ascending: true });
+            
+        if (error) throw error;
+        
+        adminResponse(res, true, data || [], 'Pending proofs loaded');
+    } catch (e) {
+        adminResponse(res, false, e.message);
+    }
+});
+
+// POST /api/admin/proofs/:id/submit — submit amazon reference
+app.post('/api/admin/proofs/:id/submit', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
+    try {
+        const { id } = req.params;
+        const { amazon_reference } = req.body;
+        
+        if (!amazon_reference) {
+            return adminResponse(res, false, "Amazon submission reference is required");
+        }
+        
+        // Update campaign_posts
+        const { data, error } = await supabase
+            .from('campaign_posts')
+            .update({ 
+                proof_status: 'submitted',
+                amazon_submission_reference: amazon_reference,
+                proof_submitted_at: new Date().toISOString()
+            })
+            .eq('id', id)
+            .select()
+            .single();
+            
+        if (error) throw error;
+
+        // Log the event
+        if (data) {
+            await supabase.from('campaign_events').insert({
+                campaign_id: data.campaign_id,
+                event_type: 'proof_submitted',
+                notes: `Proof submitted with reference: ${amazon_reference}`
+            });
+        }
+        
+        adminResponse(res, true, data, 'Proof submitted successfully');
+    } catch (e) {
+        adminResponse(res, false, e.message);
+    }
 });
 
 // ===== Product Management =====
