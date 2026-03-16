@@ -3475,6 +3475,35 @@ app.get('/api/admin/thin-page-audit', async (req, res) => {
     }
 });
 
+// ============================================
+// Cron Routes (proxy to Vercel cron handlers for local dev)
+// ============================================
+const cronTwitterHandler = require('./api/cron/twitter');
+const cronScrapeHandler = require('./api/cron/scrape');
+const cronBlogHandler = require('./api/cron/blog');
+
+app.all('/api/cron/twitter', (req, res) => {
+    // Inject admin key from query or header for local dev compatibility
+    if (!req.headers['authorization'] && !req.headers['x-admin-key'] && !req.query.key) {
+        req.headers['x-admin-key'] = process.env.ADMIN_KEY || ADMIN_KEY_DEFAULT;
+    }
+    cronTwitterHandler(req, res);
+});
+
+app.all('/api/cron/scrape', (req, res) => {
+    if (!req.headers['authorization'] && !req.headers['x-admin-key'] && !req.query.key) {
+        req.headers['x-admin-key'] = process.env.ADMIN_KEY || ADMIN_KEY_DEFAULT;
+    }
+    cronScrapeHandler(req, res);
+});
+
+app.all('/api/cron/blog', (req, res) => {
+    if (!req.headers['authorization'] && !req.headers['x-admin-key'] && !req.query.key) {
+        req.headers['x-admin-key'] = process.env.ADMIN_KEY || ADMIN_KEY_DEFAULT;
+    }
+    cronBlogHandler(req, res);
+});
+
 // Start server
 // Start server (only when running locally, not on Vercel)
 if (process.env.VERCEL !== '1') {
