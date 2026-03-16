@@ -134,7 +134,7 @@ function renderComparison(products) {
         let trClass = row.key === 'header' ? 'class="compare-header-row"' : '';
         html += `<tr ${trClass}>`;
         if (row.key !== 'header') {
-            html += `<th>${row.label}</th>`;
+            html += `<th scope="row">${row.label}</th>`;
         } else {
             html += `<th></th>`;
         }
