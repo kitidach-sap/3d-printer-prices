@@ -100,6 +100,37 @@ select:focus-visible {
   outline-offset: 2px;
 }
 
+/* Screen-reader only utility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Skip navigation link */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: var(--sp-4);
+  z-index: 10000;
+  padding: var(--sp-3) var(--sp-6);
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  text-decoration: none;
+  transition: top 0.2s;
+}
+.skip-link:focus {
+  top: 0;
+}
+
 
 /* ============================================
    Navigation Links
@@ -563,6 +594,7 @@ select:focus-visible {
 
 .filter-input:focus {
   border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow);
 }
 
 .filter-input.small {
@@ -1925,6 +1957,11 @@ td.loading {
   color: var(--text-primary);
 }
 
+.segmented-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .segmented-btn[aria-pressed="true"] {
   background: var(--bg-card);
   color: var(--accent);
@@ -2705,3 +2742,22 @@ td.loading {
     .info-grid { grid-template-columns: repeat(2, 1fr); gap: var(--sp-2); }
     .admin-card { padding: var(--sp-3); }
 }
+
+/* ============================================
+   Reduced Motion Support
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .skip-link {
+    transition: none;
+  }
+}
+
