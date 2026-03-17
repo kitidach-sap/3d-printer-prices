@@ -78,19 +78,22 @@ async function generateTweet(product, style, customLink) {
         review: `Write a review-style tweet (under 240 chars) highlighting this product's rating and value for US makers. Include 1-2 hashtags and: ${productLink}`,
     };
 
-    const prompt = `${styles[style] || styles.deal}
+    const prompt = `You are a social media manager for a 3D printing deals account.
 
-Product: ${product.product_name}
-Price: $${product.price}
-Brand: ${product.brand || 'Unknown'}
-Rating: ${product.rating ? product.rating + '/5' : 'N/A'}
-Amazon: ${amazonLink}
+Task: ${styles[style] || styles.deal}
 
-Rules:
-- Keep under 240 characters TOTAL (including links)
-- Casual, enthusiastic US tone
-- No quotes around the tweet
-- Output ONLY the tweet text, nothing else`;
+Product Details:
+- Name: ${product.product_name}
+- Price: $${product.price}
+- Brand: ${product.brand || 'Unknown'}
+- Rating: ${product.rating ? product.rating + '/5' : 'N/A'}
+- Promotion Link (MUST INCLUDE EXACTLY): ${amazonLink}
+
+CRITICAL RULES:
+1. The tweet MUST be under 280 characters TOTAL (including the link).
+2. The tweet MUST contain the exact Promotion Link.
+3. Use a casual, enthusiastic US tone.
+4. Output ONLY the raw tweet text. Do not wrap in quotes or add preamble.`;
 
     // Try GPT first (if key stored in settings)
     const { data: openaiSetting } = await supabase.from('settings').select('value').eq('key', 'openai_api_key').single();
@@ -105,7 +108,10 @@ Rules:
         });
         if (res.ok) {
             const j = await res.json();
-            return j.choices?.[0]?.message?.content?.trim() || '';
+            const text = j.choices?.[0]?.message?.content?.trim() || '';
+            if (text.length >= 30) return text;
+        } else {
+            console.log('OpenAI Error:', await res.text());
         }
     }
 
@@ -121,11 +127,27 @@ Rules:
         );
         if (res.ok) {
             const j = await res.json();
-            return j.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+            const text = j.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+            if (text.length >= 30) return text;
+        } else {
+            console.log('Gemini Error:', await res.text());
         }
     }
 
-    throw new Error('No AI API key configured');
+    // --- Fallback Templates ---
+    console.log('Using fallback template for tweet generation');
+    const link = customLink || amazonLink;
+    let fallbackText = '';
+    
+    if (style === 'deal') {
+        fallbackText = `🔥 Hot Deal!\n\n${product.product_name.substring(0, 80)}...\n\nOnly $${product.price} right now. Check it out here: ${link} #3DPrinting #Deals`;
+    } else if (style === 'tip') {
+        fallbackText = `💡 Quick tip for makers:\n\nLevel up your setup with the ${product.product_name.substring(0, 80)}... \n\nFound a great price here: ${link} #3dprinter`;
+    } else {
+        fallbackText = `⭐ Highly rated by makers!\n\n${product.product_name.substring(0, 80)}...\n\nCheck out why folks love it: ${link} #3dprinting`;
+    }
+    
+    return fallbackText;
 }
 
 // ─── Main Handler ─────────────────────────────────────────────────────────────
@@ -208,8 +230,15 @@ module.exports = async function handler(req, res) {
 
         // Generate tweet
         const customLink = isCampaign ? campaignDetails.campaign_url : null;
-        const tweetText = await generateTweet(targetProduct, style, customLink);
-        if (!tweetText || tweetText.length < 20) throw new Error('Generated tweet too short');
+        let tweetText = await generateTweet(targetProduct, style, customLink);
+        
+        if (!tweetText || tweetText.length < 10) throw new Error('Generated tweet too short');
+        
+        // Safety fallback: if the AI forgot the link, append it
+        if (!tweetText.includes('http')) {
+            tweetText = `${tweetText} ${customLink || amazonLink}`;
+        }
+
         console.log(`   📝 Tweet (${tweetText.length} chars): ${tweetText}`);
 
         // Post to X
@@ -258,12 +287,16 @@ module.exports = async function handler(req, res) {
     } catch (err) {
         console.error('❌ X post failed:', err.message);
         // Log failure
-        await supabase.from('x_posts').insert({
-            content: err.message,
-            status: 'failed',
-            error_message: err.message,
-            posted_at: new Date().toISOString(),
-        }).catch(() => { });
+        try {
+            await supabase.from('x_posts').insert({
+                content: err.message,
+                status: 'failed',
+                error_message: err.message,
+                posted_at: new Date().toISOString(),
+            });
+        } catch (dbErr) {
+            console.error('Failed to log error to x_posts:', dbErr.message);
+        }
         res.status(500).json({ error: err.message });
     }
 };
