@@ -199,7 +199,7 @@ module.exports = async function handler(req, res) {
 
         // Step 8: Save to DB with metadata
         const siteLink = buildSiteLink(product);
-        await supabase.from('x_posts').insert({
+        const { error: insertErr } = await supabase.from('x_posts').insert({
             tweet_id: tweetId,
             content: tweetText,
             product_asin: product.amazon_asin,
@@ -207,10 +207,9 @@ module.exports = async function handler(req, res) {
             product_url: siteLink,
             status: 'posted',
             posted_at: new Date().toISOString(),
-            hook_type: angle,
-            angle_type: angle,
-            cta_type: 'auto',
         });
+        if (insertErr) logger.warn('DB save failed', { error: insertErr.message });
+        else logger.success('Saved to x_posts');
 
         // Step 9: Update campaign if applicable
         if (isCampaign && campaignDetails) {
