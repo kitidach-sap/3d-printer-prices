@@ -36,7 +36,7 @@ async function selectProduct(supabase) {
     const categories = isPrinter ? ['3d_printer'] : ['accessories', 'filament'];
 
     const { data: products } = await supabase.from('products')
-        .select('amazon_asin, product_name, display_name, brand, price, rating, review_count, amazon_url, image_url, category')
+        .select('id, amazon_asin, product_name, display_name, brand, price, rating, review_count, amazon_url, image_url, category')
         .eq('is_available', true)
         .not('price', 'is', null)
         .gte('rating', 4.0)
@@ -47,7 +47,7 @@ async function selectProduct(supabase) {
     if (!products?.length) {
         // Fallback: any available product
         const { data: fallback } = await supabase.from('products')
-            .select('amazon_asin, product_name, display_name, brand, price, rating, review_count, amazon_url, image_url, category')
+            .select('id, amazon_asin, product_name, display_name, brand, price, rating, review_count, amazon_url, image_url, category')
             .eq('is_available', true).not('price', 'is', null).gte('rating', 4.0)
             .order('rating', { ascending: false }).limit(50);
         if (!fallback?.length) throw new Error('No products available');
@@ -130,7 +130,7 @@ async function getCampaignProduct(supabase) {
         if (campaigns?.length > 0) {
             const campaign = campaigns[0];
             const { data: product } = await supabase.from('products')
-                .select('amazon_asin, product_name, display_name, brand, price, rating, review_count, amazon_url, image_url, category')
+                .select('id, amazon_asin, product_name, display_name, brand, price, rating, review_count, amazon_url, image_url, category')
                 .eq('id', campaign.product_id)
                 .single();
             

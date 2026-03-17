@@ -154,6 +154,7 @@ module.exports = async function handler(req, res) {
 
         // Normalize product data
         const product = {
+            id: targetProduct.id,
             name: targetProduct.display_name || targetProduct.product_name.split(',')[0].trim().substring(0, 60),
             brand: targetProduct.brand || '',
             price: targetProduct.price,

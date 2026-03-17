@@ -12,9 +12,13 @@ const { getUrgency } = require('./urgency');
 const SITE_URL = 'https://3d-printer-prices.com';
 
 /**
- * Build a site link for a product
+ * Build a direct product page link
  */
 function buildSiteLink(product) {
+    if (product.id) {
+        return `${SITE_URL}/product.html?id=${product.id}`;
+    }
+    // Fallback to search if no id
     const searchQuery = (product.name || '').split(' ').slice(0, 4).join(' ');
     return `${SITE_URL}/?search=${encodeURIComponent(searchQuery)}`;
 }
