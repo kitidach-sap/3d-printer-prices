@@ -16,6 +16,7 @@ const crypto = require('crypto');
 const { generateMarketingTweets, generateAITweet, buildSiteLink } = require('../../marketing/generators');
 const { selectProduct, selectAngle, isDuplicate, getCampaignProduct } = require('../../marketing/scheduler');
 const { getAngles } = require('../../marketing/hooks');
+const { MarketingLogger } = require('../../marketing/logger');
 
 const supabase = createClient(
     process.env.SUPABASE_URL,
@@ -126,7 +127,8 @@ module.exports = async function handler(req, res) {
         }
     } catch (e) { }
 
-    console.log('🚀 Affiliate Revenue Engine v3 starting...');
+    const logger = new MarketingLogger(supabase, 'x_engine');
+    logger.log('Affiliate Revenue Engine v3 starting');
 
     try {
         let targetProduct = null;
@@ -140,7 +142,7 @@ module.exports = async function handler(req, res) {
             targetProduct = campaign.product;
             campaignDetails = campaign.campaign;
             isCampaign = true;
-            console.log(`   🎯 CAMPAIGN product: ${targetProduct.display_name || targetProduct.product_name}`);
+            logger.log('Campaign product found', { name: targetProduct.display_name || targetProduct.product_name, campaign_id: campaignDetails?.id });
         }
 
         // Step 2: Smart product selection (if no campaign)
@@ -164,14 +166,14 @@ module.exports = async function handler(req, res) {
 
         // Step 3: Pick best angle (avoid recently used for this product)
         const angle = selectAngle(getAngles(), usedAngles);
-        console.log(`   📦 ${product.name} | $${product.price} | ${product.category} | Angle: ${angle}`);
+        logger.log('Product selected', { name: product.name, price: product.price, category: product.category, angle, usedAngles });
 
         // Step 4: Generate tweet (AI-first, template fallback)
         let tweetText = await generateAITweet(product, angle, supabase);
 
         // Step 5: Duplicate check
         if (await isDuplicate(supabase, tweetText)) {
-            console.log('   ⚠️ Duplicate detected, regenerating...');
+            logger.warn('Duplicate detected, regenerating with different angle');
             // Try a different angle
             const altAngle = selectAngle(getAngles(), [...usedAngles, angle]);
             tweetText = await generateAITweet(product, altAngle, supabase);
@@ -181,7 +183,7 @@ module.exports = async function handler(req, res) {
         if (!tweetText || tweetText.length < 20) throw new Error('Generated tweet too short');
         if (tweetText.length > 280) tweetText = tweetText.substring(0, 277) + '...';
 
-        console.log(`   📝 Tweet (${tweetText.length} chars):\n${tweetText}`);
+        logger.log('Tweet generated', { chars: tweetText.length, preview: tweetText.substring(0, 80) + '...' });
 
         // Step 6: Upload image
         let mediaId = null;
@@ -192,7 +194,7 @@ module.exports = async function handler(req, res) {
         // Step 7: Post to X
         const tweetResult = await postTweet(tweetText, mediaId);
         const tweetId = tweetResult?.data?.id;
-        console.log(`   ✅ Posted! tweet_id: ${tweetId}${mediaId ? ' (with image)' : ''}`);
+        logger.success('Tweet posted to X', { tweet_id: tweetId, has_image: !!mediaId, chars: tweetText.length });
 
         // Step 8: Save to DB with metadata
         const siteLink = buildSiteLink(product);
@@ -227,6 +229,9 @@ module.exports = async function handler(req, res) {
             } catch (e) { console.log('   Campaign DB error:', e.message); }
         }
 
+        // Save execution log
+        await logger.save();
+
         res.json({
             status: 'success',
             tweetId,
@@ -237,10 +242,11 @@ module.exports = async function handler(req, res) {
             isCampaign,
             charCount: tweetText.length,
             content: tweetText,
+            log: logger.toJSON(),
         });
 
     } catch (err) {
-        console.error('❌ Engine error:', err.message);
+        logger.error('Engine failed', { error: err.message });
         try {
             await supabase.from('x_posts').insert({
                 content: err.message,
@@ -249,6 +255,7 @@ module.exports = async function handler(req, res) {
                 posted_at: new Date().toISOString(),
             });
         } catch (e) { }
-        res.status(500).json({ error: err.message });
+        await logger.save();
+        res.status(500).json({ error: err.message, log: logger.toJSON() });
     }
 };
