@@ -116,40 +116,70 @@ app.get('/robots.txt', (req, res) => {
 const fs = require('fs');
 const USE_CASE_PAGES = {
     '/budget-3d-printers': {
-        title: 'Best Budget 3D Printers Under $300 — Compare Prices',
-        description: 'Find the best affordable 3D printers under $300. Compare prices, ratings, and specs from top brands like Bambu Lab, Creality, and ELEGOO.',
+        title: 'Best Budget 3D Printers Under $300 — Compare Prices 2026',
+        description: 'Find the best affordable 3D printers under $300. Compare prices, ratings, and specs from top brands like Bambu Lab, Creality, and ELEGOO. Updated daily.',
         filters: { category: '3d_printer', max_price: '300' },
-        h1: '🎮 Budget 3D Printers Under $300'
+        h1: '🎮 Budget 3D Printers Under $300',
+        faqs: [
+            { q: 'What is the best 3D printer under $300 in 2026?', a: 'The best budget 3D printers under $300 include models from Bambu Lab, Creality, and ELEGOO. Our comparison tool updates prices daily from Amazon to help you find the best deal.' },
+            { q: 'Can a cheap 3D printer produce good quality prints?', a: 'Yes! Modern budget 3D printers under $300 can produce excellent quality prints. Brands like Creality Ender 3 V3 and Bambu Lab A1 Mini offer professional-level results at affordable prices.' },
+            { q: 'What should I look for in a budget 3D printer?', a: 'Key factors include build volume, print speed, auto bed leveling, filament compatibility, and community support. Our comparison tool lets you filter and sort by all these criteria.' }
+        ]
     },
     '/professional-3d-printers': {
-        title: 'Professional 3D Printers $300+ — Compare Prices',
-        description: 'Compare professional-grade 3D printers starting from $300. High-speed, large format, and multi-material printers for serious makers.',
+        title: 'Professional 3D Printers $300+ — Compare Prices 2026',
+        description: 'Compare professional-grade 3D printers starting from $300. High-speed, large format, and multi-material printers for serious makers. Updated daily.',
         filters: { category: '3d_printer', min_price: '300' },
-        h1: '🏗️ Professional 3D Printers'
+        h1: '🏗️ Professional 3D Printers',
+        faqs: [
+            { q: 'What makes a 3D printer "professional grade"?', a: 'Professional 3D printers typically offer larger build volumes, higher precision, faster print speeds, enclosed chambers for temperature control, and multi-material capability.' },
+            { q: 'Is it worth spending more than $300 on a 3D printer?', a: 'For serious hobbyists and professionals, yes. Printers above $300 offer faster speeds, better reliability, and features like multi-color printing (AMS), enclosed chambers, and larger build volumes.' },
+            { q: 'What are the best professional 3D printer brands?', a: 'Top professional brands include Bambu Lab (P1S, X1C), Prusa (MK4), QIDI, and Creality (K1 series). Compare their latest prices on our site.' }
+        ]
     },
     '/resin-3d-printers': {
-        title: 'Resin 3D Printers — Best MSLA/SLA Printers for Detail',
-        description: 'Compare resin 3D printer prices. Perfect for miniatures, jewelry, and high-detail prints. ELEGOO, Anycubic, Phrozen and more.',
+        title: 'Best Resin 3D Printers 2026 — MSLA/SLA for Detail & Miniatures',
+        description: 'Compare resin 3D printer prices. Perfect for miniatures, jewelry, and high-detail prints. ELEGOO, Anycubic, Phrozen and more. Updated daily.',
         filters: { category: '3d_printer', search: 'resin' },
-        h1: '🎨 Resin 3D Printers'
+        h1: '🎨 Resin 3D Printers',
+        faqs: [
+            { q: 'What is a resin 3D printer used for?', a: 'Resin 3D printers excel at high-detail prints like miniatures, figurines, jewelry, dental models, and prototypes. They use UV-cured liquid resin for incredibly fine detail resolution.' },
+            { q: 'Is resin or FDM better for beginners?', a: 'FDM is generally better for beginners due to easier setup and less post-processing. Resin printers require ventilation, handling of liquid resin, and a wash & cure station.' },
+            { q: 'What is the best resin printer for miniatures?', a: 'Popular choices include ELEGOO Saturn and Mars series, Anycubic Photon, and Phrozen Sonic. The best value depends on build size needs — compare prices on our site.' }
+        ]
     },
     '/3d-pens': {
-        title: '3D Pens — Best 3D Printing Pens for Kids & Adults',
-        description: 'Compare 3D pen prices. Fun and creative 3D drawing tools for kids, students, and artists. Find the best deals on Amazon.',
+        title: '3D Pens — Best 3D Printing Pens for Kids & Adults 2026',
+        description: 'Compare 3D pen prices. Fun and creative 3D drawing tools for kids, students, and artists. Find the best deals on Amazon. Updated daily.',
         filters: { category: '3d_pen' },
-        h1: '✏️ 3D Pens'
+        h1: '✏️ 3D Pens',
+        faqs: [
+            { q: 'What age is appropriate for a 3D pen?', a: 'Most 3D pens are suitable for ages 8+, though some low-temperature models are designed for younger kids (6+). Always supervise younger children as the pen tip can get warm.' },
+            { q: 'What is the difference between a 3D pen and a 3D printer?', a: 'A 3D pen is handheld and you draw freehand in 3D, while a 3D printer builds objects automatically from a digital file. 3D pens are more creative and artistic, while printers are more precise.' },
+            { q: 'What filament do 3D pens use?', a: 'Most 3D pens use standard 1.75mm PLA or ABS filament. PLA is recommended for beginners as it is safer, biodegradable, and produces no harmful fumes.' }
+        ]
     },
     '/filament': {
-        title: '3D Printer Filament & Resin — Compare Material Prices',
-        description: 'Compare prices for PLA, ABS, PETG filament and UV resin. Find the best deals on 3D printing materials from top brands.',
+        title: '3D Printer Filament & Resin — Compare Material Prices 2026',
+        description: 'Compare prices for PLA, ABS, PETG filament and UV resin. Find the best deals on 3D printing materials from top brands. Updated daily.',
         filters: { category: 'filament,resin' },
-        h1: '🧵 3D Printing Materials'
+        h1: '🧵 3D Printing Materials',
+        faqs: [
+            { q: 'What is the best 3D printer filament for beginners?', a: 'PLA is the best filament for beginners. It prints at lower temperatures, does not warp, is biodegradable, and produces no harmful fumes. Brands like HATCHBOX, eSUN, and Polymaker are popular choices.' },
+            { q: 'How much does 3D printer filament cost?', a: 'A standard 1kg spool of PLA filament costs $15-25. PETG is slightly more at $18-30, and specialty filaments like TPU or carbon fiber can cost $25-50 per spool.' },
+            { q: 'What is the difference between PLA, PETG, and ABS?', a: 'PLA is easiest to print and eco-friendly. PETG is stronger and more heat-resistant. ABS is the toughest but requires an enclosed printer and good ventilation. Each has different ideal use cases.' }
+        ]
     },
     '/accessories': {
-        title: '3D Printer Accessories — Tools, Parts & Upgrades',
-        description: 'Compare prices for 3D printer accessories, tools, nozzles, build plates, and upgrades. Find everything you need to improve your 3D printing.',
+        title: '3D Printer Accessories — Tools, Parts & Upgrades 2026',
+        description: 'Compare prices for 3D printer accessories, tools, nozzles, build plates, and upgrades. Find everything you need to improve your 3D printing. Updated daily.',
         filters: { category: 'accessories' },
-        h1: '🔧 3D Printer Accessories'
+        h1: '🔧 3D Printer Accessories',
+        faqs: [
+            { q: 'What accessories do I need for 3D printing?', a: 'Essential accessories include a scraper/putty knife, flush cutters, tweezers, spare nozzles, a build surface (PEI sheet), and filament storage. These help with print removal, maintenance, and quality.' },
+            { q: 'Do I need to buy a 3D printer enclosure?', a: 'An enclosure is recommended if you print with ABS or ASA filaments, as it maintains consistent temperature and reduces warping. For PLA printing, an enclosure is optional but can help in drafty environments.' },
+            { q: 'How often should I replace my 3D printer nozzle?', a: 'A standard brass nozzle should be replaced every 3-6 months with regular use, or sooner if you notice print quality degradation. Hardened steel nozzles last longer but cost more.' }
+        ]
     }
 };
 
@@ -196,9 +226,26 @@ Object.entries(USE_CASE_PAGES).forEach(([route, page]) => {
             `<link rel="canonical" href="https://3d-printer-prices.com${route}">`
         );
 
-        // Inject pre-set filters before app.js loads
-        const filterScript = `<script>window.__PRESET_FILTERS = ${JSON.stringify(page.filters)};</script>`;
-        html = html.replace('</head>', `${filterScript}\n</head>`);
+        // Inject FAQ schema JSON-LD
+        const faqSchema = page.faqs ? JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": page.faqs.map(f => ({
+                "@type": "Question",
+                "name": f.q,
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": f.a
+                }
+            }))
+        }) : null;
+
+        // Inject pre-set filters + FAQ schema before app.js loads
+        let injectScripts = `<script>window.__PRESET_FILTERS = ${JSON.stringify(page.filters)};</script>`;
+        if (faqSchema) {
+            injectScripts += `\n<script type="application/ld+json">${faqSchema}</script>`;
+        }
+        html = html.replace('</head>', `${injectScripts}\n</head>`);
 
         res.send(html);
     });
@@ -2025,7 +2072,6 @@ app.get('/api/admin/schedule', async (req, res) => {
 // GET /blog/:slug — serve blog post as HTML page
 app.get('/blog/:slug', async (req, res, next) => {
     const slug = req.params.slug;
-    // Skip if it looks like a file (has extension)
     if (path.extname(slug)) return next();
 
     try {
@@ -2037,22 +2083,147 @@ app.get('/blog/:slug', async (req, res, next) => {
 
         if (!data) return next();
 
-        // Convert markdown to basic HTML
-        let html = data.content
-            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-            .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-            .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-            .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.+?)\*/g, '<em>$1</em>')
-            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
-            .replace(/^- (.+)$/gm, '<li>$1</li>')
-            .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
-            .replace(/\n\n/g, '</p><p>')
-            .replace(/\n/g, '<br>');
-        html = '<p>' + html + '</p>';
+                // ── Premium Markdown → HTML Engine ──────────────────────────────
+        // Step 1: Normalize line endings
+        let raw = data.content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+        // Step 2: Extract tables to placeholders (before HTML escaping)
+        const tablePlaceholders = [];
+        const mdLines = raw.split('\n');
+        const processed = [];
+        let idx = 0;
+        while (idx < mdLines.length) {
+            if (mdLines[idx].trim().startsWith('|') && idx + 1 < mdLines.length && /^\|[\s\-:|]+\|/.test(mdLines[idx + 1].trim())) {
+                const tableRows = [];
+                while (idx < mdLines.length && mdLines[idx].trim().startsWith('|')) {
+                    tableRows.push(mdLines[idx].trim());
+                    idx++;
+                }
+                const parseRow = (row) => row.replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+                const headers = parseRow(tableRows[0]);
+                const bodyRows = tableRows.slice(2);
+                let tableHtml = '<div style="overflow-x:auto"><table class="blog-table"><thead><tr>' +
+                    headers.map(h => '<th>' + h + '</th>').join('') +
+                    '</tr></thead><tbody>';
+                for (const row of bodyRows) {
+                    const cells = parseRow(row);
+                    tableHtml += '<tr>' + cells.map(c => '<td>' + c + '</td>').join('') + '</tr>';
+                }
+                tableHtml += '</tbody></table></div>';
+                const placeholder = '__TABLE_' + tablePlaceholders.length + '__';
+                tablePlaceholders.push(tableHtml);
+                processed.push(placeholder);
+            } else {
+                processed.push(mdLines[idx]);
+                idx++;
+            }
+        }
+
+        // Step 3: Extract code blocks to placeholders (before escaping)
+        const codePlaceholders = [];
+        let rawText = processed.join('\n');
+        rawText = rawText.replace(/```([\s\S]*?)```/g, (match, inner) => {
+            const ph = '__CODE_' + codePlaceholders.length + '__';
+            codePlaceholders.push('<pre><code>' + inner.replace(/</g, '&lt;').replace(/>/g, '&gt;').trim() + '</code></pre>');
+            return ph;
+        });
+
+        // Step 4: HTML-escape remaining content
+        let html = rawText
+            .replace(/&/g, '&amp;')
+            .replace(/__TABLE_(\d+)__/g, '###TBLPH$1###')
+            .replace(/__CODE_(\d+)__/g, '###CODEPH$1###')
+            .replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/###TBLPH(\d+)###/g, '__TABLE_$1__')
+            .replace(/###CODEPH(\d+)###/g, '__CODE_$1__');
+
+        // Step 5: Convert markdown syntax to HTML
+        // Headings
+        html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+        html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+        html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+
+        // Bold & italic
+        html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+        // Inline code
+        html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+        // Links
+        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+
+        // Blockquotes
+        html = html.replace(/(^&gt; .+$\n?)+/gm, (match) => {
+            const inner = match.replace(/^&gt; /gm, '').trim();
+            return '<blockquote><p>' + inner + '</p></blockquote>';
+        });
+
+        // Horizontal rules
+        html = html.replace(/^---$/gm, '<hr>');
+
+        // Unordered lists (- item)
+        html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+        html = html.replace(/((<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>');
+
+        // Numbered lists (1. item)
+        html = html.replace(/^\d+\. (.+)$/gm, '<oli>$1</oli>');
+        html = html.replace(/((<oli>.*<\/oli>\n?)+)/g, (match) => {
+            return '<ol>' + match.replace(/<oli>/g, '<li>').replace(/<\/oli>/g, '</li>') + '</ol>';
+        });
+
+        // Paragraphs — wrap remaining text blocks
+        html = html.split('\n\n').map(block => {
+            block = block.trim();
+            if (!block) return '';
+            if (block.startsWith('<h') || block.startsWith('<ul') || block.startsWith('<ol') || 
+                block.startsWith('<blockquote') || block.startsWith('<pre') || block.startsWith('<hr') ||
+                block.startsWith('<div') || block.startsWith('__TABLE_') || block.startsWith('__CODE_')) {
+                return block;
+            }
+            return '<p>' + block.replace(/\n/g, '<br>') + '</p>';
+        }).join('\n');
+
+        // Clean up nested tags
         html = html.replace(/<p><h([123])>/g, '<h$1>').replace(/<\/h([123])><\/p>/g, '</h$1>');
         html = html.replace(/<p><ul>/g, '<ul>').replace(/<\/ul><\/p>/g, '</ul>');
+        html = html.replace(/<p><ol>/g, '<ol>').replace(/<\/ol><\/p>/g, '</ol>');
+        html = html.replace(/<p><blockquote>/g, '<blockquote>').replace(/<\/blockquote><\/p>/g, '</blockquote>');
+        html = html.replace(/<p><hr><\/p>/g, '<hr>');
+        html = html.replace(/<p><pre>/g, '<pre>').replace(/<\/pre><\/p>/g, '</pre>');
+
+        // Step 6: Reinsert tables and code blocks
+        for (let t = 0; t < tablePlaceholders.length; t++) {
+            html = html.replace('__TABLE_' + t + '__', tablePlaceholders[t]);
+        }
+        for (let c = 0; c < codePlaceholders.length; c++) {
+            html = html.replace('__CODE_' + c + '__', codePlaceholders[c]);
+        }
+
+        // Step 7: Auto-generate Table of Contents from h2 headings
+        const tocMatches = [...html.matchAll(/<h2>(.+?)<\/h2>/g)];
+        let tocHtml = '';
+        if (tocMatches.length >= 3) {
+            tocHtml = '<nav class="auto-toc"><h4>📋 Table of Contents</h4><ol>';
+            tocMatches.forEach((m, i) => {
+                const id = 'section-' + i;
+                html = html.replace(m[0], '<h2 id="' + id + '">' + m[1] + '</h2>');
+                tocHtml += '<li><a href="#' + id + '">' + m[1].replace(/<[^>]+>/g, '') + '</a></li>';
+            });
+            tocHtml += '</ol></nav>';
+            // Insert TOC after the first h1 or at the start
+            const h1End = html.indexOf('</h1>');
+            if (h1End !== -1) {
+                const insertPos = html.indexOf('</p>', h1End);
+                if (insertPos !== -1 && insertPos - h1End < 500) {
+                    html = html.substring(0, insertPos + 4) + tocHtml + html.substring(insertPos + 4);
+                } else {
+                    html = html.substring(0, h1End + 5) + tocHtml + html.substring(h1End + 5);
+                }
+            } else {
+                html = tocHtml + html;
+            }
+        }
 
         const readTime = Math.max(1, Math.round(data.word_count / 250));
         const pubDate = data.published_at ? new Date(data.published_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
@@ -2104,7 +2275,8 @@ app.get('/blog/:slug', async (req, res, next) => {
         </div>
         <div class="article-body">${html}</div>
         <div class="article-cta">
-            <p>🔍 <strong>Compare all 3D printer prices at <a href="/">3d-printer-prices.com</a></strong></p>
+            <p>🔍 <strong>Ready to find your perfect 3D printer?</strong></p>
+            <a href="/" class="cta-btn">Compare All 3D Printer Prices →</a>
         </div>
     </article>
     <footer class="footer">
@@ -3876,6 +4048,129 @@ app.get('/api/admin/thin-page-audit', async (req, res) => {
 
 // ============================================
 // Cron Routes (proxy to Vercel cron handlers for local dev)
+// ============================================
+// X Auto-Post Admin Endpoints
+// ============================================
+
+// GET/POST /api/admin/system/x-post-status — toggle X auto-post on/off
+app.get('/api/admin/system/x-post-status', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const { data } = await supabase.from('settings').select('value').eq('key', 'x_post_enabled').single();
+        res.json({ enabled: data?.value === 'true' || data?.value === true });
+    } catch (e) {
+        res.json({ enabled: false });
+    }
+});
+
+app.post('/api/admin/system/x-post-status', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const enabled = req.body.enabled ? 'true' : 'false';
+        await supabase.from('settings').upsert({ key: 'x_post_enabled', value: enabled }, { onConflict: 'key' });
+        res.json({ enabled: req.body.enabled });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// GET /api/admin/system/x-post-history — recent X posts
+app.get('/api/admin/system/x-post-history', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const { data } = await supabase.from('x_posts')
+            .select('*')
+            .order('posted_at', { ascending: false })
+            .limit(20);
+        res.json({ posts: data || [] });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// POST /api/admin/generate-x-post — generate tweet with AI
+app.post('/api/admin/generate-x-post', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const { style } = req.body || {};
+        const tweetStyle = style || 'deal';
+
+        // Pick a random top-rated product
+        const { data: products } = await supabase.from('products')
+            .select('amazon_asin, product_name, brand, price, rating, amazon_url')
+            .eq('is_available', true)
+            .not('price', 'is', null)
+            .gte('rating', 4.0)
+            .order('rating', { ascending: false })
+            .limit(20);
+
+        if (!products?.length) return res.status(404).json({ error: 'No products found' });
+        const product = products[Math.floor(Math.random() * products.length)];
+
+        const affiliateTag = process.env.AMAZON_AFFILIATE_TAG || 'kiti09-20';
+        const productLink = `https://3d-printer-prices.com/?search=${encodeURIComponent(product.product_name.split(' ').slice(0, 3).join(' '))}`;
+        const amazonLink = product.amazon_url || `https://www.amazon.com/dp/${product.amazon_asin}?tag=${affiliateTag}`;
+
+        const styles = {
+            deal: `Write a short, exciting deal alert tweet (under 240 chars) for this 3D printer product targeting US hobbyists. Include price, 1-2 hashtags (#3DPrinting #3DPrinter), and this link: ${productLink}`,
+            tip: `Write a helpful tip tweet (under 240 chars) referencing this product. End with: "Find best prices → ${productLink}" and 1-2 hashtags.`,
+            review: `Write a review-style tweet (under 240 chars) highlighting this product's rating. Include 1-2 hashtags and: ${productLink}`,
+        };
+
+        const prompt = `You are a social media manager for a 3D printing deals account.\n\nTask: ${styles[tweetStyle] || styles.deal}\n\nProduct Details:\n- Name: ${product.product_name}\n- Price: $${product.price}\n- Brand: ${product.brand || 'Unknown'}\n- Rating: ${product.rating}/5\n- Link: ${amazonLink}\n\nOutput ONLY the raw tweet text. Under 280 chars total.`;
+
+        let tweetText = '';
+
+        // Try Gemini
+        const { data: geminiSetting } = await supabase.from('settings').select('value').eq('key', 'gemini_api_key').single();
+        if (geminiSetting?.value) {
+            const gRes = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiSetting.value}`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 120 } }),
+                    signal: AbortSignal.timeout(30000),
+                }
+            );
+            if (gRes.ok) {
+                const j = await gRes.json();
+                tweetText = j.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+            }
+        }
+
+        // Fallback to GPT
+        if (!tweetText || tweetText.length < 30) {
+            const { data: openaiSetting } = await supabase.from('settings').select('value').eq('key', 'openai_api_key').single();
+            if (openaiSetting?.value) {
+                const oRes = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openaiSetting.value}` },
+                    body: JSON.stringify({ model: 'gpt-4o-mini', messages: [{ role: 'user', content: prompt }], max_tokens: 120 }),
+                    signal: AbortSignal.timeout(30000),
+                });
+                if (oRes.ok) {
+                    const j = await oRes.json();
+                    tweetText = j.choices?.[0]?.message?.content?.trim() || '';
+                }
+            }
+        }
+
+        // Fallback template
+        if (!tweetText || tweetText.length < 30) {
+            tweetText = `🔥 ${product.product_name.substring(0, 80)} — only $${product.price}!\n\nCheck it out: ${amazonLink}\n\n#3DPrinting #3DPrinter`;
+        }
+
+        res.json({ tweet: tweetText, product: product.product_name, style: tweetStyle });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // ============================================
 const cronTwitterHandler = require('./api/cron/twitter');
 const cronScrapeHandler = require('./api/cron/scrape');

@@ -1,10 +1,6 @@
 /* ============================================
-   Blog Styles
+   Blog Styles — Premium Dynamic Blog Engine
    ============================================ */
-
-/* Logo link inherits from main .logo class in style.css */
-
-/* Nav link styles inherited from main style.css */
 
 /* Blog List */
 .blog-list {
@@ -69,21 +65,227 @@
     color: var(--text-muted);
 }
 
-/* Article Page */
+/* ============================================
+   Article Page — Premium Layout
+   ============================================ */
+
+.blog-article {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: var(--sp-5) var(--sp-6) var(--sp-8);
+}
+
 .article-meta {
     display: flex;
+    flex-wrap: wrap;
     gap: var(--sp-4);
     font-size: 0.8rem;
     color: var(--text-muted);
+    margin-bottom: var(--sp-5);
+    padding-bottom: var(--sp-4);
+    border-bottom: 1px solid var(--border);
 }
 
-/* Product Recommendation Card */
+/* Article Body — Core Typography */
+.article-body {
+    font-size: 1.02rem;
+    line-height: 1.85;
+    color: var(--text-primary, #e0e0e0);
+}
+
+.article-body h1 {
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1.25;
+    margin: 0 0 1.2rem 0;
+    letter-spacing: -0.02em;
+}
+
+.article-body h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin: 2.5rem 0 1rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--accent, #6366f1);
+    color: var(--text-primary, #fff);
+}
+
+.article-body h3 {
+    font-size: 1.12rem;
+    font-weight: 600;
+    margin: 2rem 0 0.75rem 0;
+    color: var(--text-primary, #fff);
+}
+
+.article-body p {
+    margin: 0 0 1.2rem 0;
+}
+
+.article-body a {
+    color: var(--accent, #6366f1);
+    text-decoration: underline;
+    text-decoration-color: rgba(99, 102, 241, 0.3);
+    text-underline-offset: 3px;
+    transition: text-decoration-color 0.2s;
+}
+
+.article-body a:hover {
+    text-decoration-color: var(--accent, #6366f1);
+}
+
+/* Lists */
+.article-body ul,
+.article-body ol {
+    margin: 0 0 1.5rem 0;
+    padding-left: 1.5rem;
+}
+
+.article-body li {
+    margin-bottom: 0.5rem;
+    line-height: 1.7;
+}
+
+.article-body li::marker {
+    color: var(--accent, #6366f1);
+}
+
+/* Auto Table of Contents */
+.auto-toc {
+    background: var(--bg-card, #1a1a2e);
+    border: 1px solid var(--border, #2a2a3e);
+    border-radius: var(--radius, 8px);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.auto-toc h4 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-muted, #888);
+    margin: 0 0 0.6rem 0;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.auto-toc ol {
+    padding-left: 1.25rem;
+    margin: 0;
+    list-style-type: decimal;
+}
+
+.auto-toc li {
+    font-size: 0.88rem;
+    margin-bottom: 0.35rem;
+    line-height: 1.5;
+}
+
+.auto-toc a {
+    color: var(--accent, #6366f1);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.auto-toc a:hover {
+    text-decoration: underline;
+}
+
+/* Blockquotes / Tip Boxes */
+.article-body blockquote {
+    margin: 1.5rem 0;
+    padding: 1rem 1.25rem;
+    border-left: 4px solid var(--accent, #6366f1);
+    background: var(--bg-card, #1a1a2e);
+    border-radius: 0 var(--radius, 8px) var(--radius, 8px) 0;
+    font-style: normal;
+    color: var(--text-secondary, #b0b0b0);
+}
+
+.article-body blockquote p {
+    margin-bottom: 0.5rem;
+}
+
+.article-body blockquote p:last-child {
+    margin-bottom: 0;
+}
+
+/* Callout boxes — :::tip / :::warning / :::info */
+.callout {
+    margin: 1.5rem 0;
+    padding: 1rem 1.25rem;
+    border-radius: var(--radius, 8px);
+    border-left: 4px solid;
+}
+
+.callout-tip {
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.08);
+}
+
+.callout-warning {
+    border-color: #f59e0b;
+    background: rgba(245, 158, 11, 0.08);
+}
+
+.callout-info {
+    border-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.08);
+}
+
+.callout-title {
+    font-weight: 700;
+    font-size: 0.88rem;
+    margin-bottom: 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.callout-tip .callout-title { color: #10b981; }
+.callout-warning .callout-title { color: #f59e0b; }
+.callout-info .callout-title { color: #3b82f6; }
+
+/* Code inline & blocks */
+.article-body code {
+    background: var(--bg-card, #1a1a2e);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.88em;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    color: #e879f9;
+}
+
+.article-body pre {
+    background: var(--bg-card, #1a1a2e);
+    border: 1px solid var(--border, #2a2a3e);
+    border-radius: var(--radius, 8px);
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    font-size: 0.88rem;
+    line-height: 1.6;
+}
+
+.article-body pre code {
+    background: none;
+    padding: 0;
+    color: var(--text-primary, #e0e0e0);
+}
+
+/* Horizontal Rule */
+.article-body hr {
+    border: none;
+    height: 1px;
+    background: var(--border, #2a2a3e);
+    margin: 2.5rem 0;
+}
+
+/* Product Recommendation Card — reusable for any buying guide */
 .product-pick {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: var(--sp-5);
-    margin: var(--sp-5) 0;
+    background: var(--bg-card, #1a1a2e);
+    border: 1px solid var(--border, #2a2a3e);
+    border-radius: var(--radius, 8px);
+    padding: var(--sp-5, 1.25rem);
+    margin: var(--sp-5, 1.25rem) 0;
     position: relative;
 }
 
@@ -94,8 +296,8 @@
     left: 0;
     right: 0;
     height: 3px;
-    background: linear-gradient(90deg, var(--accent), var(--accent-hover));
-    border-radius: var(--radius) var(--radius) 0 0;
+    background: linear-gradient(90deg, var(--accent, #6366f1), var(--accent-hover, #818cf8));
+    border-radius: var(--radius, 8px) var(--radius, 8px) 0 0;
 }
 
 .pick-label {
@@ -104,8 +306,8 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--accent);
-    margin-bottom: var(--sp-2);
+    color: var(--accent, #6366f1);
+    margin-bottom: var(--sp-2, 0.5rem);
 }
 
 .product-pick h4 {
@@ -116,15 +318,15 @@
 .pick-details {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--sp-3);
+    gap: var(--sp-3, 0.75rem);
     font-size: 0.82rem;
-    color: var(--text-muted);
-    margin-bottom: var(--sp-3);
+    color: var(--text-muted, #888);
+    margin-bottom: var(--sp-3, 0.75rem);
 }
 
 .pick-price {
     font-weight: 700;
-    color: var(--success);
+    color: var(--success, #10b981);
 }
 
 .pick-rating {
@@ -133,7 +335,7 @@
 
 .pick-link {
     display: inline-block;
-    background: var(--accent);
+    background: var(--accent, #6366f1);
     color: #fff;
     padding: 0.45rem 1rem;
     border-radius: 999px;
@@ -144,77 +346,176 @@
 }
 
 .pick-link:hover {
-    background: var(--accent-hover);
+    background: var(--accent-hover, #818cf8);
 }
+
+/* Tables — both comparison-table and auto-generated blog-table */
+.comparison-table,
+.blog-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-size: 0.88rem;
+}
+
+.comparison-table th,
+.blog-table th {
+    background: var(--bg-card, #1a1a2e);
+    border: 1px solid var(--border, #2a2a3e);
+    padding: 0.65rem 0.9rem;
+    text-align: left;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--accent, #6366f1);
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.comparison-table td,
+.blog-table td {
+    border: 1px solid var(--border, #2a2a3e);
+    padding: 0.65rem 0.9rem;
+}
+
+.comparison-table tr:hover,
+.blog-table tr:hover {
+    background: var(--accent-glow, rgba(99, 102, 241, 0.05));
+}
+
+.blog-table {
+    display: block;
+    overflow-x: auto;
+}
+.blog-table thead { display: table-header-group; }
+.blog-table tbody { display: table-row-group; }
+.blog-table tr { display: table-row; }
+.blog-table th, .blog-table td { display: table-cell; }
 
 /* Table of Contents */
 .toc {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: var(--sp-4) var(--sp-5);
-    margin-bottom: var(--sp-6);
+    background: var(--bg-card, #1a1a2e);
+    border: 1px solid var(--border, #2a2a3e);
+    border-radius: var(--radius, 8px);
+    padding: var(--sp-4, 1rem) var(--sp-5, 1.25rem);
+    margin-bottom: var(--sp-6, 1.5rem);
 }
 
 .toc h4 {
     font-size: 0.85rem;
-    margin-bottom: var(--sp-2);
-    color: var(--text-muted);
+    margin-bottom: var(--sp-2, 0.5rem);
+    color: var(--text-muted, #888);
 }
 
-.toc ol {
-    padding-left: 1.25rem;
-    margin: 0;
+.toc ol { padding-left: 1.25rem; margin: 0; }
+.toc li { font-size: 0.85rem; margin-bottom: 0.3rem; }
+.toc a { color: var(--accent, #6366f1); text-decoration: none; }
+.toc a:hover { text-decoration: underline; }
+
+/* Article CTA — bottom section */
+.article-cta {
+    margin-top: 2.5rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(139, 92, 246, 0.08));
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    border-radius: var(--radius, 8px);
+    text-align: center;
 }
 
-.toc li {
-    font-size: 0.85rem;
-    margin-bottom: 0.3rem;
+.article-cta p {
+    margin: 0 0 0.75rem 0;
+    font-size: 1.05rem;
 }
 
-.toc a {
-    color: var(--accent);
-    text-decoration: none;
+.article-cta p:last-child {
+    margin-bottom: 0;
 }
 
-.toc a:hover {
-    text-decoration: underline;
-}
-
-/* Comparison Table */
-.comparison-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: var(--sp-5) 0;
-    font-size: 0.85rem;
-}
-
-.comparison-table th {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    padding: 0.6rem 0.8rem;
-    text-align: left;
+.article-cta .cta-btn {
+    display: inline-block;
+    background: var(--accent, #6366f1);
+    color: #fff;
+    padding: 0.65rem 1.75rem;
+    border-radius: 999px;
     font-weight: 600;
+    font-size: 0.95rem;
+    text-decoration: none;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
-.comparison-table td {
-    border: 1px solid var(--border);
-    padding: 0.6rem 0.8rem;
+.article-cta .cta-btn:hover {
+    background: var(--accent-hover, #818cf8);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
 }
 
-.comparison-table tr:hover {
-    background: var(--accent-glow);
+/* Article Wrapper (for static HTML like best-3d-printers-under-300) */
+.article-wrapper {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 1.5rem;
+}
+
+.article-wrapper .article-header h1 {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: 0.75rem;
+}
+
+.article-wrapper .article-content {
+    font-size: 1.02rem;
+    line-height: 1.85;
+}
+
+.article-wrapper .article-content h3 {
+    font-size: 1.12rem;
+    font-weight: 600;
+    margin: 2rem 0 0.75rem 0;
+}
+
+.article-wrapper .article-content p {
+    margin: 0 0 1.2rem 0;
+}
+
+.article-wrapper .article-content ul {
+    margin: 0 0 1.5rem 0;
+    padding-left: 1.5rem;
+}
+
+.article-wrapper .article-content li {
+    margin-bottom: 0.5rem;
+    line-height: 1.7;
 }
 
 /* Responsive */
 @media (max-width: 600px) {
     .blog-list {
-        padding: var(--sp-4);
+        padding: var(--sp-4, 1rem);
     }
 
+    .blog-article {
+        padding: var(--sp-4, 1rem);
+    }
+
+    .article-body h1 {
+        font-size: 1.4rem;
+    }
+
+    .article-body h2 {
+        font-size: 1.15rem;
+    }
+
+    .auto-toc {
+        padding: 1rem;
+    }
 
     .pick-details {
         flex-direction: column;
         gap: 0.3rem;
+    }
+
+    .article-cta {
+        padding: 1rem;
     }
 }
