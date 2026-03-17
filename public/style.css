@@ -3363,3 +3363,33 @@ td.loading {
     grid-template-columns: 1fr;
   }
 }
+
+/* ============================================
+   Trust Banner
+   ============================================ */
+.trust-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: var(--radius-sm);
+  margin: 0 auto 1.5rem;
+  max-width: 700px;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+.trust-badge {
+  font-weight: 600;
+  color: var(--success);
+}
+.trust-divider {
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+@media (max-width: 600px) {
+  .trust-banner { font-size: var(--text-xs); gap: 0.3rem; }
+}

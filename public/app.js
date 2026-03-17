@@ -146,6 +146,7 @@ async function loadStats() {
 
         const elTotal = document.getElementById('stat-total');
         if (elTotal) elTotal.textContent = stats.total?.toLocaleString() || '0';
+        const _statsTotal = stats.total || 0;
 
         const printerCount = (stats.byCategory?.['3d_printer']?.count || 0);
         const elPrinters = document.getElementById('stat-printers');
@@ -164,6 +165,7 @@ async function loadStats() {
                 if (scrapeData.lastScrape) {
                     elUpdated.textContent = timeAgo(scrapeData.lastScrape);
                     elUpdated.title = new Date(scrapeData.lastScrape).toLocaleString();
+                    updateTrustBanner(_statsTotal, scrapeData.lastScrape);
                 } else {
                     elUpdated.textContent = '—';
                 }
@@ -175,6 +177,14 @@ async function loadStats() {
     } catch (err) {
         console.error('Stats error:', err);
     }
+}
+
+// Populate trust banner after stats load
+function updateTrustBanner(total, lastScrape) {
+    const elCount = document.getElementById('trust-product-count');
+    const elAgo = document.getElementById('trust-updated-ago');
+    if (elCount && total) elCount.textContent = total.toLocaleString();
+    if (elAgo && lastScrape) elAgo.textContent = timeAgo(lastScrape);
 }
 
 function timeAgo(dateStr) {
@@ -392,7 +402,7 @@ async function loadProducts() {
                         </div>
                         
                         <div class="action-buttons">
-                            <a href="${affiliateUrl(p.amazon_url)}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-full">Check Price</a>
+                            <a href="${affiliateUrl(p.amazon_url)}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-full">Check on Amazon</a>
                             <label class="btn btn-secondary btn-full compare-btn ${compareList.some(c => c.id === p.id) ? 'active' : ''}">
                                 <input type="checkbox" class="sr-only" onchange="toggleCompare('${p.id}', this.dataset.name, this.dataset.image, ${p.price || 0}, this.dataset.url); this.parentElement.classList.toggle('active', this.checked);" data-name="${escapeHtml(p.display_name || p.product_name)}" data-image="${p.image_url || ''}" data-url="${p.amazon_url}" ${compareList.some(c => c.id === p.id) ? 'checked' : ''}>
                                 ${compareList.some(c => c.id === p.id) ? '✓ Added' : '➕ Compare'}
