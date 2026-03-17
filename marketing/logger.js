@@ -58,30 +58,16 @@ class MarketingLogger {
     }
 
     /**
-     * Save the complete execution log to Supabase
-     * Stored as an x_posts entry with status='log'
+     * Finalize the log — console output only (no DB pollution)
      */
     async save() {
         const duration = Date.now() - this.startTime;
         const hasErrors = this.entries.some(e => e.level === 'error');
-        const summary = this.entries.map(e => `[${e.level.toUpperCase()}] ${e.message}`).join('\n');
-
-        try {
-            await this.supabase.from('x_posts').insert({
-                content: summary.substring(0, 1000),
-                status: hasErrors ? 'error_log' : 'run_log',
-                error_message: hasErrors ? this.entries.filter(e => e.level === 'error').map(e => e.message).join('; ') : null,
-                posted_at: new Date().toISOString(),
-            });
-        } catch (e) {
-            console.error('Failed to save log:', e.message);
-        }
-
+        console.log(`   📋 Log: ${this.entries.length} entries, ${duration}ms, ${hasErrors ? 'HAS ERRORS' : 'OK'}`);
         return {
             duration_ms: duration,
             entries: this.entries.length,
             has_errors: hasErrors,
-            summary,
         };
     }
 

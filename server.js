@@ -4083,6 +4083,7 @@ app.get('/api/admin/system/x-post-history', async (req, res) => {
     try {
         const { data } = await supabase.from('x_posts')
             .select('*')
+            .in('status', ['posted', 'failed'])
             .order('posted_at', { ascending: false })
             .limit(20);
         res.json({ posts: data || [] });

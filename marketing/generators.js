@@ -35,17 +35,32 @@ function assembleTweet(parts, link) {
         tweet += '\n\n' + link;
     }
     
-    // Add hashtag if there's room
-    const hashtags = ['#3DPrinting', '#3DPrinter', '#3Dprint', '#Makers', '#AdditiveManufacturing'];
-    const hashtag = hashtags[Math.floor(Math.random() * 3)]; // bias toward top 3
-    if (tweet.length + hashtag.length + 2 <= 280) {
-        tweet += '\n\n' + hashtag;
+    // Add 3-5 hashtags
+    const allHashtags = [
+        '#3DPrinting', '#3DPrinter', '#3Dprint', '#Makers',
+        '#AdditiveManufacturing', '#3DPrintingCommunity', '#MakerSpace',
+        '#FDM', '#Resin3D', '#PrinterDeals', '#3DPrintLife',
+    ];
+    // Shuffle and pick 3-5
+    const shuffled = [...allHashtags].sort(() => Math.random() - 0.5);
+    let hashtagStr = '';
+    let count = 0;
+    for (const tag of shuffled) {
+        const candidate = hashtagStr ? hashtagStr + ' ' + tag : tag;
+        if (tweet.length + 2 + candidate.length <= 280 && count < 5) {
+            hashtagStr = candidate;
+            count++;
+        }
+        if (count >= 3 && tweet.length + 2 + hashtagStr.length > 260) break; // stop if tight
+    }
+    if (hashtagStr) {
+        tweet += '\n\n' + hashtagStr;
     }
 
     // Hard truncate safety
     if (tweet.length > 280) {
-        // Try removing hashtag
-        tweet = tweet.replace(/\n\n#\w+$/g, '');
+        // Remove last hashtag if over limit
+        tweet = tweet.replace(/ #\w+$/, '');
     }
     if (tweet.length > 280) {
         tweet = tweet.substring(0, 277) + '...';
@@ -179,7 +194,7 @@ RULES:
 - Sound like a real maker, not a bot
 - No excessive emojis (max 2)
 - No misleading claims
-- Include exactly 1 hashtag
+- Include 3-5 hashtags (e.g. #3DPrinting #3DPrinter #Makers)
 - Output ONLY the tweet text, no quotes or labels
 
 Write the tweet now:`;
