@@ -43,7 +43,7 @@ const SEARCHES = [
     { query: '3D+pen', category: '3d_pen', productType: '3d_pen' },
 ];
 
-const AFFILIATE_TAG = 'kiti09-20';
+const AFFILIATE_TAG = process.env.AMAZON_AFFILIATE_TAG || 'kiti09-20';
 
 function parsePrice(text) {
     if (!text) return null;

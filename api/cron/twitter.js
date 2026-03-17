@@ -19,7 +19,7 @@ const X_ACCESS_TOKEN = process.env.X_ACCESS_TOKEN;
 const X_ACCESS_TOKEN_SECRET = process.env.X_ACCESS_TOKEN_SECRET;
 
 // Affiliate tag
-const AFFILIATE_TAG = process.env.AMAZON_AFFILIATE_TAG || 'diskprices03-20';
+const AFFILIATE_TAG = process.env.AMAZON_AFFILIATE_TAG || 'kiti09-20';
 
 // ─── OAuth 1.0a Signature Helper ─────────────────────────────────────────────
 function oauthSign(method, url, params, consumerSecret, tokenSecret) {

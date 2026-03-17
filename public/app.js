@@ -281,24 +281,23 @@ async function loadFeaturedCampaigns() {
 }
 
 // ============================================
-// Load Products
+// Load Products (Modern Grid Cards)
 // ============================================
 async function loadProducts() {
     const tbody = document.getElementById('products-body');
-    // Skeleton loading — 6 placeholder rows with shimmer
+    // Skeleton loading — 6 placeholder cards with shimmer
+    tbody.classList.add('product-grid');
     tbody.innerHTML = Array.from({ length: 6 }, () => `
-        <tr class="skeleton-row">
-            <td class="product-name"><div style="display:flex;align-items:center;gap:1rem;">
-                <div class="skeleton-box" style="width:50px;height:50px;border-radius:8px;"></div>
-                <div style="flex:1;"><div class="skeleton-box" style="width:80%;height:14px;margin-bottom:6px;"></div><div class="skeleton-box" style="width:50%;height:10px;"></div></div>
-            </div></td>
-            <td><div class="skeleton-box" style="width:60px;height:14px;"></div></td>
-            <td><div class="skeleton-box" style="width:50px;height:14px;"></div></td>
-            <td><div class="skeleton-box" style="width:70px;height:14px;"></div></td>
-            <td><div class="skeleton-box" style="width:40px;height:14px;"></div></td>
-            <td><div class="skeleton-box" style="width:40px;height:14px;"></div></td>
-            <td><div class="skeleton-box" style="width:80px;height:28px;border-radius:4px;"></div></td>
-        </tr>
+        <div class="product-card skeleton-card">
+            <div class="skeleton-box" style="width:100%;height:180px;border-radius:8px 8px 0 0;"></div>
+            <div style="padding:1rem;">
+                <div class="skeleton-box" style="width:80%;height:16px;margin-bottom:8px;"></div>
+                <div class="skeleton-box" style="width:50%;height:12px;margin-bottom:16px;"></div>
+                <div class="skeleton-box" style="width:100%;height:1px;margin-bottom:16px;"></div>
+                <div class="skeleton-box" style="width:40%;height:24px;margin-bottom:16px;"></div>
+                <div class="skeleton-box" style="width:100%;height:36px;border-radius:6px;"></div>
+            </div>
+        </div>
     `).join('');
 
     try {
@@ -324,72 +323,84 @@ async function loadProducts() {
         document.getElementById('result-count').textContent = `${totalProducts.toLocaleString()} products found`;
 
         if (!data || data.length === 0) {
+            tbody.classList.remove('product-grid');
             tbody.innerHTML = `
-                <tr>
-                    <td colspan="7">
-                        <div class="empty-state">
-                            <span class="empty-icon">🔍</span>
-                            <h3>No matches found</h3>
-                            <p>We couldn't find any products matching your current filter combination.</p>
-                            <button class="btn btn-primary" onclick="document.getElementById('clear-filters').click()">Clear All Filters</button>
-                        </div>
-                    </td>
-                </tr>
+                <div class="empty-state">
+                    <span class="empty-icon">🔍</span>
+                    <h3>No matches found</h3>
+                    <p>We couldn't find any products matching your current filter combination.</p>
+                    <button class="btn btn-primary" onclick="document.getElementById('clear-filters').click()">Clear All Filters</button>
+                </div>
             `;
             return;
         }
 
+        tbody.classList.add('product-grid');
         tbody.innerHTML = data.map(p => `
-            <tr>
-                <td class="product-name">
-                    <a href="/product.html?id=${p.id}" class="product-name-link">
-                        <img
-                            src="${p.image_url || ''}"
-                            alt="${escapeHtml(p.display_name || p.product_name)}"
-                            class="product-thumb"
-                            loading="lazy"
-                            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
-                        />
-                        <span class="product-thumb-fallback" style="display:${p.image_url ? 'none' : 'flex'}">
-                            ${p.category === 'filament' ? '🧵' : p.category === 'resin' ? '💧' : p.category === '3d_pen' ? '✏️' : p.category === 'accessories' ? '🔧' : '🖨️'}
-                        </span>
-                        <div style="display:flex; flex-direction:column; gap:0.25rem;">
-                            <span class="product-title-text">${escapeHtml(p.display_name || p.product_name)}</span>
-                            ${p.labels && p.labels.length > 0 ? `
-                            <div class="ai-badges">
-                                ${p.labels.map(l => `<span class="${l.toLowerCase().includes('beginner') ? 'badge-beginner' : 'badge-feature'}">${escapeHtml(l)}</span>`).join('')}
-                            </div>
-                            ` : ''}
-                            <div style="margin-top: 0.5rem; display: flex; gap: var(--sp-2); align-items: center; flex-wrap: wrap;">
-                                <a href="${affiliateUrl(p.amazon_url)}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm" onclick="event.stopPropagation()">Check Price</a>
-                                <a href="/product.html?id=${p.id}" class="btn btn-secondary btn-sm" onclick="event.stopPropagation()">View Details</a>
-                            </div>
+            <div class="product-card">
+                <a href="/product.html?id=${p.id}" class="card-image-link">
+                    <img
+                        src="${p.image_url || ''}"
+                        alt="${escapeHtml(p.display_name || p.product_name)}"
+                        class="product-thumb"
+                        loading="lazy"
+                        onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+                    />
+                    <span class="product-thumb-fallback" style="display:${p.image_url ? 'none' : 'flex'}">
+                        ${p.category === 'filament' ? '🧵' : p.category === 'resin' ? '💧' : p.category === '3d_pen' ? '✏️' : p.category === 'accessories' ? '🔧' : '🖨️'}
+                    </span>
+                    ${p.condition === 'new' ? '' : `<span class="condition-badge condition-${p.condition}">♻️ Used</span>`}
+                </a>
+                
+                <div class="card-content">
+                    <div class="card-meta">
+                        <span class="brand-name">${p.brand ? escapeHtml(p.brand) : 'Generic'}</span>
+                        <div class="rating-mini">
+                            ${formatRating(p.rating, p.review_count)}
                         </div>
-                    </a>
-                    <div style="margin-top:0.5rem; margin-left: calc(60px + 1rem); /* align with text */">
-                        <label class="compare-checkbox-label" style="display:inline-flex; align-items:center; gap:0.3rem; font-size:0.75rem; color:var(--text-muted); cursor:pointer; font-weight: 500;">
-                            <input type="checkbox" onchange="toggleCompare('${p.id}', this.dataset.name, this.dataset.image, ${p.price || 0}, this.dataset.url)" data-name="${escapeHtml(p.display_name || p.product_name)}" data-image="${p.image_url || ''}" data-url="${p.amazon_url}" ${compareList.some(c => c.id === p.id) ? 'checked' : ''}>
-                            ➕ Compare
-                        </label>
                     </div>
-                </td>
-                <td>${p.brand ? `<span class="brand-badge">${escapeHtml(p.brand)}</span>` : '—'}</td>
-                <td class="price-cell">
-                    $${p.price?.toFixed(2) || '—'}
-                    ${p.original_price && p.discount_percent ? `<br><span class="orig-price">$${p.original_price.toFixed(2)}</span> <span class="discount-badge">-${p.discount_percent}%</span>` : ''}
-                </td>
-                <td>${p.build_volume ? escapeHtml(p.build_volume) : '—'}</td>
-                <td class="rating-cell">
-                    ${formatRating(p.rating, p.review_count)}
-                    ${p.beginner_score ? `<br><span class="beginner-score">Beg. Score: ${p.beginner_score}/10</span>` : ''}
-                </td>
-                <td><span class="type-badge">${escapeHtml(
-                    p.category === '3d_printer' 
-                        ? (p.printer_type && p.printer_type !== 'Unknown' ? p.printer_type : 'FDM / Resin')
-                        : (p.category ? p.category.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase()) : formatType(p.product_type))
-                )}</span></td>
-                <td><span class="condition-${p.condition}">${p.condition === 'new' ? '✨ New' : '♻️ Used'}</span></td>
-            </tr>
+                    
+                    <h3 class="product-title">
+                        <a href="/product.html?id=${p.id}">${escapeHtml(p.display_name || p.product_name)}</a>
+                    </h3>
+
+                    ${p.labels && p.labels.length > 0 ? `
+                    <div class="ai-badges">
+                        ${p.labels.map(l => `<span class="${l.toLowerCase().includes('beginner') ? 'badge-beginner' : 'badge-feature'}">${escapeHtml(l)}</span>`).join('')}
+                    </div>
+                    ` : '<div class="ai-badges-placeholder"></div>'}
+
+                    <div class="specs-grid">
+                        <div class="spec-item">
+                            <span class="spec-label">Type</span>
+                            <span class="spec-val">${escapeHtml(
+                                p.category === '3d_printer' 
+                                    ? (p.printer_type && p.printer_type !== 'Unknown' ? p.printer_type : 'FDM')
+                                    : (p.category ? p.category.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase()) : formatType(p.product_type))
+                            )}</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Build Vol.</span>
+                            <span class="spec-val" title="${escapeHtml(p.build_volume)}">${p.build_volume ? escapeHtml(p.build_volume) : '—'}</span>
+                        </div>
+                    </div>
+
+                    <div class="card-footer">
+                        <div class="price-block">
+                            <div class="current-price">$${p.price?.toFixed(2) || '—'}</div>
+                            ${p.original_price && p.discount_percent ? `<div class="orig-price-row"><span class="orig-price">$${p.original_price.toFixed(2)}</span> <span class="discount-badge">-${p.discount_percent}%</span></div>` : ''}
+                        </div>
+                        
+                        <div class="action-buttons">
+                            <a href="${affiliateUrl(p.amazon_url)}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-full">Check Price</a>
+                            <label class="btn btn-secondary btn-full compare-btn ${compareList.some(c => c.id === p.id) ? 'active' : ''}">
+                                <input type="checkbox" class="sr-only" onchange="toggleCompare('${p.id}', this.dataset.name, this.dataset.image, ${p.price || 0}, this.dataset.url); this.parentElement.classList.toggle('active', this.checked);" data-name="${escapeHtml(p.display_name || p.product_name)}" data-image="${p.image_url || ''}" data-url="${p.amazon_url}" ${compareList.some(c => c.id === p.id) ? 'checked' : ''}>
+                                ${compareList.some(c => c.id === p.id) ? '✓ Added' : '➕ Compare'}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
         `).join('');
 
         // Pagination
@@ -400,7 +411,7 @@ async function loadProducts() {
 
     } catch (err) {
         console.error('Products error:', err);
-        tbody.innerHTML = '<tr><td colspan="7" class="loading">Error loading products</td></tr>';
+        tbody.innerHTML = '<div class="loading" style="grid-column: 1/-1; text-align: center; padding: 2rem;">Error loading products</div>';
     }
 }
 

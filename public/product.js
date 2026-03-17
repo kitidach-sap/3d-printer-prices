@@ -261,20 +261,25 @@ async function fetchAlternatives(currentProduct) {
                 document.getElementById('alternatives-section').style.display = 'block';
                 const grid = document.getElementById('alternatives-grid');
                 grid.innerHTML = alts.map(p => `
-                    <a href="/product.html?id=${p.id}" class="product-card" style="text-decoration:none;">
-                        <div class="product-thumb">
-                            <img src="${p.image_url}" alt="${escapeHtml(p.product_name)}" loading="lazy" onerror="this.style.display='none'">
-                        </div>
-                        <div class="product-info">
-                            <h3 class="product-title" style="-webkit-line-clamp: 2;">${escapeHtml(p.product_name)}</h3>
-                            <div class="product-price">
-                                <span class="price-current">$${p.price.toFixed(2)}</span>
+                    <div class="product-card">
+                        <a href="/product.html?id=${p.id}" class="card-image-link" title="${escapeHtml(p.product_name)}">
+                            <img src="${p.image_url}" alt="${escapeHtml(p.product_name)}" class="product-thumb" loading="lazy" onerror="this.style.display='none'">
+                        </a>
+                        <div class="card-content">
+                            <div class="card-meta">
+                                <span class="brand-name">${p.brand ? escapeHtml(p.brand) : 'Generic'}</span>
+                                <div class="rating-mini">${p.rating ? '⭐ ' + p.rating.toFixed(1) : ''}</div>
                             </div>
-                            <div class="product-meta" style="margin-top:0.5rem; color:var(--text-muted); font-size:0.8rem;">
-                                ${p.rating ? '⭐ ' + p.rating.toFixed(1) : ''} ${p.brand ? '<span class="sep">|</span> ' + escapeHtml(p.brand) : ''}
+                            <h3 class="product-title">
+                                <a href="/product.html?id=${p.id}">${escapeHtml(p.product_name)}</a>
+                            </h3>
+                            <div class="card-footer" style="margin-top: auto;">
+                                <div class="price-block">
+                                    <div class="current-price">$${p.price.toFixed(2)}</div>
+                                </div>
                             </div>
                         </div>
-                    </a>
+                    </div>
                 `).join('');
             }
         }

@@ -72,8 +72,22 @@ async function fetchWithRetry(url, options = {}, retries = SITE_CONFIG.scraper.m
     }
 }
 // Middleware
-app.use(cors());
-app.use(express.json());
+const ALLOWED_ORIGINS = [
+    'https://3d-printer-prices.com',
+    'https://www.3d-printer-prices.com',
+    'http://localhost:3000',
+    'http://localhost:5173',
+];
+app.use(cors({
+    origin: function (origin, callback) {
+        // Allow requests with no origin (server-to-server, cron, curl)
+        if (!origin) return callback(null, true);
+        if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+        callback(new Error('CORS not allowed from: ' + origin));
+    },
+    credentials: true,
+}));
+app.use(express.json({ limit: '10mb' }));
 
 // Request logging
 app.use((req, res, next) => {
@@ -384,11 +398,14 @@ app.get('/api/scrape-status', async (req, res) => {
 // ============================================
 let scraperRunning = false;
 
-const ADMIN_KEY_DEFAULT = '3dprinter-admin-2026';
-
 function verifyAdmin(req, res) {
     const adminKey = req.headers['x-admin-key'] || req.query.key;
-    const expectedKey = process.env.ADMIN_KEY || ADMIN_KEY_DEFAULT;
+    const expectedKey = process.env.ADMIN_KEY;
+    if (!expectedKey) {
+        console.error('[SECURITY] ADMIN_KEY env var is not set — all admin requests will be rejected');
+        res.status(500).json({ error: 'Server misconfiguration — ADMIN_KEY not set' });
+        return false;
+    }
     if (adminKey !== expectedKey) {
         res.status(401).json({ error: 'Unauthorized — invalid admin key' });
         return false;
@@ -413,7 +430,7 @@ const SCRAPE_SEARCHES = [
     { query: '3D+pen', category: '3d_pen', productType: '3d_pen', label: '3D Pen' },
 ];
 
-const AFFILIATE_TAG = 'kiti09-20';
+const AFFILIATE_TAG = process.env.AMAZON_AFFILIATE_TAG || 'kiti09-20';
 let SCRAPER_API_KEY = process.env.SCRAPER_API_KEY || '';
 
 // Load saved API key from Supabase on startup
@@ -777,6 +794,7 @@ async function runLightScrape(filterCategories = null, maxPerQuery = 30) {
 
 // GET /api/admin/scraper-mode — check scraper configuration
 app.get('/api/admin/scraper-mode', (req, res) => {
+    if (!verifyAdmin(req, res)) return;
     const masked = SCRAPER_API_KEY
         ? SCRAPER_API_KEY.slice(0, 8) + '••••••' + SCRAPER_API_KEY.slice(-4)
         : '';
@@ -3768,6 +3786,7 @@ app.post('/api/notes/:id/upvote', async (req, res) => {
 
 // Admin: list pending notes for moderation
 app.get('/api/admin/notes/pending', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
     try {
         const { data, error } = await supabase.from('product_notes')
             .select('*, product:products(id, display_name, product_name)')
@@ -3782,6 +3801,7 @@ app.get('/api/admin/notes/pending', async (req, res) => {
 
 // Admin: approve/reject a note
 app.patch('/api/admin/notes/:id', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
     try {
         const { is_approved } = req.body;
         if (is_approved) {
@@ -3799,6 +3819,7 @@ app.patch('/api/admin/notes/:id', async (req, res) => {
 // THIN PAGE AUDIT (Automated)
 // ============================================
 app.get('/api/admin/thin-page-audit', async (req, res) => {
+    if (!verifyAdmin(req, res)) return;
     try {
         const { data: products, error } = await supabase.from('products')
             .select('id, product_name, display_name, brand, price, rating, review_count, category, printer_type, specs_json, beginner_score, labels, tags, image_url');
@@ -3863,21 +3884,21 @@ const cronBlogHandler = require('./api/cron/blog');
 app.all('/api/cron/twitter', (req, res) => {
     // Inject admin key from query or header for local dev compatibility
     if (!req.headers['authorization'] && !req.headers['x-admin-key'] && !req.query.key) {
-        req.headers['x-admin-key'] = process.env.ADMIN_KEY || ADMIN_KEY_DEFAULT;
+        req.headers['x-admin-key'] = process.env.ADMIN_KEY || '';
     }
     cronTwitterHandler(req, res);
 });
 
 app.all('/api/cron/scrape', (req, res) => {
     if (!req.headers['authorization'] && !req.headers['x-admin-key'] && !req.query.key) {
-        req.headers['x-admin-key'] = process.env.ADMIN_KEY || ADMIN_KEY_DEFAULT;
+        req.headers['x-admin-key'] = process.env.ADMIN_KEY || '';
     }
     cronScrapeHandler(req, res);
 });
 
 app.all('/api/cron/blog', (req, res) => {
     if (!req.headers['authorization'] && !req.headers['x-admin-key'] && !req.query.key) {
-        req.headers['x-admin-key'] = process.env.ADMIN_KEY || ADMIN_KEY_DEFAULT;
+        req.headers['x-admin-key'] = process.env.ADMIN_KEY || '';
     }
     cronBlogHandler(req, res);
 });

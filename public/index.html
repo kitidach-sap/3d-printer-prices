@@ -222,25 +222,10 @@
         </div>
       </div>
 
-      <div class="table-container">
-        <table id="products-table">
-          <thead>
-            <tr>
-              <th scope="col" class="sortable" data-sort="product_name">Product</th>
-              <th scope="col" class="sortable" data-sort="brand">Brand</th>
-              <th scope="col" class="sortable" data-sort="price">Price</th>
-              <th scope="col">Build Volume</th>
-              <th scope="col" class="sortable" data-sort="rating">Rating</th>
-              <th scope="col">Type</th>
-              <th scope="col">Condition</th>
-            </tr>
-          </thead>
-          <tbody id="products-body">
-            <tr>
-              <td colspan="7" class="loading">Loading products...</td>
-            </tr>
-          </tbody>
-        </table>
+      <div id="products-body" class="product-grid">
+        <div class="loading" style="padding: 3rem; text-align: center; width: 100%;">
+          Loading products...
+        </div>
       </div>
 
       <!-- Ad: In-Feed (between table and pagination) -->
