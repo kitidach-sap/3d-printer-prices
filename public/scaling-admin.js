@@ -15,7 +15,8 @@
     // ═══════════════════════════════════════════════════════════════════════════
 
     function adminKey() {
-        return localStorage.getItem('admin_key') || '';
+        // adminKey is a global var set by admin.html's inline login script
+        return window.adminKey || '';
     }
     function hdr() {
         return { 'Content-Type': 'application/json', 'x-admin-key': adminKey() };
