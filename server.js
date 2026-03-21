@@ -4379,6 +4379,115 @@ app.get('/api/admin/analytics/boost-log', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// ADMIN SCALING ENDPOINTS — Full Auto Scaling System
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// GET /api/admin/scaling/overview — full scaling state
+app.get('/api/admin/scaling/overview', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const scaling = require('./revenue/scaling');
+        const decay = require('./revenue/decay');
+        const result = await scaling.getScalingCandidates(supabase);
+        res.json({
+            ...result,
+            decay: decay.getDecayState(),
+            scaling_log: scaling.getScalingLog(),
+        });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/scaling/products — product scaling candidates
+app.get('/api/admin/scaling/products', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const scaling = require('./revenue/scaling');
+        const data = await scaling.getScalingCandidates(supabase);
+        const rising = await scaling.getRisingItems(supabase);
+        res.json({
+            products: data.products,
+            rising,
+            mode: data.mode,
+            dry_run: data.dry_run,
+        });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/scaling/articles — article scaling + cluster analysis
+app.get('/api/admin/scaling/articles', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const scaling = require('./revenue/scaling');
+        const data = await scaling.getScalingCandidates(supabase);
+        // Cluster summary
+        const clusters = {};
+        data.articles.forEach(a => {
+            const c = a.cluster;
+            if (!clusters[c]) clusters[c] = { cluster: c, articles: 0, winners: 0, avg_ctr: 0, total_clicks: 0 };
+            clusters[c].articles++;
+            if (a.verdict === 'winner') clusters[c].winners++;
+            clusters[c].total_clicks += a.clicks;
+            clusters[c].avg_ctr += a.ctr;
+        });
+        Object.values(clusters).forEach(c => { c.avg_ctr = Math.round(c.avg_ctr / c.articles * 100) / 100; });
+        res.json({
+            articles: data.articles,
+            clusters: Object.values(clusters).sort((a, b) => b.total_clicks - a.total_clicks),
+            blog_recommendations: data.recommendations.filter(r => r.type === 'article' || r.type === 'blog_cluster'),
+        });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/scaling/variants — CTA/urgency/badge scaling
+app.get('/api/admin/scaling/variants', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const scaling = require('./revenue/scaling');
+        const data = await scaling.getScalingCandidates(supabase);
+        res.json({
+            variants: data.variants,
+            x_posts: data.x_posts,
+            variant_recommendations: data.recommendations.filter(r =>
+                ['urgency', 'position', 'badge', 'x_hook', 'x_angle', 'x_cta'].includes(r.type)
+            ),
+        });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/scaling/campaigns — campaign scaling state
+app.get('/api/admin/scaling/campaigns', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const scaling = require('./revenue/scaling');
+        const data = await scaling.getScalingCandidates(supabase);
+        res.json({
+            campaigns: data.campaigns,
+            campaign_recommendations: data.recommendations.filter(r => r.type === 'campaign'),
+        });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/scaling/sources — source intent rankings
+app.get('/api/admin/scaling/sources', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const sourceOptimizer = require('./revenue/sourceOptimizer');
+        const rankings = await sourceOptimizer.getSourceRankings(supabase);
+        const behavior = await sourceOptimizer.getSourceBehavior(supabase);
+        res.json({
+            source_rankings: rankings,
+            source_behavior: behavior,
+        });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/trending — public trending product IDs (for frontend badge)
 app.get('/api/trending', async (req, res) => {
     try {

@@ -15,6 +15,12 @@ const config = require('./config');
 const winners = require('./winners');
 const analytics = require('./analytics');
 
+// Lazy-loaded to avoid circular deps
+let _scaling = null;
+let _decay = null;
+function getScaling() { if (!_scaling) _scaling = require('./scaling'); return _scaling; }
+function getDecay() { if (!_decay) _decay = require('./decay'); return _decay; }
+
 // In-memory cache (recalculated periodically)
 let _cache = null;
 let _cacheTime = 0;
@@ -80,8 +86,70 @@ async function getBoosts(supabase, forceRefresh = false) {
         const campaign_boosts = computeCampaignBoosts(campaignWinners);
         const x_post_weights = computeXPostWeights(xWinners);
 
+        // ─── SCALING BRIDGE: layer scaling weights on top ───
+        let scalingApplied = false;
+        let scalingStats = { products: 0, variants: 0, x: 0, campaigns: 0, decayed: 0 };
+        try {
+            const scalingWeights = await getScaling().getScalingWeights(supabase);
+            
+            // Apply product scaling weights (stack with base boost, cap at MAX_COMBINED_WEIGHT)
+            if (Object.keys(scalingWeights.products).length > 0) {
+                Object.entries(scalingWeights.products).forEach(([name, sw]) => {
+                    if (products[name]) {
+                        const combined = Math.min(config.MAX_COMBINED_WEIGHT, products[name].rank_weight * sw);
+                        products[name].rank_weight = Math.round(combined * 100) / 100;
+                        products[name].scaling_applied = sw;
+                        scalingStats.products++;
+                    } else if (sw > 1.0) {
+                        // Scaling promotes a product not yet boosted by base system
+                        products[name] = {
+                            rank_weight: Math.min(config.MAX_COMBINED_WEIGHT, sw),
+                            badge: null,
+                            reason: `Scaling: weight ${sw}`,
+                            scaling_applied: sw,
+                        };
+                        scalingStats.products++;
+                    }
+                });
+            }
+
+            // Apply variant scaling weights
+            Object.entries(scalingWeights.variants || {}).forEach(([name, sw]) => {
+                if (urgency_weights[name]) {
+                    urgency_weights[name] = Math.min(config.MAX_COMBINED_WEIGHT, urgency_weights[name] * sw);
+                    scalingStats.variants++;
+                }
+            });
+
+            // Apply X post scaling weights
+            ['hooks', 'angles', 'ctas'].forEach(dim => {
+                Object.entries((scalingWeights.x || {})[dim] || {}).forEach(([name, sw]) => {
+                    if (x_post_weights[dim]) {
+                        x_post_weights[dim][name] = Math.min(config.MAX_COMBINED_WEIGHT,
+                            (x_post_weights[dim][name] || 1.0) * sw);
+                        scalingStats.x++;
+                    }
+                });
+            });
+
+            // Apply campaign scaling weights
+            Object.entries(scalingWeights.campaigns || {}).forEach(([pid, sw]) => {
+                if (campaign_boosts[pid]) {
+                    campaign_boosts[pid].weight = Math.min(config.MAX_COMBINED_WEIGHT, campaign_boosts[pid].weight * sw);
+                    scalingStats.campaigns++;
+                }
+            });
+
+            scalingApplied = Object.values(scalingStats).some(v => v > 0);
+        } catch (scalingErr) {
+            // Scaling failure is non-fatal — base boosts still work
+            console.log('Scaling bridge error (non-fatal):', scalingErr.message);
+        }
+
         _cache = {
             generated_at: new Date().toISOString(),
+            scaling_applied: scalingApplied,
+            scaling_stats: scalingStats,
             products,
             urgency_weights,
             position_weights,
@@ -137,7 +205,8 @@ async function getBoosts(supabase, forceRefresh = false) {
         });
 
         // Console summary for Vercel logs
-        console.log(`💰 Boost computed: ${prodBoosts} products, ${urgBoosts} urgency, ${badgeCount} badges, ${campCount} campaigns`);
+        const scalingInfo = scalingApplied ? ` | Scaling: ${scalingStats.products}p ${scalingStats.variants}v ${scalingStats.x}x ${scalingStats.campaigns}c` : '';
+        console.log(`💰 Boost computed: ${prodBoosts} products, ${urgBoosts} urgency, ${badgeCount} badges, ${campCount} campaigns${scalingInfo}`);
     } catch (e) {
         console.log('Boost computation error:', e.message);
         _cache = _cache || getEmptyBoosts();
