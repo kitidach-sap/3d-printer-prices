@@ -20,6 +20,35 @@ let _cache = null;
 let _cacheTime = 0;
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// BOOST DECISION LOG — ring buffer in memory
+// ═══════════════════════════════════════════════════════════════════════════════
+const _boostLog = [];
+
+function logBoostDecision(type, details) {
+    if (!config.BOOST_LOGGING_ENABLED) return;
+    const entry = {
+        timestamp: new Date().toISOString(),
+        type,
+        ...details,
+    };
+    _boostLog.push(entry);
+    // Ring buffer: keep last N entries
+    while (_boostLog.length > (config.MAX_BOOST_LOG_ENTRIES || 200)) {
+        _boostLog.shift();
+    }
+}
+
+function getBoostLog() {
+    return {
+        total_entries: _boostLog.length,
+        max_entries: config.MAX_BOOST_LOG_ENTRIES || 200,
+        cache_age_ms: _cacheTime ? Date.now() - _cacheTime : null,
+        cache_ttl_ms: config.WINNER_RECALC_INTERVAL_MS,
+        entries: [..._boostLog].reverse(), // newest first
+    };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // MAIN BOOST COMPUTATION
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -43,17 +72,72 @@ async function getBoosts(supabase, forceRefresh = false) {
             winners.detectXPostWinners(supabase).catch(() => ({ hooks: { all: [] }, angles: { all: [] }, ctas: { all: [] } })),
         ]);
 
+        const products = computeProductBoosts(productWinners);
+        const urgency_weights = computeUrgencyWeights(variantWinners.urgency);
+        const position_weights = computePositionWeights(variantWinners.position);
+        const badge_overrides = computeBadgeOverrides(productWinners);
+        const featured_articles = computeFeaturedArticles(articleWinners);
+        const campaign_boosts = computeCampaignBoosts(campaignWinners);
+        const x_post_weights = computeXPostWeights(xWinners);
+
         _cache = {
             generated_at: new Date().toISOString(),
-            products: computeProductBoosts(productWinners),
-            urgency_weights: computeUrgencyWeights(variantWinners.urgency),
-            position_weights: computePositionWeights(variantWinners.position),
-            badge_overrides: computeBadgeOverrides(productWinners),
-            featured_articles: computeFeaturedArticles(articleWinners),
-            campaign_boosts: computeCampaignBoosts(campaignWinners),
-            x_post_weights: computeXPostWeights(xWinners),
+            products,
+            urgency_weights,
+            position_weights,
+            badge_overrides,
+            featured_articles,
+            campaign_boosts,
+            x_post_weights,
         };
         _cacheTime = now;
+
+        // Log all boost decisions
+        const prodBoosts = Object.keys(products).length;
+        const urgBoosts = Object.keys(urgency_weights).length;
+        const badgeCount = Object.keys(badge_overrides).length;
+        const campCount = Object.keys(campaign_boosts).length;
+
+        logBoostDecision('computation', {
+            product_boosts: prodBoosts,
+            urgency_weights: urgBoosts,
+            badge_overrides: badgeCount,
+            campaign_boosts: campCount,
+            featured_articles: featured_articles.length,
+            x_hook_weights: Object.keys(x_post_weights.hooks).length,
+            x_angle_weights: Object.keys(x_post_weights.angles).length,
+            x_cta_weights: Object.keys(x_post_weights.ctas).length,
+            flags: {
+                AUTO_BOOST: config.AUTO_BOOST_ENABLED,
+                WINNER_CTA: config.WINNER_CTA_ENABLED,
+                CAMPAIGN: config.CAMPAIGN_BOOST_ENABLED,
+                BLOG: config.BLOG_OPTIMIZATION_ENABLED,
+                X: config.X_OPTIMIZATION_ENABLED,
+            },
+        });
+
+        // Log individual product boosts
+        Object.entries(products).forEach(([name, boost]) => {
+            logBoostDecision('product_boost', {
+                product: name,
+                rank_weight: boost.rank_weight,
+                badge: boost.badge,
+                reason: boost.reason,
+            });
+        });
+
+        // Log campaign boosts
+        Object.entries(campaign_boosts).forEach(([pid, boost]) => {
+            logBoostDecision('campaign_boost', {
+                product_id: pid,
+                campaign: boost.campaign_name,
+                weight: boost.weight,
+                reason: boost.reason,
+            });
+        });
+
+        // Console summary for Vercel logs
+        console.log(`💰 Boost computed: ${prodBoosts} products, ${urgBoosts} urgency, ${badgeCount} badges, ${campCount} campaigns`);
     } catch (e) {
         console.log('Boost computation error:', e.message);
         _cache = _cache || getEmptyBoosts();
@@ -326,4 +410,5 @@ module.exports = {
     getXPostWeights,
     getCampaignBoost,
     getEmptyBoosts,
+    getBoostLog,
 };

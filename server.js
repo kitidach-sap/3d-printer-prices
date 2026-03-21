@@ -4350,6 +4350,35 @@ app.get('/api/admin/analytics/campaigns', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/admin/analytics/boost-log — monitoring: all boost decisions
+app.get('/api/admin/analytics/boost-log', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const boosters = require('./revenue/boosters');
+        const config = require('./revenue/config');
+        // Trigger a boost computation if cache is empty
+        await boosters.getBoosts(supabase);
+        const log = boosters.getBoostLog();
+        res.json({
+            ...log,
+            config: {
+                AUTO_BOOST_ENABLED: config.AUTO_BOOST_ENABLED,
+                WINNER_CTA_ENABLED: config.WINNER_CTA_ENABLED,
+                CAMPAIGN_BOOST_ENABLED: config.CAMPAIGN_BOOST_ENABLED,
+                BLOG_OPTIMIZATION_ENABLED: config.BLOG_OPTIMIZATION_ENABLED,
+                X_OPTIMIZATION_ENABLED: config.X_OPTIMIZATION_ENABLED,
+                MAX_BOOST_MULTIPLIER: config.MAX_BOOST_MULTIPLIER,
+                MIN_BOOST_MULTIPLIER: config.MIN_BOOST_MULTIPLIER,
+                CAMPAIGN_OVERRIDE_MAX: config.CAMPAIGN_OVERRIDE_MAX,
+                MAX_TRENDING_PRODUCTS: config.MAX_TRENDING_PRODUCTS,
+                MIN_CLICKS_FOR_WINNER: config.MIN_CLICKS_FOR_WINNER,
+                BOOST_LOGGING_ENABLED: config.BOOST_LOGGING_ENABLED,
+            },
+        });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/trending — public trending product IDs (for frontend badge)
 app.get('/api/trending', async (req, res) => {
     try {
