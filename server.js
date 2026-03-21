@@ -2159,14 +2159,18 @@ app.get('/blog/:slug', async (req, res, next) => {
                     idx++;
                 }
                 const parseRow = (row) => row.replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+                const inlineMd = (text) => text
+                    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
                 const headers = parseRow(tableRows[0]);
                 const bodyRows = tableRows.slice(2);
                 let tableHtml = '<div style="overflow-x:auto"><table class="blog-table"><thead><tr>' +
-                    headers.map(h => '<th>' + h + '</th>').join('') +
+                    headers.map(h => '<th>' + inlineMd(h) + '</th>').join('') +
                     '</tr></thead><tbody>';
                 for (const row of bodyRows) {
                     const cells = parseRow(row);
-                    tableHtml += '<tr>' + cells.map(c => '<td>' + c + '</td>').join('') + '</tr>';
+                    tableHtml += '<tr>' + cells.map(c => '<td>' + inlineMd(c) + '</td>').join('') + '</tr>';
                 }
                 tableHtml += '</tbody></table></div>';
                 const placeholder = '__TABLE_' + tablePlaceholders.length + '__';
@@ -2187,14 +2191,32 @@ app.get('/blog/:slug', async (req, res, next) => {
             return ph;
         });
 
+        // Step 3.5: Extract inline HTML blocks to placeholders (before escaping)
+        // This preserves custom elements like CTA boxes, product highlights, exit CTAs, related grids
+        const htmlBlockPlaceholders = [];
+        rawText = rawText.replace(/(<div class="blog-[^"]*"[\s\S]*?<\/div>\s*<\/div>)/g, (match) => {
+            const ph = '__HTMLBLOCK_' + htmlBlockPlaceholders.length + '__';
+            htmlBlockPlaceholders.push(match);
+            return ph;
+        });
+        // Also handle self-closing or single-level div blocks
+        rawText = rawText.replace(/(<div class="blog-[^"]*">[\s\S]*?<\/div>)(?!\s*<\/div>)/g, (match) => {
+            if (match.includes('__HTMLBLOCK_')) return match; // already extracted
+            const ph = '__HTMLBLOCK_' + htmlBlockPlaceholders.length + '__';
+            htmlBlockPlaceholders.push(match);
+            return ph;
+        });
+
         // Step 4: HTML-escape remaining content
         let html = rawText
             .replace(/&/g, '&amp;')
             .replace(/__TABLE_(\d+)__/g, '###TBLPH$1###')
             .replace(/__CODE_(\d+)__/g, '###CODEPH$1###')
+            .replace(/__HTMLBLOCK_(\d+)__/g, '###HTMLBPH$1###')
             .replace(/</g, '&lt;').replace(/>/g, '&gt;')
             .replace(/###TBLPH(\d+)###/g, '__TABLE_$1__')
-            .replace(/###CODEPH(\d+)###/g, '__CODE_$1__');
+            .replace(/###CODEPH(\d+)###/g, '__CODE_$1__')
+            .replace(/###HTMLBPH(\d+)###/g, '__HTMLBLOCK_$1__');
 
         // Step 5: Convert markdown syntax to HTML
         // Headings
@@ -2237,7 +2259,8 @@ app.get('/blog/:slug', async (req, res, next) => {
             if (!block) return '';
             if (block.startsWith('<h') || block.startsWith('<ul') || block.startsWith('<ol') || 
                 block.startsWith('<blockquote') || block.startsWith('<pre') || block.startsWith('<hr') ||
-                block.startsWith('<div') || block.startsWith('__TABLE_') || block.startsWith('__CODE_')) {
+                block.startsWith('<div') || block.startsWith('__TABLE_') || block.startsWith('__CODE_') ||
+                block.startsWith('__HTMLBLOCK_')) {
                 return block;
             }
             return '<p>' + block.replace(/\n/g, '<br>') + '</p>';
@@ -2257,6 +2280,9 @@ app.get('/blog/:slug', async (req, res, next) => {
         }
         for (let c = 0; c < codePlaceholders.length; c++) {
             html = html.replace('__CODE_' + c + '__', codePlaceholders[c]);
+        }
+        for (let h = 0; h < htmlBlockPlaceholders.length; h++) {
+            html = html.replace('__HTMLBLOCK_' + h + '__', htmlBlockPlaceholders[h]);
         }
 
         // Step 7: Auto-generate Table of Contents from h2 headings
