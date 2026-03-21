@@ -2216,9 +2216,9 @@ app.get('/blog/:slug', async (req, res, next) => {
         // Links
         html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
 
-        // Blockquotes
-        html = html.replace(/(^&gt; .+$\n?)+/gm, (match) => {
-            const inner = match.replace(/^&gt; /gm, '').trim();
+        // Blockquotes (handle multi-line with empty > lines)
+        html = html.replace(/(^&gt; .*$\n?)+/gm, (match) => {
+            const inner = match.replace(/^&gt; ?/gm, '').trim();
             return '<blockquote><p>' + inner + '</p></blockquote>';
         });
 
