@@ -519,3 +519,233 @@
         padding: 1rem;
     }
 }
+
+/* ============================================
+   Blog Conversion Elements — Affiliate Funnel
+   ============================================ */
+
+/* --- CTA Box (context-aware) --- */
+.blog-cta-box {
+    background: var(--bg-card);
+    border: 2px solid var(--accent);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 2rem 0;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+.blog-cta-box::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #f97316, #ef4444, #8b5cf6);
+}
+.blog-cta-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+}
+.blog-cta-product {
+    font-size: 1.2rem;
+    margin-bottom: 0.3rem;
+}
+.blog-cta-sub {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+}
+.blog-cta-btn {
+    display: inline-block;
+    background: linear-gradient(135deg, #f97316, #ef4444);
+    color: #fff !important;
+    font-weight: 700;
+    padding: 0.75rem 2rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 1rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.blog-cta-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(249, 115, 22, 0.4);
+}
+.blog-cta-urgency {
+    display: block;
+    margin-top: 0.75rem;
+    font-size: 0.8rem;
+    color: #ef4444;
+    animation: pulse-urgency 2s infinite;
+}
+@keyframes pulse-urgency {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* --- Product Highlight Card --- */
+.blog-product-highlight {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin: 1.5rem 0;
+    position: relative;
+}
+.blog-product-highlight:hover {
+    border-color: var(--accent);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+}
+.blog-ph-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #f97316, #f59e0b);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    margin-bottom: 0.5rem;
+}
+.blog-ph-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+}
+.blog-ph-meta {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+}
+.blog-ph-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+.blog-ph-btn {
+    display: inline-block;
+    padding: 0.5rem 1.25rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+.blog-ph-btn.primary {
+    background: linear-gradient(135deg, #f97316, #ef4444);
+    color: #fff !important;
+}
+.blog-ph-btn.primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 12px rgba(249, 115, 22, 0.3);
+}
+.blog-ph-btn.secondary {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text) !important;
+}
+.blog-ph-btn.secondary:hover {
+    border-color: var(--accent);
+}
+
+/* --- Exit CTA Banner --- */
+.blog-exit-cta {
+    background: linear-gradient(135deg, rgba(249,115,22,0.1), rgba(139,92,246,0.1));
+    border: 2px solid var(--accent);
+    border-radius: 16px;
+    padding: 2rem;
+    margin: 2.5rem 0;
+    text-align: center;
+}
+.blog-exit-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 0.75rem;
+}
+.blog-exit-pick {
+    font-size: 1.05rem;
+    color: var(--text-muted);
+    margin-bottom: 1.25rem;
+}
+.blog-exit-btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin: 0.4rem;
+    transition: all 0.2s;
+}
+.blog-exit-btn.primary {
+    background: linear-gradient(135deg, #f97316, #ef4444);
+    color: #fff !important;
+}
+.blog-exit-btn.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(249, 115, 22, 0.4);
+}
+.blog-exit-btn.secondary {
+    background: var(--bg-card);
+    border: 1px solid var(--accent);
+    color: var(--accent) !important;
+}
+.blog-exit-btn.secondary:hover {
+    background: var(--accent);
+    color: #fff !important;
+}
+.blog-exit-btn.tertiary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted) !important;
+}
+.blog-exit-btn.tertiary:hover {
+    border-color: var(--accent);
+    color: var(--accent) !important;
+}
+
+/* --- Related Articles Grid --- */
+.blog-related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0 1.5rem;
+}
+.blog-related-card {
+    display: block;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s;
+}
+.blog-related-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.blog-related-card strong {
+    display: block;
+    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
+}
+.blog-related-card span {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* --- Mobile Responsive --- */
+@media (max-width: 600px) {
+    .blog-cta-box { padding: 1rem; }
+    .blog-cta-btn { padding: 0.6rem 1.5rem; font-size: 0.9rem; }
+    .blog-exit-cta { padding: 1.25rem; }
+    .blog-exit-btn { display: block; margin: 0.4rem 0; }
+    .blog-ph-actions { flex-direction: column; }
+    .blog-ph-btn { text-align: center; }
+    .blog-related-grid { grid-template-columns: 1fr 1fr; }
+}

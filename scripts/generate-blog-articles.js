@@ -232,21 +232,64 @@ const ARTICLES = [
       filter: p => p.category === '3d_printer' || p.category === 'filament', limit: 4 },
 ];
 
-// ─── Content Generator ──────────────────────────────────────────────────────
+// ─── Conversion-Driven Content Generator ────────────────────────────────────
 
-function generateProductTable(products) {
-    if (!products.length) return '';
-    let table = `| Printer | Price | Rating | Type | Best For |\n|---------|-------|--------|------|----------|\n`;
-    products.forEach(p => {
-        const name = p.display_name || p.product_name || 'Unknown';
-        const price = p.price ? `$${p.price}` : 'N/A';
-        const rating = p.rating ? `${p.rating}/5 (${p.review_count || 0})` : 'N/A';
-        const type = p.printer_type || p.product_type || p.category || '-';
-        const best = bestForLabel(p);
-        const link = `[${name}](${SITE}/product.html?id=${p.id})`;
-        table += `| ${link} | ${price} | ${rating} | ${type} | ${best} |\n`;
-    });
-    return table;
+// ------- CONTEXT-AWARE CTA VARIANTS -------
+function getContextCTA(article, product) {
+    const name = product ? (product.display_name || product.product_name) : 'this printer';
+    const price = product?.price ? `$${product.price}` : '';
+    const link = product ? `${SITE}/product.html?id=${product.id}` : SITE;
+
+    const ctaMap = {
+        beginner: { label: '🎯 Safe Choice for Beginners', sub: 'Easy setup, great community support. Perfect first printer.', btn: 'Check Beginner-Friendly Price' },
+        budget: { label: '💰 Best Value Pick', sub: `At ${price}, this is hard to beat. Prices update daily.`, btn: `Get It for ${price}` },
+        speed: { label: '⚡ Performance Pick', sub: 'High-speed printing without quality loss.', btn: 'Check Performance Price' },
+        resin: { label: '🔬 Detail Champion', sub: 'Ultra-fine detail for miniatures, jewelry, and dental.', btn: 'Check Resin Printer Price' },
+        default: { label: '🏆 Editor\'s Pick', sub: `${name} — verified by ${product?.review_count || '100'}+ reviews.`, btn: `Check Price — ${price}` },
+    };
+
+    // Match article intent to CTA variant
+    let variant = 'default';
+    const slug = article.slug || '';
+    if (slug.includes('beginner') || slug.includes('kids') || slug.includes('start')) variant = 'beginner';
+    else if (slug.includes('budget') || slug.includes('under-200') || slug.includes('cheap')) variant = 'budget';
+    else if (slug.includes('speed') || slug.includes('fast')) variant = 'speed';
+    else if (slug.includes('resin') || slug.includes('miniature')) variant = 'resin';
+
+    const cta = ctaMap[variant];
+    return `\n<div class="blog-cta-box">\n<div class="blog-cta-label">${cta.label}</div>\n<div class="blog-cta-product"><strong>${name}</strong> ${price ? `— ${price}` : ''}</div>\n<div class="blog-cta-sub">${cta.sub}</div>\n<a href="${link}" class="blog-cta-btn">${cta.btn} →</a>\n<span class="blog-cta-urgency">⏰ Price updated today — may change soon</span>\n</div>\n\n`;
+}
+
+// ------- INLINE CTA (every 2-3 sections) -------
+function inlineCTA(product, urgencyText) {
+    if (!product) return '';
+    const name = product.display_name || product.product_name;
+    const price = product.price ? `$${product.price}` : 'Check price';
+    const link = `${SITE}/product.html?id=${product.id}`;
+    return `\n> 🔥 **${name}** is currently **${price}** — [Check latest price →](${link})\n> *${urgencyText || 'Prices change daily. Compare now.'}*\n\n`;
+}
+
+// ------- PRODUCT HIGHLIGHT BLOCK -------
+function productHighlight(p, badge) {
+    const name = p.display_name || p.product_name || 'Unknown';
+    const price = p.price ? `$${p.price}` : 'Check price';
+    const rating = p.rating ? `⭐ ${p.rating}/5` : '';
+    const reviews = p.review_count ? `(${p.review_count} reviews)` : '';
+    const link = `${SITE}/product.html?id=${p.id}`;
+    const compareLink = `${SITE}/?search=${encodeURIComponent(name.split(' ').slice(0, 3).join(' '))}`;
+
+    return `\n<div class="blog-product-highlight">\n<div class="blog-ph-badge">${badge || bestForBadge(p)}</div>\n<div class="blog-ph-name">${name}</div>\n<div class="blog-ph-meta">${price} ${rating} ${reviews}</div>\n<div class="blog-ph-actions">\n<a href="${link}" class="blog-ph-btn primary">Check Price →</a>\n<a href="${compareLink}" class="blog-ph-btn secondary">Compare Options</a>\n</div>\n</div>\n\n`;
+}
+
+function bestForBadge(p) {
+    if (p.beginner_score >= 8) return '🎯 Best for Beginners';
+    if (p.price && p.price < 200) return '💰 Best Budget';
+    if (p.price && p.price >= 500) return '👔 Best Professional';
+    if (p.speed_score >= 8) return '⚡ Fastest';
+    if (p.printer_type === 'Resin') return '🔬 Best Detail';
+    if (p.rating >= 4.7) return '⭐ Top Rated';
+    if (p.review_count >= 1000) return '🔥 Most Popular';
+    return '✅ Recommended';
 }
 
 function bestForLabel(p) {
@@ -259,7 +302,23 @@ function bestForLabel(p) {
     return 'General use';
 }
 
-function generateProductReview(p, index) {
+// ------- COMPARISON TABLE WITH ACTIONS -------
+function comparisonTable(products) {
+    if (!products.length) return '';
+    let table = `| # | Printer | Price | Rating | Best For | Action |\n|---|---------|-------|--------|----------|--------|\n`;
+    products.forEach((p, i) => {
+        const name = p.display_name || p.product_name || 'Unknown';
+        const price = p.price ? `**$${p.price}**` : 'N/A';
+        const rating = p.rating ? `${p.rating}/5 (${p.review_count || 0})` : 'N/A';
+        const best = bestForLabel(p);
+        const link = `${SITE}/product.html?id=${p.id}`;
+        table += `| ${i + 1} | ${name} | ${price} | ${rating} | ${best} | [Check Price →](${link}) |\n`;
+    });
+    return table + '\n';
+}
+
+// ------- PRODUCT REVIEW WITH CTA -------
+function productReview(p, index, article) {
     const name = p.display_name || p.product_name || 'Unknown';
     const price = p.price ? `$${p.price}` : 'Check price';
     const rating = p.rating || 'N/A';
@@ -277,169 +336,253 @@ function generateProductReview(p, index) {
     if (p.printer_type === 'Resin') pros.push('Exceptional detail quality');
     if (p.printer_type === 'FDM') pros.push('Low cost per print');
     if (pros.length === 0) pros.push('Solid performance', 'Good build quality');
-    
+
     if (p.price >= 500) cons.push('Higher price point');
     if (p.beginner_score && p.beginner_score < 5) cons.push('Steeper learning curve');
     if (p.printer_type === 'Resin') cons.push('Requires post-processing (washing + curing)');
     if (p.printer_type === 'FDM' && p.speed_score && p.speed_score < 5) cons.push('Moderate print speed');
     if (cons.length === 0) cons.push('May need firmware updates');
 
-    return `### ${index + 1}. ${name}
+    let out = `### ${index + 1}. ${name}\n\n`;
+    out += `${productHighlight(p, bestForBadge(p))}`;
+    out += `${name} is ${p.price < 200 ? 'one of the most affordable options in this category' : p.rating >= 4.5 ? 'a top-rated choice with excellent user reviews' : 'a solid contender with good overall performance'}.\n\n`;
+    out += `**Pros:**\n${pros.map(x => `- ✅ ${x}`).join('\n')}\n\n`;
+    out += `**Cons:**\n${cons.map(c => `- ❌ ${c}`).join('\n')}\n\n`;
 
-**Price:** ${price} | **Rating:** ${rating}/5 (${reviews} reviews)
-[→ Compare prices on 3D Printer Prices](${link})
+    // Inject inline CTA after every 2nd product review
+    if ((index + 1) % 2 === 0 && article) {
+        out += inlineCTA(p, `Don't wait — ${name} at ${price} is a popular choice.`);
+    }
 
-${name} is ${p.price < 200 ? 'one of the most affordable options in this category' : p.rating >= 4.5 ? 'a top-rated choice with excellent user reviews' : 'a solid contender with good overall performance'}.
-
-**Pros:**
-${pros.map(p => `- ✅ ${p}`).join('\n')}
-
-**Cons:**
-${cons.map(c => `- ❌ ${c}`).join('\n')}
-
----`;
+    out += `---\n`;
+    return out;
 }
+
+// ------- EXIT CTA -------
+function exitCTA(article, topPick) {
+    const compareLink = `${SITE}/compare.html`;
+    const mainLink = SITE;
+    const topName = topPick ? (topPick.display_name || topPick.product_name) : '';
+    const topPrice = topPick?.price ? `$${topPick.price}` : '';
+    const topLink = topPick ? `${SITE}/product.html?id=${topPick.id}` : SITE;
+
+    let out = `\n<div class="blog-exit-cta">\n`;
+    out += `<div class="blog-exit-title">🎯 Ready to Choose?</div>\n`;
+    if (topPick) {
+        out += `<div class="blog-exit-pick">Our #1 Pick: <strong>${topName}</strong> ${topPrice ? `at <strong>${topPrice}</strong>` : ''}</div>\n`;
+        out += `<a href="${topLink}" class="blog-exit-btn primary">Check Price for ${topName} →</a>\n`;
+    }
+    out += `<a href="${compareLink}" class="blog-exit-btn secondary">Compare prices across stores →</a>\n`;
+    out += `<a href="${mainLink}" class="blog-exit-btn tertiary">Browse all 200+ products →</a>\n`;
+    out += `</div>\n\n`;
+    return out;
+}
+
+// ------- INTERNAL LINK BOOST -------
+function internalLinkBoost(slug, products) {
+    const links = [
+        { slug: 'best-3d-printers-for-beginners', label: '🏆 Best 3D Printers for Beginners', desc: 'Top picks for first-time buyers' },
+        { slug: 'best-budget-3d-printers-under-200', label: '💰 Best Printers Under $200', desc: 'Great quality on a tight budget' },
+        { slug: 'best-resin-printers', label: '🔬 Best Resin Printers', desc: 'Ultra-fine detail for miniatures' },
+        { slug: 'fdm-vs-resin-3d-printer', label: '⚙️ FDM vs Resin Compared', desc: 'Which technology is right for you?' },
+        { slug: 'how-to-start-3d-printing', label: '🛠️ How to Start 3D Printing', desc: 'Complete beginner walkthrough' },
+        { slug: 'best-3d-printer-filaments', label: '🧵 Best Filaments Guide', desc: 'PLA, PETG, ABS compared' },
+        { slug: 'top-rated-3d-printers', label: '⭐ Top Rated Printers', desc: 'Highest Amazon ratings + reviews' },
+        { slug: 'best-3d-printer-deals', label: '🔥 Current Deals', desc: 'Today\'s best discounts' },
+    ].filter(l => l.slug !== slug).slice(0, 5);
+
+    let out = `## You Might Also Like\n\n`;
+    out += `<div class="blog-related-grid">\n`;
+    links.forEach(l => {
+        out += `<a href="${SITE}/blog/${l.slug}" class="blog-related-card">\n<strong>${l.label}</strong>\n<span>${l.desc}</span>\n</a>\n`;
+    });
+    out += `</div>\n\n`;
+
+    // Final push with product links
+    if (products.length > 0) {
+        out += `### Quick Product Links\n\n`;
+        products.slice(0, 5).forEach(p => {
+            const name = p.display_name || p.product_name;
+            const price = p.price ? ` — $${p.price}` : '';
+            out += `- [${name}${price}](${SITE}/product.html?id=${p.id})\n`;
+        });
+        out += `\n`;
+    }
+
+    out += `*All prices updated daily. [Compare all products →](${SITE})*\n`;
+    return out;
+}
+
+// ─── Main Article Content Generator ─────────────────────────────────────────
 
 function generateArticleContent(article, products) {
     const { title, desc, type, slug } = article;
     let content = '';
 
-    // Introduction
+    // ── Header ──
     content += `# ${title}\n\n`;
     content += `*Last updated: ${TODAY} | Based on real-time price data from Amazon*\n\n`;
     content += `${desc}\n\n`;
 
-    // Internal links
-    content += `> 💡 **Quick Tip:** Use our [price comparison tool](${SITE}) to compare all ${products.length > 0 ? products.length + '+' : '200+'} products in real time.\n\n`;
-
+    // ── Quick CTA right at top ──
     if (products.length > 0) {
-        // Quick comparison table
-        content += `## Quick Comparison\n\n`;
-        content += generateProductTable(products);
-        content += '\n';
+        content += getContextCTA(article, products[0]);
+    }
 
-        // Detailed reviews
+    // ── TL;DR / Quick Compare Section ──
+    if (products.length > 0) {
+        content += `## ⚡ Quick Comparison\n\n`;
+        content += comparisonTable(products);
+        content += `> 💡 Tap "Check Price" to see the latest Amazon price — we track changes daily.\n\n`;
+    }
+
+    // ── Top 3 Product Highlights ──
+    if (products.length >= 3) {
+        content += `## 🏆 Our Top 3 Picks\n\n`;
+        products.slice(0, 3).forEach(p => {
+            content += productHighlight(p, bestForBadge(p));
+        });
+        content += inlineCTA(products[0], `Our #1 pick — prices change frequently. Lock in today's price.`);
+    }
+
+    // ── Detailed Reviews ──
+    if (products.length > 0) {
         content += `## Detailed Reviews\n\n`;
         products.forEach((p, i) => {
-            content += generateProductReview(p, i);
-            content += '\n';
+            content += productReview(p, i, article);
         });
     }
 
-    // Type-specific content sections
+    // ── Type-specific content with inline CTAs ──
     if (type === 'buying-guide') {
         content += generateBuyingGuideContent(article, products);
     } else if (type === 'comparison') {
         content += generateComparisonContent(article, products);
     } else if (type === 'tutorial') {
-        content += generateTutorialContent(article);
+        content += generateTutorialContent(article, products);
     } else if (type === 'review') {
         content += generateReviewContent(article, products);
     }
 
-    // FAQ section (SEO)
+    // ── FAQ (with internal links, SEO-optimized) ──
     content += generateFAQ(article);
 
-    // Closing CTA
+    // ── Final Verdict with CTA ──
     content += `## Final Verdict\n\n`;
     if (products.length > 0) {
-        const topPick = products[0];
-        const topName = topPick.display_name || topPick.product_name;
-        content += `Our top pick is the **${topName}** for its excellent combination of features and value. However, the best choice depends on your specific needs and budget.\n\n`;
-        content += `[→ Compare all options on 3D Printer Prices](${SITE})\n\n`;
+        const top = products[0];
+        const topName = top.display_name || top.product_name;
+        content += `Our top pick is the **${topName}** for its excellent combination of features and value.\n\n`;
+        content += getContextCTA(article, top);
     } else {
         content += `Ready to start? Check our [live price tracker](${SITE}) for the latest deals and compare all options side by side.\n\n`;
     }
 
-    // Internal linking section
-    content += generateInternalLinks(slug);
+    // ── EXIT CTA (compare across stores) ──
+    content += exitCTA(article, products[0]);
+
+    // ── Internal Link Boost ──
+    content += internalLinkBoost(slug, products);
 
     return content;
 }
 
+// ─── Content Section Generators ─────────────────────────────────────────────
+
 function generateBuyingGuideContent(article, products) {
-    return `## What to Look For
+    let out = `## What to Look For\n\n`;
+    out += `### Build Quality & Frame\nA sturdy frame is essential for consistent prints. Metal frames (aluminum extrusion or steel) outperform plastic.\n\n`;
 
-### Build Quality & Frame
-A sturdy frame is essential for consistent prints. Metal frames (aluminum extrusion or steel) outperform plastic in rigidity and vibration dampening.
+    // INLINE CTA after first section
+    if (products.length > 0) out += inlineCTA(products[0], 'See our top pick — great build quality at an unbeatable price.');
 
-### Print Speed
-Modern printers range from 60mm/s (budget) to 600mm/s (premium). For most users, 150-300mm/s provides the best speed-quality balance.
+    out += `### Print Speed\nModern printers range from 60mm/s (budget) to 600mm/s (premium). For most users, 150-300mm/s provides the best balance.\n\n`;
+    out += `### Build Volume\nStandard volumes (220×220×250mm) handle most projects. Cosplay and engineering may need larger beds.\n\n`;
 
-### Build Volume
-Consider what you'll be printing. Standard build volumes (220×220×250mm) handle most projects, but cosplay and engineering applications may need larger beds.
+    // INLINE CTA after 3rd section
+    if (products.length > 1) out += inlineCTA(products[1], 'Great combination of speed and build volume.');
 
-### Ease of Use
-Auto bed leveling, filament sensors, and touchscreen interfaces make a big difference for beginners. Look for printers with Klipper or Marlin firmware.
+    out += `### Ease of Use\nAuto bed leveling, filament sensors, and touchscreen interfaces make a big difference for beginners.\n\n`;
+    out += `### Community & Support\nA strong community means more tutorials and troubleshooting help. Creality and Bambu Lab lead here.\n\n`;
 
-### Community & Support
-A strong user community means more tutorials, profiles, and troubleshooting help. Creality and Bambu Lab have the largest communities.\n\n`;
+    // Context-aware CTA after guide
+    if (products.length > 0) out += getContextCTA(article, products[Math.min(2, products.length - 1)]);
+
+    return out;
 }
 
 function generateComparisonContent(article, products) {
-    return `## How We Compare
+    let out = `## How We Compare\n\n`;
+    out += `Our methodology uses real pricing, verified reviews, and community feedback. We track prices daily.\n\n`;
+    out += `### Key Differences\n\n1. **Price to performance ratio** — maximum value per dollar\n2. **Print quality** — layer resolution and surface finish\n3. **Reliability** — consistency over hundreds of prints\n4. **Ecosystem** — slicer support, parts, and community\n\n`;
 
-Our comparison methodology uses data from real pricing, verified user reviews, and hands-on testing where available. We track prices daily across Amazon to ensure accuracy.\n\n### Key Differences\n\nThe biggest factors when comparing these options are:\n1. **Price to performance ratio** — getting the most value for your budget\n2. **Print quality** — layer resolution and surface finish\n3. **Reliability** — consistency over hundreds of prints\n4. **Ecosystem** — slicer support, spare parts, and community\n\n`;
+    // Comparison CTA
+    if (products.length >= 2) {
+        out += `> 🔍 **Side-by-side comparison:** [Compare these models on our tracker →](${SITE}/compare.html)\n\n`;
+        out += inlineCTA(products[0], `Currently leading the comparison. Check if the price has dropped.`);
+    }
+
+    return out;
 }
 
-function generateTutorialContent(article) {
-    return `## Before You Begin
+function generateTutorialContent(article, products) {
+    let out = `## Before You Begin\n\n`;
+    out += `Make sure you have:\n- A 3D printer (see our [buying guides](${SITE}/blog/) for recommendations)\n- Basic tools (see our [accessories guide](${SITE}/blog/best-3d-printing-accessories))\n- A clean, level workspace\n\n`;
 
-Make sure you have:\n- A 3D printer (see our [buying guides](${SITE}/blog/) for recommendations)\n- Basic tools (see our [accessories guide](${SITE}/blog/best-3d-printing-accessories))\n- A clean, level workspace\n\n### Safety First\n\nAlways work in a well-ventilated area when 3D printing. Resin printers require gloves and a mask. FDM printers produce minor fumes — keep a window open.\n\n`;
+    // Product recommendation for tutorials
+    if (products && products.length > 0) {
+        out += `### Recommended Printer for This Tutorial\n\n`;
+        out += productHighlight(products[0], '🎯 Best for This Guide');
+    }
+
+    out += `### Safety First\n\nAlways work in a well-ventilated area. Resin printers require gloves and a mask.\n\n`;
+
+    // Mid-tutorial CTA
+    if (products && products.length > 0) {
+        out += inlineCTA(products[0], `Need a printer for this? This is our recommended pick.`);
+    }
+
+    return out;
 }
 
 function generateReviewContent(article, products) {
-    return `## Our Testing Methodology
+    let out = `## Our Testing Methodology\n\n`;
+    out += `We evaluate based on:\n- **Real user reviews** — Amazon verified purchases\n- **Price tracking** — daily monitoring\n- **Specification analysis** — speed, resolution, features\n- **Community feedback** — Reddit, forums, and maker groups\n\n`;
+    out += `All prices are updated in real-time from our [price tracker](${SITE}).\n\n`;
 
-We evaluate 3D printers based on:\n- **Real user reviews** — aggregated from Amazon verified purchases\n- **Price tracking** — daily price monitoring across all retailers\n- **Specification analysis** — build volume, speed, resolution, and features\n- **Community feedback** — Reddit, forums, and 3D printing communities\n\nAll prices shown are updated in real-time from our [price tracker](${SITE}).\n\n`;
+    // Review CTA
+    if (products.length > 0) {
+        out += `> 🏆 **Current #1:** [${products[0].display_name || products[0].product_name}](${SITE}/product.html?id=${products[0].id}) at $${products[0].price || 'see price'}\n\n`;
+    }
+
+    return out;
 }
 
 function generateFAQ(article) {
     const faqs = {
         'buying-guide': [
-            { q: 'What is the best 3D printer for beginners?', a: `For beginners, we recommend printers with auto bed leveling, easy setup, and strong community support. Check our [beginner guide](${SITE}/blog/best-3d-printers-for-beginners) for detailed recommendations.` },
-            { q: 'How much should I spend on my first 3D printer?', a: `$150-300 is the sweet spot for a first 3D printer. See our [budget guide](${SITE}/blog/best-budget-3d-printers-under-200) for top picks under $200.` },
-            { q: 'FDM or resin — which is better?', a: `FDM is better for large, functional parts. Resin is better for small, highly detailed prints. Read our [FDM vs resin comparison](${SITE}/blog/fdm-vs-resin-3d-printer) for a full breakdown.` },
+            { q: 'What is the best 3D printer for beginners?', a: `For beginners, we recommend printers with auto bed leveling and great community support. [See our beginner guide →](${SITE}/blog/best-3d-printers-for-beginners)` },
+            { q: 'How much should I spend on my first 3D printer?', a: `$150-300 is the sweet spot. [See top picks under $200 →](${SITE}/blog/best-budget-3d-printers-under-200)` },
+            { q: 'FDM or resin — which is better?', a: `FDM for large parts, resin for detail. [Full comparison →](${SITE}/blog/fdm-vs-resin-3d-printer)` },
         ],
         'comparison': [
-            { q: 'Which brand makes the best 3D printers?', a: `Bambu Lab leads in speed and ease of use. Creality wins on value. ELEGOO dominates resin. See our [brand comparisons](${SITE}/blog/) for details.` },
-            { q: 'Are expensive 3D printers worth it?', a: `Premium printers ($500+) offer faster speeds, auto calibration, and multi-material support. Read our [cheap vs expensive comparison](${SITE}/blog/cheap-vs-expensive-3d-printers).` },
+            { q: 'Which brand makes the best 3D printers?', a: `Bambu Lab leads speed, Creality wins value, ELEGOO dominates resin. [Compare brands →](${SITE}/blog/)` },
+            { q: 'Are expensive printers worth it?', a: `$500+ printers offer auto calibration and multi-material. [Cheap vs expensive →](${SITE}/blog/cheap-vs-expensive-3d-printers)` },
         ],
         'tutorial': [
-            { q: 'How long does it take to learn 3D printing?', a: `Most people produce their first successful print within 1-2 hours of setup. Mastering settings and design takes 2-4 weeks of practice.` },
-            { q: 'What software do I need for 3D printing?', a: `You need a slicer (Cura or PrusaSlicer — both free) and optionally a CAD program for design (TinkerCAD or Fusion 360 — also free).` },
+            { q: 'How long does it take to learn 3D printing?', a: `First print in 1-2 hours. Mastery in 2-4 weeks. [Start here →](${SITE}/blog/how-to-start-3d-printing)` },
+            { q: 'What software do I need?', a: `Cura or PrusaSlicer (free). For design: TinkerCAD or Fusion 360 (free). [Design guide →](${SITE}/blog/how-to-design-3d-prints)` },
         ],
         'review': [
-            { q: 'How do you track 3D printer prices?', a: `We monitor prices across Amazon daily using automated scrapers. See our [methodology](${SITE}/methodology.html) for details.` },
-            { q: 'Are your reviews biased?', a: `Our rankings use real review data and price history. We may earn a commission through affiliate links, but this never influences our recommendations.` },
+            { q: 'How do you track prices?', a: `Daily automated scraping. [See methodology →](${SITE}/methodology.html)` },
+            { q: 'Are your reviews biased?', a: `Rankings use real data. We earn affiliate commissions but never compromise recommendations. [Compare yourself →](${SITE})` },
         ],
     };
 
     const questions = faqs[article.type] || faqs['buying-guide'];
-    let content = `## Frequently Asked Questions\n\n`;
-    questions.forEach(f => {
-        content += `### ${f.q}\n\n${f.a}\n\n`;
-    });
-    return content;
-}
-
-function generateInternalLinks(slug) {
-    const relatedSlugs = [
-        { slug: 'best-3d-printers-for-beginners', label: '🏆 Best 3D Printers for Beginners' },
-        { slug: 'best-resin-printers', label: '🔬 Best Resin Printers' },
-        { slug: 'fdm-vs-resin-3d-printer', label: '⚙️ FDM vs Resin Compared' },
-        { slug: 'how-to-start-3d-printing', label: '🛠️ How to Start 3D Printing' },
-        { slug: 'best-3d-printer-filaments', label: '🧵 Best Filaments Guide' },
-        { slug: 'best-budget-3d-printers-under-200', label: '💰 Best Printers Under $200' },
-    ];
-
-    const links = relatedSlugs.filter(r => r.slug !== slug).slice(0, 4);
-    let content = `## Related Articles\n\n`;
-    links.forEach(l => {
-        content += `- [${l.label}](${SITE}/blog/${l.slug})\n`;
-    });
-    content += `\n*All prices updated daily. [Compare all products →](${SITE})*\n`;
-    return content;
+    let out = `## Frequently Asked Questions\n\n`;
+    questions.forEach(f => { out += `### ${f.q}\n\n${f.a}\n\n`; });
+    return out;
 }
 
 // ─── Main Generator ─────────────────────────────────────────────────────────
