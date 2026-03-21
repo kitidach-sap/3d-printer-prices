@@ -4268,6 +4268,66 @@ app.get('/api/admin/analytics', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ============================================
+// Auto Money System — Admin Analytics API
+// ============================================
+
+// GET /api/admin/analytics/overview — full aggregated analytics
+app.get('/api/admin/analytics/overview', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const revenueAnalytics = require('./revenue/analytics');
+        const days = parseInt(req.query.days) || 7;
+        const result = await revenueAnalytics.getFullAnalytics(supabase, days);
+        res.json(result);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/analytics/products — product performance + winners/losers
+app.get('/api/admin/analytics/products', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const winners = require('./revenue/winners');
+        const result = await winners.detectProductWinners(supabase);
+        res.json(result);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/analytics/articles — article conversion performance
+app.get('/api/admin/analytics/articles', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const winners = require('./revenue/winners');
+        const result = await winners.detectArticleWinners(supabase);
+        res.json(result);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/analytics/variants — CTA variant performance
+app.get('/api/admin/analytics/variants', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const winners = require('./revenue/winners');
+        const result = await winners.detectVariantWinners(supabase);
+        res.json(result);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/analytics/winners — full boost recommendations
+app.get('/api/admin/analytics/winners', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const winners = require('./revenue/winners');
+        const result = await winners.getBoostRecommendations(supabase);
+        res.json(result);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/trending — public trending product IDs (for frontend badge)
 app.get('/api/trending', async (req, res) => {
     try {
