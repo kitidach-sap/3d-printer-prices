@@ -1010,8 +1010,8 @@ select:focus-visible {
 }
 
 .action-buttons {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: var(--sp-2);
   margin-top: var(--sp-2);
 }
@@ -1022,7 +1022,10 @@ select:focus-visible {
   padding: 0.4rem var(--sp-2);
   text-align: center;
   justify-content: center;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .compare-btn {
