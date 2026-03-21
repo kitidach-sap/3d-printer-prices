@@ -18,8 +18,12 @@ const analytics = require('./analytics');
 // Lazy-loaded to avoid circular deps
 let _scaling = null;
 let _decay = null;
+let _brain = null;
+let _pipeline = null;
 function getScaling() { if (!_scaling) _scaling = require('./scaling'); return _scaling; }
 function getDecay() { if (!_decay) _decay = require('./decay'); return _decay; }
+function getBrain() { if (!_brain) _brain = require('./growthBrain'); return _brain; }
+function getPipeline() { if (!_pipeline) _pipeline = require('./actionPipeline'); return _pipeline; }
 
 // In-memory cache (recalculated periodically)
 let _cache = null;
@@ -146,6 +150,36 @@ async function getBoosts(supabase, forceRefresh = false) {
             console.log('Scaling bridge error (non-fatal):', scalingErr.message);
         }
 
+        // ─── GROWTH BRAIN: evaluate and auto-execute decisions ───
+        let brainResult = null;
+        try {
+            brainResult = await getBrain().evaluateAll(supabase);
+            
+            // Apply brain overrides on top of everything
+            const overrides = getPipeline().getOverrides();
+            Object.entries(overrides.products || {}).forEach(([name, weight]) => {
+                if (products[name]) {
+                    products[name].rank_weight = Math.min(config.MAX_COMBINED_WEIGHT, products[name].rank_weight * weight);
+                    products[name].brain_override = weight;
+                } else if (weight > 1.0) {
+                    products[name] = { rank_weight: Math.min(config.MAX_COMBINED_WEIGHT, weight), badge: null, reason: 'Brain override', brain_override: weight };
+                }
+            });
+            Object.entries(overrides.variants || {}).forEach(([name, weight]) => {
+                if (urgency_weights[name]) urgency_weights[name] = Math.min(config.MAX_COMBINED_WEIGHT, urgency_weights[name] * weight);
+            });
+            Object.entries(overrides.campaigns || {}).forEach(([pid, weight]) => {
+                if (campaign_boosts[pid]) campaign_boosts[pid].weight = Math.min(config.MAX_COMBINED_WEIGHT, campaign_boosts[pid].weight * weight);
+            });
+            ['hooks', 'angles', 'ctas'].forEach(dim => {
+                Object.entries((overrides.x || {})[dim] || {}).forEach(([name, weight]) => {
+                    if (x_post_weights[dim]) x_post_weights[dim][name] = Math.min(config.MAX_COMBINED_WEIGHT, (x_post_weights[dim][name] || 1.0) * weight);
+                });
+            });
+        } catch (brainErr) {
+            console.log('Growth Brain error (non-fatal):', brainErr.message);
+        }
+
         _cache = {
             generated_at: new Date().toISOString(),
             scaling_applied: scalingApplied,
@@ -206,7 +240,8 @@ async function getBoosts(supabase, forceRefresh = false) {
 
         // Console summary for Vercel logs
         const scalingInfo = scalingApplied ? ` | Scaling: ${scalingStats.products}p ${scalingStats.variants}v ${scalingStats.x}x ${scalingStats.campaigns}c` : '';
-        console.log(`💰 Boost computed: ${prodBoosts} products, ${urgBoosts} urgency, ${badgeCount} badges, ${campCount} campaigns${scalingInfo}`);
+        const brainInfo = brainResult && brainResult.executed > 0 ? ` | Brain: ${brainResult.executed} exec, ${brainResult.deferred} defer` : '';
+        console.log(`💰 Boost computed: ${prodBoosts} products, ${urgBoosts} urgency, ${badgeCount} badges, ${campCount} campaigns${scalingInfo}${brainInfo}`);
     } catch (e) {
         console.log('Boost computation error:', e.message);
         _cache = _cache || getEmptyBoosts();

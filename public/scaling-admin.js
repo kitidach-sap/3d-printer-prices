@@ -74,6 +74,8 @@
             case 'sc-campaigns': loadCampaigns(); break;
             case 'sc-sources': loadSources(); break;
             case 'sc-recs': loadRecommendations(); break;
+            case 'sc-brain': loadBrain(); break;
+            case 'sc-strategy': loadStrategy(); break;
             case 'sc-settings': loadSettings(); break;
         }
     }
@@ -465,6 +467,9 @@
                 { key: 'SOURCE_OPTIMIZATION_ENABLED', label: 'Source Optimization', desc: 'Source-aware behavior recommendations' },
                 { key: 'DECAY_ENGINE_ENABLED', label: 'Decay Engine', desc: 'Reduce stale winners over time (gentle, floor 0.9x)' },
                 { key: 'SCALING_DRY_RUN', label: 'Dry Run Mode', desc: 'ON = recommendation only, OFF = apply weights' },
+                { key: 'GROWTH_BRAIN_ENABLED', label: '🧠 Growth Brain', desc: 'Enable AI decision engine (evaluates recommendations)' },
+                { key: 'BRAIN_AUTO_EXECUTE', label: '⚡ Brain Auto-Execute', desc: 'Let brain auto-apply high-confidence decisions' },
+                { key: 'STRATEGY_ENGINE_ENABLED', label: '🎯 Strategy Engine', desc: 'Enable opportunity detection, forecasting, exploration' },
             ];
 
             el.innerHTML = `
@@ -554,7 +559,6 @@
 
     window._scToggleFlag = async function (flag, value) {
         if (!confirm(`Set ${flag} to ${value ? 'ON' : 'OFF'}?`)) {
-            // Re-read settings to revert checkbox
             loadSettings();
             return;
         }
@@ -567,6 +571,227 @@
             if (!d.ok) alert('Error: ' + (d.error || 'Unknown'));
         } catch (e) { alert('Error: ' + e.message); }
     };
+
+    window._scRevert = async function (actionId) {
+        if (!confirm(`Revert brain action #${actionId}?`)) return;
+        try {
+            const res = await fetch('/api/admin/brain/revert', {
+                method: 'POST', headers: hdr(),
+                body: JSON.stringify({ actionId })
+            });
+            const d = await res.json();
+            alert(d.ok ? `Reverted action #${actionId}` : 'Error: ' + (d.error || 'Revert failed'));
+            loadBrain();
+        } catch (e) { alert('Error: ' + e.message); }
+    };
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // BRAIN TAB
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    async function loadBrain() {
+        const el = $('sc-brain');
+        if (!el) return;
+        el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-muted)">Loading brain status...</div>';
+        try {
+            const [status, history] = await Promise.all([
+                fetch(`/api/admin/brain/status?key=${adminKey()}`).then(r => r.json()),
+                fetch(`/api/admin/brain/history?key=${adminKey()}&limit=30`).then(r => r.json()),
+            ]);
+
+            const modeColor = status.mode === 'auto_execute' ? 'var(--success)' : status.mode === 'observe_only' ? 'var(--warning)' : 'var(--danger)';
+            const pipe = status.pipeline || {};
+            const lastEval = status.last_evaluation;
+            const hist = (history.history || []);
+
+            el.innerHTML = `
+                <div class="admin-card" style="border-left:3px solid ${modeColor}">
+                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
+                        <h3 style="margin:0">🧠 Growth Brain</h3>
+                        <div>
+                            <span style="font-size:0.72rem;color:var(--text-muted)">Mode:</span>
+                            <span style="font-weight:700;color:${modeColor};font-size:0.85rem">${status.mode?.replace(/_/g, ' ').toUpperCase() || 'UNKNOWN'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0.75rem;margin-bottom:1rem">
+                    ${metricCard('Actions / Hour', `${pipe.actions_this_hour || 0}/${pipe.max_actions_per_hour || 10}`, '⚡')}
+                    ${metricCard('Capacity Left', pipe.capacity_remaining ?? '—', '📊')}
+                    ${metricCard('Total Actions', pipe.total_actions || 0, '🔢')}
+                    ${metricCard('Active Overrides', Object.values(pipe.active_overrides || {}).reduce((a,b)=>a+b,0), '🎛️')}
+                    ${metricCard('Cooldowns', pipe.cooldowns_active || 0, '⏳')}
+                </div>
+
+                ${lastEval ? `<div class="admin-card">
+                    <h4 style="margin-top:0;font-size:0.85rem">📋 Last Evaluation — ${timeAgo(lastEval.timestamp)}</h4>
+                    <div style="display:flex;gap:1rem;font-size:0.75rem;flex-wrap:wrap">
+                        <span>✅ Executed: <strong>${lastEval.executed}</strong></span>
+                        <span>⏸️ Deferred: <strong>${lastEval.deferred}</strong></span>
+                        <span>⏭️ Skipped: <strong>${lastEval.skipped}</strong></span>
+                        <span>📦 Total: <strong>${lastEval.total_recommendations}</strong></span>
+                    </div>
+                    ${(lastEval.decisions || []).length ? `
+                        <div class="admin-table-wrapper" style="margin-top:0.5rem">
+                            <table class="admin-table" style="font-size:0.68rem">
+                                <thead><tr><th>Type</th><th>Target</th><th>Confidence</th><th>Outcome</th><th>Reason</th></tr></thead>
+                                <tbody>${lastEval.decisions.slice(0, 15).map(d => `<tr>
+                                    <td>${badge(d.type, d.type)}</td>
+                                    <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(d.target)}</td>
+                                    <td>${d.confidence ? badge(d.confidence, d.confidence) : '—'}</td>
+                                    <td>${badge(d.outcome, d.outcome === 'executed' ? 'winner' : d.outcome === 'deferred' ? 'medium' : 'low')}</td>
+                                    <td style="font-size:0.62rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(d.reason)}">${esc(d.reason)}</td>
+                                </tr>`).join('')}</tbody>
+                            </table>
+                        </div>` : ''}
+                </div>` : '<div class="admin-card"><p style="color:var(--text-muted);font-size:0.82rem">No evaluations yet. Brain will evaluate on next boost recalc.</p></div>'}
+
+                <div class="admin-card">
+                    <h4 style="margin-top:0;font-size:0.85rem">📜 Action History (${hist.length})</h4>
+                    ${hist.length === 0 ? '<p style="color:var(--text-muted);font-size:0.82rem">No actions taken yet.</p>' : `
+                        <div class="admin-table-wrapper">
+                            <table class="admin-table" style="font-size:0.68rem">
+                                <thead><tr><th>ID</th><th>Time</th><th>Type</th><th>Entity</th><th>Before</th><th>After</th><th>Confidence</th><th>Actions</th></tr></thead>
+                                <tbody>${hist.map(a => `<tr style="${a.reverted ? 'opacity:0.4' : ''}">
+                                    <td>#${a.id}</td>
+                                    <td>${timeAgo(a.timestamp)}</td>
+                                    <td>${badge(a.type, a.type)}</td>
+                                    <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(a.entity)}</td>
+                                    <td>${a.before != null ? a.before + 'x' : '—'}</td>
+                                    <td>${a.after != null ? a.after + 'x' : '—'}</td>
+                                    <td>${a.confidence ? badge(a.confidence, a.confidence) : '—'}</td>
+                                    <td>${a.reverted ? '<span style="color:var(--text-muted);font-size:0.6rem">reverted</span>' : `<button class="btn btn-sm" style="font-size:0.6rem;padding:0.1rem 0.3rem" onclick="window._scRevert(${a.id})">↩ Revert</button>`}</td>
+                                </tr>`).join('')}</tbody>
+                            </table>
+                        </div>`}
+                </div>
+            `;
+        } catch (e) {
+            el.innerHTML = `<div class="admin-card"><p style="color:var(--danger)">Error: ${esc(e.message)}</p></div>`;
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // STRATEGY TAB
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    async function loadStrategy() {
+        const el = $('sc-strategy');
+        if (!el) return;
+        el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-muted)">Loading strategy...</div>';
+        try {
+            const data = await fetch(`/api/admin/strategy?key=${adminKey()}`).then(r => r.json());
+
+            if (!data.enabled) {
+                el.innerHTML = `<div class="admin-card"><p style="color:var(--warning);font-size:0.85rem">Strategy Engine is disabled. Enable <code>STRATEGY_ENGINE_ENABLED</code> in Settings to activate.</p></div>`;
+                return;
+            }
+
+            const opps = data.opportunities || [];
+            const gaps = data.content_gaps || [];
+            const forecast = data.forecast || {};
+            const explore = data.exploration || {};
+            const recs = data.strategic_recommendations || [];
+
+            el.innerHTML = `
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0.75rem;margin-bottom:1rem">
+                    ${metricCard('Opportunities', opps.length, '🔍')}
+                    ${metricCard('Content Gaps', gaps.length, '📝')}
+                    ${metricCard('Projected 7d', forecast.summary?.projected_7d || 0, '📈')}
+                    ${metricCard('Explore Budget', explore.budget || 0, '🧪')}
+                    ${metricCard('Strategies', recs.length, '🎯')}
+                </div>
+
+                ${recs.length ? `<div class="admin-card">
+                    <h3 style="margin-top:0">🎯 Strategic Recommendations</h3>
+                    ${recs.map(r => `
+                        <div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;margin-bottom:0.4rem">
+                            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem">
+                                <div style="flex:1">
+                                    <div style="font-size:0.82rem;font-weight:600">${esc(r.title)}</div>
+                                    <div style="font-size:0.68rem;color:var(--text-muted);margin-top:0.15rem">${esc(r.detail)}</div>
+                                </div>
+                                <div style="display:flex;gap:0.3rem;align-items:center">
+                                    ${badge(r.type, r.type)}
+                                    ${badge(r.confidence, r.confidence)}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>` : ''}
+
+                ${opps.length ? `<div class="admin-card">
+                    <h3 style="margin-top:0">🔍 Opportunities (${opps.length})</h3>
+                    <div class="admin-table-wrapper">
+                        <table class="admin-table" style="font-size:0.72rem">
+                            <thead><tr><th>Type</th><th>Category</th><th>Signal</th><th>Score</th><th>Potential</th><th>Action</th></tr></thead>
+                            <tbody>${opps.map(o => `<tr>
+                                <td>${badge(o.type, o.type)}</td>
+                                <td>${esc(o.category)}</td>
+                                <td style="font-size:0.65rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(o.signal)}">${esc(o.signal)}</td>
+                                <td><strong>${o.score}</strong></td>
+                                <td>${badge(o.potential, o.potential)}</td>
+                                <td style="font-size:0.65rem">${esc(o.action)}</td>
+                            </tr>`).join('')}</tbody>
+                        </table>
+                    </div>
+                </div>` : ''}
+
+                ${gaps.length ? `<div class="admin-card">
+                    <h3 style="margin-top:0">📝 Content Gaps (${gaps.length})</h3>
+                    <div class="admin-table-wrapper">
+                        <table class="admin-table" style="font-size:0.72rem">
+                            <thead><tr><th>Product</th><th>Clicks</th><th>Coverage</th><th>Missing</th><th>Action</th></tr></thead>
+                            <tbody>${gaps.map(g => `<tr>
+                                <td>${esc(g.entity)}</td>
+                                <td>${g.clicks}</td>
+                                <td>${esc(g.coverage)}</td>
+                                <td>${(g.missing_types || []).map(m => badge(m, 'review')).join(' ')}</td>
+                                <td style="font-size:0.65rem">${esc(g.action)}</td>
+                            </tr>`).join('')}</tbody>
+                        </table>
+                    </div>
+                </div>` : ''}
+
+                ${(forecast.products || []).length ? `<div class="admin-card">
+                    <h3 style="margin-top:0">📈 Revenue Forecast (${forecast.summary?.lookback_days || 14}d → ${forecast.summary?.projection_days || 7}d)</h3>
+                    <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:0.5rem">
+                        Avg daily: <strong>${forecast.summary?.avg_daily_clicks || 0}</strong> clicks · Projected 7d: <strong>${forecast.summary?.projected_7d || 0}</strong> · Top grower: <strong>${esc(forecast.summary?.top_grower || 'none')}</strong>
+                    </div>
+                    <div class="admin-table-wrapper">
+                        <table class="admin-table" style="font-size:0.72rem">
+                            <thead><tr><th>Product</th><th>Current</th><th>Daily Rate</th><th>Projected 7d</th><th>Growth</th><th>Revenue</th></tr></thead>
+                            <tbody>${forecast.products.map(p => `<tr>
+                                <td>${esc(p.entity)}</td>
+                                <td>${p.current_clicks}</td>
+                                <td>${p.daily_rate}</td>
+                                <td><strong>${p.projected_clicks_7d}</strong></td>
+                                <td>${badge(p.growth_trend, p.growth_trend === 'growing' ? 'rising' : p.growth_trend === 'stable' ? 'stable' : 'low')}</td>
+                                <td>${badge(p.revenue_potential, p.revenue_potential)}</td>
+                            </tr>`).join('')}</tbody>
+                        </table>
+                    </div>
+                </div>` : ''}
+
+                ${explore.candidates?.length || explore.topic_suggestions?.length ? `<div class="admin-card">
+                    <h3 style="margin-top:0">🧪 Exploration Mode</h3>
+                    <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:0.5rem">
+                        Budget: <strong>${explore.budget}</strong> slots · Used: ${explore.used} · Remaining: <strong>${explore.remaining}</strong>
+                    </div>
+                    ${explore.candidates?.length ? `<h4 style="font-size:0.78rem">Unexplored Products</h4>
+                    <div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.5rem">${explore.candidates.map(c => 
+                        `<span style="background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;padding:0.25rem 0.5rem;font-size:0.7rem">${esc(c.entity)} (${c.clicks} clicks)</span>`
+                    ).join('')}</div>` : ''}
+                    ${explore.topic_suggestions?.length ? `<h4 style="font-size:0.78rem">Topic Suggestions</h4>
+                    <div style="display:flex;flex-wrap:wrap;gap:0.4rem">${explore.topic_suggestions.map(t => 
+                        `<span style="background:#a78bfa15;border:1px solid #a78bfa30;border-radius:6px;padding:0.25rem 0.5rem;font-size:0.7rem;color:#a78bfa">${esc(t.topic)}</span>`
+                    ).join('')}</div>` : ''}
+                </div>` : ''}
+            `;
+        } catch (e) {
+            el.innerHTML = `<div class="admin-card"><p style="color:var(--danger)">Error: ${esc(e.message)}</p></div>`;
+        }
+    }
 
     // ═══════════════════════════════════════════════════════════════════════════
     // INIT — hook into admin tabs system

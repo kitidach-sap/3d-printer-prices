@@ -4557,6 +4557,8 @@ app.post('/api/admin/scaling/settings', express.json(), async (req, res) => {
             'FULL_AUTO_SCALING_ENABLED', 'PRODUCT_SCALING_ENABLED', 'BLOG_SCALING_ENABLED',
             'X_SCALING_ENABLED', 'CAMPAIGN_SCALING_ENABLED', 'SOURCE_OPTIMIZATION_ENABLED',
             'DECAY_ENGINE_ENABLED', 'SCALING_DRY_RUN',
+            'GROWTH_BRAIN_ENABLED', 'BRAIN_AUTO_EXECUTE',
+            'STRATEGY_ENGINE_ENABLED',
         ];
         if (!allowedFlags.includes(flag)) {
             return res.status(400).json({ error: `Invalid flag: ${flag}. Allowed: ${allowedFlags.join(', ')}` });
@@ -4568,6 +4570,56 @@ app.post('/api/admin/scaling/settings', express.json(), async (req, res) => {
         logScalingAction('flag_toggle', { flag, previous, new: Boolean(value) });
 
         res.json({ ok: true, flag, previous, new: config[flag] });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GROWTH BRAIN + STRATEGY ENGINE API
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// GET /api/admin/brain/status — brain state and pipeline status
+app.get('/api/admin/brain/status', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const brain = require('./revenue/growthBrain');
+        res.json(brain.getBrainStatus());
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/brain/history — action history
+app.get('/api/admin/brain/history', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const pipeline = require('./revenue/actionPipeline');
+        const limit = parseInt(req.query.limit) || 50;
+        res.json({ history: pipeline.getHistory(limit), status: pipeline.getStatus() });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/brain/revert — revert a brain action
+app.post('/api/admin/brain/revert', express.json(), async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const pipeline = require('./revenue/actionPipeline');
+        const { actionId } = req.body;
+        if (!actionId) return res.status(400).json({ error: 'actionId required' });
+        const result = pipeline.revertAction(actionId);
+        logScalingAction('brain_revert', { actionId, result: result.ok });
+        res.json(result);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/strategy — strategy engine output
+app.get('/api/admin/strategy', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const strategy = require('./revenue/strategyEngine');
+        const data = await strategy.getStrategy(supabase);
+        res.json(data);
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

@@ -95,6 +95,28 @@ module.exports = {
     MIN_ORGANIC_DIVERSITY: 0.6,         // 60% of rankings must be organic/unmodified
 
     // ═══════════════════════════════════════════════════════════
+    // GROWTH BRAIN — AI Decision Engine
+    // ═══════════════════════════════════════════════════════════
+    GROWTH_BRAIN_ENABLED: process.env.GROWTH_BRAIN_ENABLED === 'true' || false,
+    BRAIN_AUTO_EXECUTE: process.env.BRAIN_AUTO_EXECUTE === 'true' || false,
+    MAX_ACTIONS_PER_HOUR: 10,
+    COOLDOWN_PER_ENTITY_MS: 7200000,    // 2 hours between actions on same entity
+    MAX_BOOST_DELTA: 0.15,              // max single change ±15%
+    MAX_ACTION_HISTORY: 500,
+
+    // ═══════════════════════════════════════════════════════════
+    // STRATEGY ENGINE — Opportunity Detection + Forecasting
+    // ═══════════════════════════════════════════════════════════
+    STRATEGY_ENGINE_ENABLED: process.env.STRATEGY_ENGINE_ENABLED === 'true' || false,
+    EXPLORATION_RESERVE_RATIO: 0.15,    // 15% reserved for new/untested
+    EXPLORATION_MIN_BUDGET: 2,          // at least 2 exploration slots
+    FORECAST_LOOKBACK_DAYS: 14,         // data for forecasting
+    FORECAST_PROJECT_DAYS: 7,           // project this far forward
+    MIN_CLUSTER_ARTICLES: 3,            // min articles to form a cluster
+    CONTENT_GAP_THRESHOLD: 0.3,         // 30% coverage = gap detected
+    STRATEGY_RECALC_INTERVAL_MS: 3600000, // hourly recalc
+
+    // ═══════════════════════════════════════════════════════════
     // LOGGING
     // ═══════════════════════════════════════════════════════════
     BOOST_LOGGING_ENABLED: true,
