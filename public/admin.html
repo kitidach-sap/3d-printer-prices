@@ -53,6 +53,7 @@
             <button class="admin-tab" data-tab="schedule" role="tab" aria-selected="false" aria-controls="tab-schedule">⏰ Schedule</button>
             <button class="admin-tab" data-tab="xpost" role="tab" aria-selected="false" aria-controls="tab-xpost">🐦 X Auto-Post</button>
             <button class="admin-tab" data-tab="marketing" role="tab" aria-selected="false" aria-controls="tab-marketing">📢 Marketing</button>
+            <button class="admin-tab" data-tab="scaling" role="tab" aria-selected="false" aria-controls="tab-scaling">📈 Scaling</button>
             <button class="admin-tab" data-tab="settings" role="tab" aria-selected="false" aria-controls="tab-settings">⚙️ Settings</button>
         </div>
 
@@ -940,6 +941,28 @@
                     </div>
                 </form>
             </div>
+        </div>
+
+        <!-- ==================== SCALING TAB ==================== -->
+        <div class="tab-content" id="tab-scaling" role="tabpanel" tabindex="0">
+            <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.75rem;border-bottom:1px solid var(--border);padding-bottom:0.5rem">
+                <button class="sc-subtab active" data-sctab="sc-overview" style="padding:0.3rem 0.6rem;font-size:0.75rem;border:1px solid var(--border);border-radius:4px;background:var(--bg-card);cursor:pointer;color:var(--text-primary)">📊 Overview</button>
+                <button class="sc-subtab" data-sctab="sc-products" style="padding:0.3rem 0.6rem;font-size:0.75rem;border:1px solid var(--border);border-radius:4px;background:var(--bg-card);cursor:pointer;color:var(--text-secondary)">📦 Products</button>
+                <button class="sc-subtab" data-sctab="sc-articles" style="padding:0.3rem 0.6rem;font-size:0.75rem;border:1px solid var(--border);border-radius:4px;background:var(--bg-card);cursor:pointer;color:var(--text-secondary)">📝 Articles</button>
+                <button class="sc-subtab" data-sctab="sc-variants" style="padding:0.3rem 0.6rem;font-size:0.75rem;border:1px solid var(--border);border-radius:4px;background:var(--bg-card);cursor:pointer;color:var(--text-secondary)">🏷️ Variants</button>
+                <button class="sc-subtab" data-sctab="sc-campaigns" style="padding:0.3rem 0.6rem;font-size:0.75rem;border:1px solid var(--border);border-radius:4px;background:var(--bg-card);cursor:pointer;color:var(--text-secondary)">📢 Campaigns</button>
+                <button class="sc-subtab" data-sctab="sc-sources" style="padding:0.3rem 0.6rem;font-size:0.75rem;border:1px solid var(--border);border-radius:4px;background:var(--bg-card);cursor:pointer;color:var(--text-secondary)">🌐 Sources</button>
+                <button class="sc-subtab" data-sctab="sc-recs" style="padding:0.3rem 0.6rem;font-size:0.75rem;border:1px solid var(--border);border-radius:4px;background:var(--bg-card);cursor:pointer;color:var(--text-secondary)">💡 Recs</button>
+                <button class="sc-subtab" data-sctab="sc-settings" style="padding:0.3rem 0.6rem;font-size:0.75rem;border:1px solid var(--border);border-radius:4px;background:var(--bg-card);cursor:pointer;color:var(--text-secondary)">🔧 Settings</button>
+            </div>
+            <div class="sc-tab-content" id="sc-overview" style="display:block"><div style="text-align:center;padding:2rem;color:var(--text-muted)">Click to load scaling data...</div></div>
+            <div class="sc-tab-content" id="sc-products" style="display:none"></div>
+            <div class="sc-tab-content" id="sc-articles" style="display:none"></div>
+            <div class="sc-tab-content" id="sc-variants" style="display:none"></div>
+            <div class="sc-tab-content" id="sc-campaigns" style="display:none"></div>
+            <div class="sc-tab-content" id="sc-sources" style="display:none"></div>
+            <div class="sc-tab-content" id="sc-recs" style="display:none"></div>
+            <div class="sc-tab-content" id="sc-settings" style="display:none"></div>
         </div>
 
         <!-- ==================== SETTINGS TAB ==================== -->
@@ -2814,6 +2837,7 @@
             }
         }
     </script>
+    <script src="scaling-admin.js"></script>
 </body>
 
 </html>

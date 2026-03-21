@@ -4488,6 +4488,89 @@ app.get('/api/admin/scaling/sources', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// ADMIN SCALING POST ENDPOINTS — overrides, boosts, settings
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// In-memory audit log for scaling overrides
+const _scalingAuditLog = [];
+function logScalingAction(action, details) {
+    _scalingAuditLog.push({ timestamp: new Date().toISOString(), action, ...details });
+    while (_scalingAuditLog.length > 500) _scalingAuditLog.shift();
+    console.log(`📊 Scaling action: ${action}`, JSON.stringify(details).slice(0, 200));
+}
+
+// GET /api/admin/scaling/audit — audit trail
+app.get('/api/admin/scaling/audit', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    res.json({ total: _scalingAuditLog.length, entries: [..._scalingAuditLog].reverse() });
+});
+
+// POST /api/admin/scaling/boost — manual boost override
+app.post('/api/admin/scaling/boost', express.json(), async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const { entity, type, weight, action: boostAction } = req.body;
+        if (!entity || !type) return res.status(400).json({ error: 'entity and type required' });
+        const safeWeight = Math.max(0.5, Math.min(2.0, Number(weight) || 1.0));
+
+        logScalingAction('manual_boost', {
+            entity, type, weight: safeWeight, action: boostAction,
+            previous: 'auto', new: safeWeight,
+        });
+
+        // Store override in-memory (will persist until process restart)
+        if (!global._scalingOverrides) global._scalingOverrides = {};
+        global._scalingOverrides[`${type}:${entity}`] = { weight: safeWeight, at: Date.now() };
+
+        res.json({ ok: true, message: `Boost set: ${entity} → ${safeWeight}x`, applied: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/scaling/override — accept/ignore recommendation
+app.post('/api/admin/scaling/override', express.json(), async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const { recommendation_index, action: overrideAction } = req.body;
+        logScalingAction('recommendation_override', {
+            recommendation_index, action: overrideAction,
+        });
+        res.json({
+            ok: true,
+            message: `Recommendation ${recommendation_index} ${overrideAction}ed. Logged for review.`,
+        });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/scaling/settings — toggle feature flags at runtime
+app.post('/api/admin/scaling/settings', express.json(), async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const { flag, value } = req.body;
+        const config = require('./revenue/config');
+
+        const allowedFlags = [
+            'FULL_AUTO_SCALING_ENABLED', 'PRODUCT_SCALING_ENABLED', 'BLOG_SCALING_ENABLED',
+            'X_SCALING_ENABLED', 'CAMPAIGN_SCALING_ENABLED', 'SOURCE_OPTIMIZATION_ENABLED',
+            'DECAY_ENGINE_ENABLED', 'SCALING_DRY_RUN',
+        ];
+        if (!allowedFlags.includes(flag)) {
+            return res.status(400).json({ error: `Invalid flag: ${flag}. Allowed: ${allowedFlags.join(', ')}` });
+        }
+
+        const previous = config[flag];
+        config[flag] = Boolean(value);
+
+        logScalingAction('flag_toggle', { flag, previous, new: Boolean(value) });
+
+        res.json({ ok: true, flag, previous, new: config[flag] });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/trending — public trending product IDs (for frontend badge)
 app.get('/api/trending', async (req, res) => {
     try {
