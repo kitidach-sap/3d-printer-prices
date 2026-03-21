@@ -836,6 +836,9 @@ function getSmartBadges(p) {
         if (p.rating >= 4.7 && p.review_count >= 50) badges.push({ text: '⭐ Top Rated', class: 'badge-top' });
         if (p.review_count >= 1000) badges.push({ text: '🔥 Popular', class: 'badge-popular' });
     }
+    // Data-driven trending badge
+    const tBadge = getTrendingBadge(p.id);
+    if (tBadge && badges.length < 3) badges.unshift(tBadge); // trending goes first
     return badges.slice(0, 3);
 }
 
@@ -860,6 +863,25 @@ async function loadCampaigns() {
             });
         }
     } catch (e) { /* silent */ }
+}
+
+// --- Trending Products (Data-Driven) ---
+let _trendingProducts = {};
+
+async function loadTrending() {
+    try {
+        const res = await fetch('/api/trending');
+        const data = await res.json();
+        if (data.trending) {
+            data.trending.forEach(t => { _trendingProducts[t.product_id] = t; });
+        }
+    } catch (e) { /* silent */ }
+}
+
+function getTrendingBadge(productId) {
+    const t = _trendingProducts[productId];
+    if (t && t.badge) return { text: t.badge, class: 'badge-trending' };
+    return null;
 }
 
 function isCampaignProduct(productId) {
@@ -980,6 +1002,7 @@ function initStickyMobileCTA() {
 // --- Initialize on DOM Ready ---
 document.addEventListener('DOMContentLoaded', () => {
     loadCampaigns();
+    loadTrending();
     injectFAQSchema();
 
     // Track source on landing

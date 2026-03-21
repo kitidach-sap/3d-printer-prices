@@ -4099,6 +4099,30 @@ app.get('/api/metrics', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/admin/analytics — full optimization dashboard (admin-only)
+app.get('/api/admin/analytics', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const optimizer = require('./marketing/optimizer');
+        const dashboard = await optimizer.getDashboard(supabase);
+        res.json(dashboard);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/trending — public trending product IDs (for frontend badge)
+app.get('/api/trending', async (req, res) => {
+    try {
+        const optimizer = require('./marketing/optimizer');
+        const trending = await optimizer.getTrendingProducts(supabase);
+        // Return only IDs and scores (lightweight)
+        const result = Object.entries(trending).map(([id, d]) => ({
+            product_id: id, score: d.trending_score, badge: d.badge,
+        })).sort((a, b) => b.score - a.score).slice(0, 30);
+        res.json({ trending: result });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // ============================================
 // Cron Routes (proxy to Vercel cron handlers for local dev)
 // ============================================

@@ -3436,6 +3436,16 @@ td.loading {
   border-radius: 4px;
   font-weight: 600;
 }
+.badge-trending {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(249, 115, 22, 0.2));
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+  animation: pulse-badge 2s ease-in-out infinite;
+}
 
 /* ============================================
    Revenue Optimization — Campaign Featured

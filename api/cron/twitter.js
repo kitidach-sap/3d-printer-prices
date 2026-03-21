@@ -17,6 +17,7 @@ const { generateMarketingTweets, generateAITweet, buildSiteLink } = require('../
 const { selectProduct, selectAngle, isDuplicate, getCampaignProduct } = require('../../marketing/scheduler');
 const { getAngles } = require('../../marketing/hooks');
 const { MarketingLogger } = require('../../marketing/logger');
+const { getOptimizedWeights, selectWeightedAngle } = require('../../marketing/optimizer');
 
 const supabase = createClient(
     process.env.SUPABASE_URL,
@@ -165,8 +166,23 @@ module.exports = async function handler(req, res) {
             amazon_asin: targetProduct.amazon_asin,
         };
 
-        // Step 3: Pick best angle (avoid recently used for this product)
-        const angle = selectAngle(getAngles(), usedAngles);
+        // Step 3: Pick best angle — data-driven (A/B weighted) or random fallback
+        let angle;
+        try {
+            const { weights, confidence } = await getOptimizedWeights(supabase);
+            // Filter out recently used angles
+            const available = { ...weights };
+            usedAngles.forEach(a => delete available[a]);
+            if (Object.keys(available).length > 0) {
+                angle = selectWeightedAngle(available);
+            } else {
+                angle = selectAngle(getAngles(), usedAngles);
+            }
+            logger.log('Angle selected (optimizer)', { angle, confidence });
+        } catch (e) {
+            angle = selectAngle(getAngles(), usedAngles);
+            logger.log('Angle selected (fallback)', { angle });
+        }
         logger.log('Product selected', { name: product.name, price: product.price, category: product.category, angle, usedAngles });
 
         // Step 4: Generate tweet (AI-first, template fallback)
