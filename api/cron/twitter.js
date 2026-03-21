@@ -207,6 +207,9 @@ module.exports = async function handler(req, res) {
             product_url: siteLink,
             status: 'posted',
             posted_at: new Date().toISOString(),
+            hook_type: angle,
+            angle_type: angle,
+            cta_type: 'auto',
         });
         if (insertErr) logger.warn('DB save failed', { error: insertErr.message });
         else logger.success('Saved to x_posts');

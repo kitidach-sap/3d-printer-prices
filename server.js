@@ -4047,6 +4047,59 @@ app.get('/api/admin/thin-page-audit', async (req, res) => {
 });
 
 // ============================================
+// Behavior Tracking — Revenue Optimization
+// ============================================
+
+// POST /api/events — lightweight async event tracking (non-blocking)
+app.post('/api/events', async (req, res) => {
+    res.status(202).json({ ok: true });
+    try {
+        const events = Array.isArray(req.body) ? req.body : [req.body];
+        const rows = events.slice(0, 20).map(e => ({
+            event_type: String(e.type || 'click').substring(0, 20),
+            product_id: e.product_id || null,
+            product_name: e.product_name ? String(e.product_name).substring(0, 100) : null,
+            price: e.price ? Number(e.price) : null,
+            badge: e.badge ? String(e.badge).substring(0, 50) : null,
+            position: e.position ? Number(e.position) : null,
+            source: e.source ? String(e.source).substring(0, 30) : 'organic',
+            session_id: e.session_id ? String(e.session_id).substring(0, 50) : null,
+            user_agent: (req.headers['user-agent'] || '').substring(0, 200),
+        }));
+        await supabase.from('click_events').insert(rows);
+    } catch (e) { console.log('Event tracking error:', e.message); }
+});
+
+// GET /api/metrics — simple analytics dashboard (admin-only)
+app.get('/api/metrics', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const since = new Date(Date.now() - 7 * 86400000).toISOString();
+        const { data: clicks } = await supabase.from('click_events')
+            .select('product_name, product_id, price')
+            .eq('event_type', 'click').gte('created_at', since)
+            .order('created_at', { ascending: false }).limit(500);
+        const { data: sources } = await supabase.from('click_events')
+            .select('source').gte('created_at', since).limit(1000);
+        const { data: badges } = await supabase.from('click_events')
+            .select('badge').eq('event_type', 'click')
+            .not('badge', 'is', null).gte('created_at', since).limit(500);
+        const agg = (arr, k) => {
+            const m = {};
+            (arr || []).forEach(r => { const v = r[k] || 'unknown'; m[v] = (m[v] || 0) + 1; });
+            return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([n, c]) => ({ name: n, count: c }));
+        };
+        res.json({
+            period: '7d', total_clicks: clicks?.length || 0, total_events: sources?.length || 0,
+            top_products: agg(clicks, 'product_name'),
+            top_sources: agg(sources, 'source'),
+            top_badges: agg(badges, 'badge'),
+        });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ============================================
 // Cron Routes (proxy to Vercel cron handlers for local dev)
 // ============================================
 // X Auto-Post Admin Endpoints

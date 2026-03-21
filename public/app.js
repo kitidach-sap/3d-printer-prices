@@ -347,7 +347,7 @@ async function loadProducts() {
 
         tbody.classList.add('product-grid');
         tbody.innerHTML = data.map(p => `
-            <div class="product-card">
+            <div class="product-card ${isCampaignProduct(p.id) ? 'campaign-featured' : ''}">
                 <a href="/product.html?id=${p.id}" class="card-image-link">
                     <img
                         src="${p.image_url || ''}"
@@ -360,6 +360,7 @@ async function loadProducts() {
                         ${p.category === 'filament' ? '🧵' : p.category === 'resin' ? '💧' : p.category === '3d_pen' ? '✏️' : p.category === 'accessories' ? '🔧' : '🖨️'}
                     </span>
                     ${p.condition === 'new' ? '' : `<span class="condition-badge condition-${p.condition}">♻️ Used</span>`}
+                    ${isCampaignProduct(p.id) ? '<span class="badge-featured-deal">🔥 Featured Deal</span>' : ''}
                 </a>
                 
                 <div class="card-content">
@@ -374,11 +375,9 @@ async function loadProducts() {
                         <a href="/product.html?id=${p.id}">${escapeHtml(p.display_name || p.product_name)}</a>
                     </h3>
 
-                    ${p.labels && p.labels.length > 0 ? `
                     <div class="ai-badges">
-                        ${p.labels.map(l => `<span class="${l.toLowerCase().includes('beginner') ? 'badge-beginner' : 'badge-feature'}">${escapeHtml(l)}</span>`).join('')}
+                        ${getSmartBadges(p).map(b => `<span class="${b.class}">${escapeHtml(b.text)}</span>`).join('')}
                     </div>
-                    ` : '<div class="ai-badges-placeholder"></div>'}
 
                     <div class="specs-grid">
                         <div class="spec-item">
@@ -402,9 +401,9 @@ async function loadProducts() {
                         </div>
                         
                         <div class="action-buttons">
-                            <a href="${affiliateUrl(p.amazon_url)}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-full">Check on Amazon</a>
+                            <a href="${affiliateUrl(p.amazon_url)}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-full" onclick="trackEvent('click',{product_id:'${p.id}',product_name:'${escapeHtml(p.display_name||p.product_name).replace(/'/g,"\\'")}',price:${p.price||0},badge:'${getSmartBadges(p).map(b=>b.text).join(',')}',position:${data.indexOf(p)}})">Check Price — $${p.price?.toFixed(2) || '—'} <span class="urgency-tag">${getUrgencyTag(p)}</span></a>
                             <label class="btn btn-secondary btn-full compare-btn ${compareList.some(c => c.id === p.id) ? 'active' : ''}">
-                                <input type="checkbox" class="sr-only" onchange="toggleCompare('${p.id}', this.dataset.name, this.dataset.image, ${p.price || 0}, this.dataset.url); this.parentElement.classList.toggle('active', this.checked);" data-name="${escapeHtml(p.display_name || p.product_name)}" data-image="${p.image_url || ''}" data-url="${p.amazon_url}" ${compareList.some(c => c.id === p.id) ? 'checked' : ''}>
+                                <input type="checkbox" class="sr-only" onchange="toggleCompare('${p.id}', this.dataset.name, this.dataset.image, ${p.price || 0}, this.dataset.url); this.parentElement.classList.toggle('active', this.checked); trackEvent('compare',{product_id:'${p.id}',product_name:this.dataset.name,price:${p.price||0}});" data-name="${escapeHtml(p.display_name || p.product_name)}" data-image="${p.image_url || ''}" data-url="${p.amazon_url}" ${compareList.some(c => c.id === p.id) ? 'checked' : ''}>
                                 ${compareList.some(c => c.id === p.id) ? '✓ Added' : '➕ Compare'}
                             </label>
                         </div>
@@ -418,6 +417,13 @@ async function loadProducts() {
         document.getElementById('page-info').textContent = `Page ${currentPage + 1} of ${totalPages}`;
         document.getElementById('prev-page').disabled = currentPage === 0;
         document.getElementById('next-page').disabled = !pagination.hasMore;
+
+        // Revenue Optimization hooks
+        if (currentPage === 0 && typeof injectProductSchema === 'function') {
+            injectProductSchema(data);
+            renderTrustBanner(totalProducts);
+            initStickyMobileCTA();
+        }
 
     } catch (err) {
         console.error('Products error:', err);
@@ -779,3 +785,205 @@ function openCompareModal() {
     const ids = compareList.map(c => c.id).join(',');
     window.open(`/compare.html?ids=${ids}`, '_blank');
 }
+
+// ============================================
+// Revenue Optimization Layer
+// ============================================
+
+// --- Session & Source Tracking ---
+const _sessionId = localStorage.getItem('_sid') || (() => { const s = Date.now().toString(36) + Math.random().toString(36).slice(2, 8); localStorage.setItem('_sid', s); return s; })();
+
+function detectSource() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('utm_source') === 'twitter' || params.get('ref') === 'x') return 'twitter';
+    if (params.get('utm_source') === 'campaign' || params.get('campaign')) return 'campaign';
+    if (document.referrer.includes('t.co') || document.referrer.includes('twitter.com') || document.referrer.includes('x.com')) return 'twitter';
+    if (document.referrer.includes('google') || document.referrer.includes('bing')) return 'search';
+    if (document.referrer.includes('reddit.com')) return 'reddit';
+    if (document.referrer && !document.referrer.includes(location.hostname)) return 'referral';
+    return 'direct';
+}
+
+const _trafficSource = (() => {
+    const src = detectSource();
+    if (src !== 'direct') sessionStorage.setItem('_src', src);
+    return sessionStorage.getItem('_src') || src;
+})();
+
+// --- Non-blocking Event Tracker ---
+function trackEvent(type, data = {}) {
+    try {
+        const payload = JSON.stringify({ type, ...data, source: _trafficSource, session_id: _sessionId });
+        if (navigator.sendBeacon) {
+            navigator.sendBeacon('/api/events', new Blob([payload], { type: 'application/json' }));
+        } else {
+            fetch('/api/events', { method: 'POST', body: payload, headers: { 'Content-Type': 'application/json' }, keepalive: true }).catch(() => {});
+        }
+    } catch (e) { /* silent */ }
+}
+
+// --- Smart Badge Generator ---
+function getSmartBadges(p) {
+    const badges = [];
+    // Keep existing DB badges
+    if (p.labels && p.labels.length > 0) {
+        p.labels.forEach(l => badges.push({ text: l, class: l.toLowerCase().includes('beginner') ? 'badge-beginner' : 'badge-feature' }));
+    }
+    // Dynamic computed badges (only if not already have >2)
+    if (badges.length < 3) {
+        if (p.discount_percent && p.discount_percent > 5) badges.push({ text: `📉 ${p.discount_percent}% Off`, class: 'badge-price-drop' });
+        if (p.price && p.price < 200 && p.rating >= 4.0 && p.category === '3d_printer') badges.push({ text: '💰 Best Budget', class: 'badge-budget' });
+        if (p.rating >= 4.7 && p.review_count >= 50) badges.push({ text: '⭐ Top Rated', class: 'badge-top' });
+        if (p.review_count >= 1000) badges.push({ text: '🔥 Popular', class: 'badge-popular' });
+    }
+    return badges.slice(0, 3);
+}
+
+// --- CTA Urgency Tag ---
+function getUrgencyTag(p) {
+    if (p.discount_percent && p.discount_percent > 5) return '(Price Drop!)';
+    if (p.rating >= 4.7) return '(Top Rated)';
+    if (p.review_count >= 500) return '(Popular)';
+    return '(Updated Today)';
+}
+
+// --- Campaign Surface ---
+let _campaignProducts = new Set();
+
+async function loadCampaigns() {
+    try {
+        const res = await fetch('/api/featured-campaigns');
+        const data = await res.json();
+        if (data.success && data.campaigns) {
+            data.campaigns.forEach(c => {
+                if (c.product_id) _campaignProducts.add(c.product_id);
+            });
+        }
+    } catch (e) { /* silent */ }
+}
+
+function isCampaignProduct(productId) {
+    return _campaignProducts.has(productId);
+}
+
+// --- FAQ Schema Injection ---
+function injectFAQSchema() {
+    const path = window.location.pathname;
+    const faqs = {
+        '/': [
+            { q: 'What is the best 3D printer for beginners in 2026?', a: 'The Bambu Lab A1 Mini and Creality Ender-3 V3 are top picks for beginners, offering great print quality under $300 with easy setup.' },
+            { q: 'How much does a good 3D printer cost?', a: 'Budget 3D printers start at $150-300, mid-range models cost $300-800, and professional printers range from $800-3000+.' },
+            { q: 'FDM vs Resin — which 3D printer should I buy?', a: 'FDM is better for large functional parts and beginners. Resin excels at tiny details like miniatures and jewelry. FDM is cheaper to operate.' },
+            { q: 'Are 3D printers worth it in 2026?', a: 'Yes. Prices have dropped significantly while quality has improved. A $200 printer today outperforms $1000 printers from 5 years ago.' },
+        ],
+        '/budget-3d-printers': [
+            { q: 'What is the best 3D printer under $200?', a: 'The Creality Ender-3 V3 SE and Elegoo Neptune 4 are excellent printers under $200, offering reliable printing with modern features.' },
+            { q: 'Is a cheap 3D printer worth buying?', a: 'Yes, budget printers under $300 now include features like auto bed leveling and fast printing that were premium features 2 years ago.' },
+            { q: 'What should I look for in a budget 3D printer?', a: 'Look for auto bed leveling, direct drive extruder, at least 220x220mm build area, and a heated bed. These features make printing much easier.' },
+        ],
+        '/resin-3d-printers': [
+            { q: 'Are resin 3D printers safe to use at home?', a: 'Yes, with proper ventilation and PPE. Use the printer in a well-ventilated area, wear nitrile gloves, and consider a fume extractor.' },
+            { q: 'What is the best resin 3D printer for miniatures?', a: 'The Elegoo Saturn 4 Ultra and Anycubic Photon Mono M7 offer excellent detail resolution for miniatures and tabletop gaming pieces.' },
+            { q: 'How much does resin cost per print?', a: 'A typical miniature uses 5-15ml of resin, costing $0.15-0.50 per print. A 1kg bottle of standard resin costs $25-40 and makes dozens of prints.' },
+        ],
+        '/filament': [
+            { q: 'What is the best PLA filament brand?', a: 'Hatchbox, eSUN, and Polymaker are consistently rated as top PLA filament brands for their quality, consistency, and value.' },
+            { q: 'PLA vs PETG — which filament should I use?', a: 'PLA is easier to print and best for decorative items. PETG is stronger, more heat-resistant, and better for functional parts.' },
+        ],
+    };
+
+    // Match path
+    const matchedFaqs = faqs[path] || faqs['/'];
+    if (!matchedFaqs) return;
+
+    const schema = {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: matchedFaqs.map(f => ({
+            '@type': 'Question',
+            name: f.q,
+            acceptedAnswer: { '@type': 'Answer', text: f.a }
+        }))
+    };
+
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.textContent = JSON.stringify(schema);
+    document.head.appendChild(script);
+}
+
+// --- Product List Schema Injection ---
+function injectProductSchema(products) {
+    if (!products || products.length === 0) return;
+    const items = products.slice(0, 10).map((p, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        item: {
+            '@type': 'Product',
+            name: p.display_name || p.product_name,
+            image: p.image_url || '',
+            url: `https://3d-printer-prices.com/product.html?id=${p.id}`,
+            ...(p.rating ? {
+                aggregateRating: { '@type': 'AggregateRating', ratingValue: p.rating, reviewCount: p.review_count || 1 }
+            } : {}),
+            offers: {
+                '@type': 'Offer',
+                url: p.amazon_url,
+                priceCurrency: 'USD',
+                price: p.price || 0,
+                availability: 'https://schema.org/InStock',
+                seller: { '@type': 'Organization', name: 'Amazon' }
+            }
+        }
+    }));
+
+    const schema = { '@context': 'https://schema.org', '@type': 'ItemList', itemListElement: items };
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.textContent = JSON.stringify(schema);
+    document.head.appendChild(script);
+}
+
+// --- Trust Banner ---
+function renderTrustBanner(productCount) {
+    const banner = document.getElementById('trust-banner');
+    if (!banner) return;
+    const hours = new Date().getHours();
+    const ago = hours < 8 ? 'last night' : hours < 14 ? 'this morning' : 'today';
+    banner.innerHTML = `
+        <span>✅ <strong>${productCount}+ products</strong> tracked</span>
+        <span class="trust-sep">·</span>
+        <span>Prices updated <strong>${ago}</strong></span>
+        <span class="trust-sep">·</span>
+        <span>Data from <strong>Amazon</strong></span>
+    `;
+    banner.style.display = 'flex';
+}
+
+// --- Sticky Mobile CTA ---
+function initStickyMobileCTA() {
+    const bar = document.getElementById('sticky-mobile-bar');
+    if (!bar || window.innerWidth > 768) return;
+    let shown = false;
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+            if (!e.isIntersecting && !shown) {
+                bar.classList.add('visible');
+                shown = true;
+            }
+        });
+    }, { threshold: 0 });
+    const firstCard = document.querySelector('.product-card');
+    if (firstCard) observer.observe(firstCard);
+}
+
+// --- Initialize on DOM Ready ---
+document.addEventListener('DOMContentLoaded', () => {
+    loadCampaigns();
+    injectFAQSchema();
+
+    // Track source on landing
+    if (_trafficSource !== 'direct') {
+        trackEvent('visit', { source: _trafficSource, landing_page: window.location.pathname });
+    }
+});
