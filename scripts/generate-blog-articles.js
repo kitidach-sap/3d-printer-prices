@@ -232,7 +232,7 @@ const ARTICLES = [
       filter: p => p.category === '3d_printer' || p.category === 'filament', limit: 4 },
 ];
 
-// ─── Conversion-Driven Content Generator ────────────────────────────────────
+// ─── Conversion-Driven Content Generator (Pure Markdown) ────────────────────
 
 // ------- CONTEXT-AWARE CTA VARIANTS -------
 function getContextCTA(article, product) {
@@ -241,14 +241,13 @@ function getContextCTA(article, product) {
     const link = product ? `${SITE}/product.html?id=${product.id}` : SITE;
 
     const ctaMap = {
-        beginner: { label: '🎯 Safe Choice for Beginners', sub: 'Easy setup, great community support. Perfect first printer.', btn: 'Check Beginner-Friendly Price' },
-        budget: { label: '💰 Best Value Pick', sub: `At ${price}, this is hard to beat. Prices update daily.`, btn: `Get It for ${price}` },
-        speed: { label: '⚡ Performance Pick', sub: 'High-speed printing without quality loss.', btn: 'Check Performance Price' },
-        resin: { label: '🔬 Detail Champion', sub: 'Ultra-fine detail for miniatures, jewelry, and dental.', btn: 'Check Resin Printer Price' },
-        default: { label: '🏆 Editor\'s Pick', sub: `${name} — verified by ${product?.review_count || '100'}+ reviews.`, btn: `Check Price — ${price}` },
+        beginner: { label: '🎯 SAFE CHOICE FOR BEGINNERS', sub: 'Easy setup, great community support. Perfect first printer.' },
+        budget: { label: '💰 BEST VALUE PICK', sub: `At ${price}, this is hard to beat. Prices update daily.` },
+        speed: { label: '⚡ PERFORMANCE PICK', sub: 'High-speed printing without quality loss.' },
+        resin: { label: '🔬 DETAIL CHAMPION', sub: 'Ultra-fine detail for miniatures, jewelry, and dental.' },
+        default: { label: '🏆 EDITOR\'S PICK', sub: `${name} — verified by ${product?.review_count || '100'}+ reviews.` },
     };
 
-    // Match article intent to CTA variant
     let variant = 'default';
     const slug = article.slug || '';
     if (slug.includes('beginner') || slug.includes('kids') || slug.includes('start')) variant = 'beginner';
@@ -257,7 +256,7 @@ function getContextCTA(article, product) {
     else if (slug.includes('resin') || slug.includes('miniature')) variant = 'resin';
 
     const cta = ctaMap[variant];
-    return `\n<div class="blog-cta-box">\n<div class="blog-cta-label">${cta.label}</div>\n<div class="blog-cta-product"><strong>${name}</strong> ${price ? `— ${price}` : ''}</div>\n<div class="blog-cta-sub">${cta.sub}</div>\n<a href="${link}" class="blog-cta-btn">${cta.btn} →</a>\n<span class="blog-cta-urgency">⏰ Price updated today — may change soon</span>\n</div>\n\n`;
+    return `\n> **${cta.label}**\n> \n> **${name}** ${price ? `— **${price}**` : ''}\n> \n> ${cta.sub}\n> \n> [**→ Check Price Now**](${link}) | ⏰ *Price updated today — may change soon*\n\n`;
 }
 
 // ------- INLINE CTA (every 2-3 sections) -------
@@ -269,7 +268,7 @@ function inlineCTA(product, urgencyText) {
     return `\n> 🔥 **${name}** is currently **${price}** — [Check latest price →](${link})\n> *${urgencyText || 'Prices change daily. Compare now.'}*\n\n`;
 }
 
-// ------- PRODUCT HIGHLIGHT BLOCK -------
+// ------- PRODUCT HIGHLIGHT BLOCK (pure markdown) -------
 function productHighlight(p, badge) {
     const name = p.display_name || p.product_name || 'Unknown';
     const price = p.price ? `$${p.price}` : 'Check price';
@@ -278,7 +277,7 @@ function productHighlight(p, badge) {
     const link = `${SITE}/product.html?id=${p.id}`;
     const compareLink = `${SITE}/?search=${encodeURIComponent(name.split(' ').slice(0, 3).join(' '))}`;
 
-    return `\n<div class="blog-product-highlight">\n<div class="blog-ph-badge">${badge || bestForBadge(p)}</div>\n<div class="blog-ph-name">${name}</div>\n<div class="blog-ph-meta">${price} ${rating} ${reviews}</div>\n<div class="blog-ph-actions">\n<a href="${link}" class="blog-ph-btn primary">Check Price →</a>\n<a href="${compareLink}" class="blog-ph-btn secondary">Compare Options</a>\n</div>\n</div>\n\n`;
+    return `\n> ${badge || bestForBadge(p)}\n> \n> **${name}**\n> \n> ${price} ${rating} ${reviews}\n> \n> [**Check Price →**](${link}) | [Compare Options](${compareLink})\n\n`;
 }
 
 function bestForBadge(p) {
@@ -344,12 +343,11 @@ function productReview(p, index, article) {
     if (cons.length === 0) cons.push('May need firmware updates');
 
     let out = `### ${index + 1}. ${name}\n\n`;
-    out += `${productHighlight(p, bestForBadge(p))}`;
+    out += productHighlight(p, bestForBadge(p));
     out += `${name} is ${p.price < 200 ? 'one of the most affordable options in this category' : p.rating >= 4.5 ? 'a top-rated choice with excellent user reviews' : 'a solid contender with good overall performance'}.\n\n`;
     out += `**Pros:**\n${pros.map(x => `- ✅ ${x}`).join('\n')}\n\n`;
     out += `**Cons:**\n${cons.map(c => `- ❌ ${c}`).join('\n')}\n\n`;
 
-    // Inject inline CTA after every 2nd product review
     if ((index + 1) % 2 === 0 && article) {
         out += inlineCTA(p, `Don't wait — ${name} at ${price} is a popular choice.`);
     }
@@ -358,7 +356,7 @@ function productReview(p, index, article) {
     return out;
 }
 
-// ------- EXIT CTA -------
+// ------- EXIT CTA (pure markdown) -------
 function exitCTA(article, topPick) {
     const compareLink = `${SITE}/compare.html`;
     const mainLink = SITE;
@@ -366,19 +364,17 @@ function exitCTA(article, topPick) {
     const topPrice = topPick?.price ? `$${topPick.price}` : '';
     const topLink = topPick ? `${SITE}/product.html?id=${topPick.id}` : SITE;
 
-    let out = `\n<div class="blog-exit-cta">\n`;
-    out += `<div class="blog-exit-title">🎯 Ready to Choose?</div>\n`;
+    let out = `\n> **🎯 Ready to Choose?**\n> \n`;
     if (topPick) {
-        out += `<div class="blog-exit-pick">Our #1 Pick: <strong>${topName}</strong> ${topPrice ? `at <strong>${topPrice}</strong>` : ''}</div>\n`;
-        out += `<a href="${topLink}" class="blog-exit-btn primary">Check Price for ${topName} →</a>\n`;
+        out += `> Our #1 Pick: **${topName}** ${topPrice ? `at **${topPrice}**` : ''}\n> \n`;
+        out += `> [**→ Check Price for ${topName}**](${topLink})\n> \n`;
     }
-    out += `<a href="${compareLink}" class="blog-exit-btn secondary">Compare prices across stores →</a>\n`;
-    out += `<a href="${mainLink}" class="blog-exit-btn tertiary">Browse all 200+ products →</a>\n`;
-    out += `</div>\n\n`;
+    out += `> [**→ Compare prices across stores**](${compareLink})\n> \n`;
+    out += `> [→ Browse all 200+ products](${mainLink})\n\n`;
     return out;
 }
 
-// ------- INTERNAL LINK BOOST -------
+// ------- INTERNAL LINK BOOST (pure markdown) -------
 function internalLinkBoost(slug, products) {
     const links = [
         { slug: 'best-3d-printers-for-beginners', label: '🏆 Best 3D Printers for Beginners', desc: 'Top picks for first-time buyers' },
@@ -392,13 +388,11 @@ function internalLinkBoost(slug, products) {
     ].filter(l => l.slug !== slug).slice(0, 5);
 
     let out = `## You Might Also Like\n\n`;
-    out += `<div class="blog-related-grid">\n`;
     links.forEach(l => {
-        out += `<a href="${SITE}/blog/${l.slug}" class="blog-related-card">\n<strong>${l.label}</strong>\n<span>${l.desc}</span>\n</a>\n`;
+        out += `- [${l.label}](${SITE}/blog/${l.slug}) — ${l.desc}\n`;
     });
-    out += `</div>\n\n`;
+    out += `\n`;
 
-    // Final push with product links
     if (products.length > 0) {
         out += `### Quick Product Links\n\n`;
         products.slice(0, 5).forEach(p => {
