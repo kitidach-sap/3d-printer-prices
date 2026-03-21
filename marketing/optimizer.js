@@ -281,16 +281,146 @@ async function getCampaignBoosts(supabase) {
 }
 
 /**
- * 6. FULL DASHBOARD
+ * 7. BLOG CTA PERFORMANCE ANALYTICS
+ * Aggregate blog_click events by cta_variant, cta_position, article_slug
+ */
+async function getBlogCTAPerformance(supabase, days = 7) {
+    const since = new Date(Date.now() - days * 86400000).toISOString();
+
+    // All blog events (clicks + views)
+    const { data: events } = await supabase.from('click_events')
+        .select('event_type, product_name, cta_variant, article_slug, cta_position, created_at')
+        .in('event_type', ['blog_click', 'blog_view'])
+        .gte('created_at', since)
+        .order('created_at', { ascending: false })
+        .limit(5000);
+
+    if (!events || events.length === 0) {
+        return { period: `${days}d`, total_views: 0, total_clicks: 0,
+            by_variant: [], by_position: [], by_article: [], by_product: [] };
+    }
+
+    const views = events.filter(e => e.event_type === 'blog_view');
+    const clicks = events.filter(e => e.event_type === 'blog_click');
+
+    const countBy = (arr, key) => {
+        const m = {};
+        arr.forEach(r => { const v = r[key]; if (v) m[v] = (m[v] || 0) + 1; });
+        return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 20)
+            .map(([name, count]) => ({ name, count }));
+    };
+
+    // CTR by article: clicks / views for each article
+    const articleViews = {};
+    const articleClicks = {};
+    views.forEach(v => { if (v.article_slug) articleViews[v.article_slug] = (articleViews[v.article_slug] || 0) + 1; });
+    clicks.forEach(c => { if (c.article_slug) articleClicks[c.article_slug] = (articleClicks[c.article_slug] || 0) + 1; });
+
+    const articleCTR = Object.keys(articleViews).map(slug => ({
+        slug,
+        views: articleViews[slug] || 0,
+        clicks: articleClicks[slug] || 0,
+        ctr: articleViews[slug] > 0 ? Math.round((articleClicks[slug] || 0) / articleViews[slug] * 10000) / 100 : 0,
+    })).sort((a, b) => b.ctr - a.ctr);
+
+    return {
+        period: `${days}d`,
+        total_views: views.length,
+        total_clicks: clicks.length,
+        overall_ctr: views.length > 0 ? Math.round(clicks.length / views.length * 10000) / 100 : 0,
+        by_variant: countBy(clicks, 'cta_variant'),
+        by_position: countBy(clicks, 'cta_position'),
+        by_article: articleCTR.slice(0, 20),
+        by_product: countBy(clicks, 'product_name'),
+    };
+}
+
+/**
+ * 8. BLOG WINNERS — identify best CTA variants, positions, articles
+ * Used by generator to weight selection toward high performers
+ */
+async function getBlogWinners(supabase) {
+    const perf = await getBlogCTAPerformance(supabase, 14);
+    const MIN_CLICKS = 3;
+
+    // Best urgency variants
+    const qualifiedVariants = perf.by_variant.filter(v => v.count >= MIN_CLICKS);
+    const winnerVariant = qualifiedVariants.length > 0 ? qualifiedVariants[0].name : null;
+
+    // Best positions
+    const qualifiedPositions = perf.by_position.filter(p => p.count >= MIN_CLICKS);
+    const winnerPosition = qualifiedPositions.length > 0 ? qualifiedPositions[0].name : null;
+
+    // Best articles (by CTR, min 2 views)
+    const qualifiedArticles = perf.by_article.filter(a => a.views >= 2 && a.clicks >= 1);
+    const topArticles = qualifiedArticles.slice(0, 5).map(a => a.slug);
+
+    // Compute variant weights for generator
+    const variantWeights = {};
+    const defaultVariants = [
+        '(Updated today ⚠️)', '(Lower than usual 📉)', '(Limited stock ⚡)',
+        '(Selling fast)', '(Lowest in 30 days 🔥)', '(Stock running low)',
+        "(Today's best price)", '(Price may increase)', '(3 stores compared)', '(Just restocked 📦)'
+    ];
+    defaultVariants.forEach(v => { variantWeights[v] = 1.0; });
+
+    if (perf.total_clicks >= MIN_CLICKS * 2) {
+        const maxCount = Math.max(...perf.by_variant.map(v => v.count), 1);
+        perf.by_variant.forEach(v => {
+            if (variantWeights[v.name] !== undefined) {
+                variantWeights[v.name] = 0.5 + (v.count / maxCount) * 1.5; // range 0.5–2.0
+            }
+        });
+    }
+
+    return {
+        confidence: perf.total_clicks >= MIN_CLICKS * 5 ? 'high' : perf.total_clicks >= MIN_CLICKS ? 'medium' : 'low',
+        total_clicks: perf.total_clicks,
+        total_views: perf.total_views,
+        winner_variant: winnerVariant,
+        winner_position: winnerPosition,
+        top_articles: topArticles,
+        variant_weights: variantWeights,
+        position_performance: perf.by_position,
+    };
+}
+
+/**
+ * 9. BLOG PRODUCT BOOSTS — products with high blog CTR get trending badge
+ */
+async function getBlogProductBoosts(supabase) {
+    const perf = await getBlogCTAPerformance(supabase, 7);
+    const MIN_BLOG_CLICKS = 2;
+
+    const boosts = {};
+    perf.by_product.forEach(p => {
+        if (p.count >= MIN_BLOG_CLICKS) {
+            const maxClicks = Math.max(...perf.by_product.map(x => x.count), 1);
+            boosts[p.name] = {
+                blog_clicks: p.count,
+                trending_score: Math.round((p.count / maxClicks) * 100),
+                badge: p.count >= maxClicks * 0.5 ? '🔥 Trending' : '📈 Rising',
+            };
+        }
+    });
+
+    return boosts;
+}
+
+/**
+ * 6. FULL DASHBOARD (extended with blog analytics)
  * Combines all analytics into one response
  */
 async function getDashboard(supabase) {
-    const [analytics, abResults, optimizedWeights, trending, campaignBoosts] = await Promise.all([
+    const [analytics, abResults, optimizedWeights, trending, campaignBoosts, blogPerf, blogWinners, blogBoosts] = await Promise.all([
         getAnalytics(supabase, 7),
         getABTestResults(supabase, 14),
         getOptimizedWeights(supabase),
         getTrendingProducts(supabase),
-        getCampaignBoosts(supabase).catch(() => ({})), // campaigns table may not exist
+        getCampaignBoosts(supabase).catch(() => ({})),
+        getBlogCTAPerformance(supabase, 7).catch(() => ({})),
+        getBlogWinners(supabase).catch(() => ({})),
+        getBlogProductBoosts(supabase).catch(() => ({})),
     ]);
 
     return {
@@ -300,6 +430,11 @@ async function getDashboard(supabase) {
         optimized_weights: optimizedWeights,
         trending_products: Object.values(trending).sort((a, b) => b.trending_score - a.trending_score).slice(0, 20),
         active_campaign_boosts: campaignBoosts,
+        blog: {
+            cta_performance: blogPerf,
+            winners: blogWinners,
+            product_boosts: blogBoosts,
+        },
     };
 }
 
@@ -311,4 +446,7 @@ module.exports = {
     getTrendingProducts,
     getCampaignBoosts,
     getDashboard,
+    getBlogCTAPerformance,
+    getBlogWinners,
+    getBlogProductBoosts,
 };

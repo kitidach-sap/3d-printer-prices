@@ -9,6 +9,7 @@
  */
 
 const { createClient } = require('@supabase/supabase-js');
+const { getBlogWinners, getBlogProductBoosts, getTrendingProducts, getCampaignBoosts } = require('../marketing/optimizer');
 require('dotenv').config();
 
 const supabase = createClient(
@@ -19,6 +20,9 @@ const supabase = createClient(
 const SITE = 'https://3d-printer-prices.com';
 const TODAY = new Date().toISOString().split('T')[0];
 const YEAR = new Date().getFullYear();
+
+// Self-optimization data — populated before generation
+let OPT_DATA = { variant_weights: {}, trending: {}, product_boosts: {}, campaign_boosts: {} };
 
 // ─── Article Template Definitions ────────────────────────────────────────────
 
@@ -252,6 +256,17 @@ const URGENCY_VARIANTS = [
 ];
 
 function priceUrgency() {
+    // Weighted selection — winners get picked more often
+    const w = OPT_DATA.variant_weights;
+    if (Object.keys(w).length > 0) {
+        const entries = URGENCY_VARIANTS.map(v => [v, w[v] || 1.0]);
+        const total = entries.reduce((s, [, wt]) => s + wt, 0);
+        let r = Math.random() * total;
+        for (const [variant, weight] of entries) {
+            r -= weight;
+            if (r <= 0) return variant;
+        }
+    }
     return URGENCY_VARIANTS[Math.floor(Math.random() * URGENCY_VARIANTS.length)];
 }
 
@@ -268,6 +283,20 @@ function priceDisplayPlain(p) {
 // ─── 2. PRODUCT BADGES ──────────────────────────────────────────────────────
 
 function bestForBadge(p) {
+    const name = p.display_name || p.product_name || '';
+    // Data-driven trending override
+    if (OPT_DATA.product_boosts[name] && OPT_DATA.product_boosts[name].badge) {
+        return OPT_DATA.product_boosts[name].badge;
+    }
+    const pid = String(p.id);
+    if (OPT_DATA.trending[pid] && OPT_DATA.trending[pid].badge) {
+        return OPT_DATA.trending[pid].badge;
+    }
+    // Campaign boost override
+    if (OPT_DATA.campaign_boosts[pid]) {
+        return '🔥 Featured Deal';
+    }
+    // Default badge logic
     if (p.beginner_score >= 8) return '🎯 Best for Beginners';
     if (p.price && p.price < 150) return '💰 Best Budget Pick';
     if (p.price && p.price < 200) return '💰 Great Value';
@@ -699,8 +728,32 @@ function generateFAQ(article) {
 // ─── Main Generator ─────────────────────────────────────────────────────────
 
 async function main() {
-    console.log('📝 SEO Content Generator — Phase 2');
-    console.log('===================================\n');
+    console.log('📝 SEO Content Generator — Self-Optimizing Engine');
+    console.log('==================================================\n');
+
+    // Load optimization data from analytics
+    try {
+        const [winners, blogBoosts, trending, campaignBoosts] = await Promise.all([
+            getBlogWinners(supabase).catch(() => ({})),
+            getBlogProductBoosts(supabase).catch(() => ({})),
+            getTrendingProducts(supabase).catch(() => ({})),
+            getCampaignBoosts(supabase).catch(() => ({})),
+        ]);
+        OPT_DATA.variant_weights = winners.variant_weights || {};
+        OPT_DATA.product_boosts = blogBoosts || {};
+        OPT_DATA.trending = trending || {};
+        OPT_DATA.campaign_boosts = campaignBoosts || {};
+
+        const conf = winners.confidence || 'none';
+        console.log(`🧠 Optimization data loaded (confidence: ${conf})`);
+        if (winners.winner_variant) console.log(`   Winner variant: ${winners.winner_variant}`);
+        if (winners.winner_position) console.log(`   Winner position: ${winners.winner_position}`);
+        console.log(`   Trending products: ${Object.keys(trending).length}`);
+        console.log(`   Blog product boosts: ${Object.keys(blogBoosts).length}`);
+        console.log(`   Active campaigns: ${Object.keys(campaignBoosts).length}\n`);
+    } catch (e) {
+        console.log('⚠️  Could not load optimization data, using defaults:', e.message, '\n');
+    }
 
     // Fetch all available products
     const { data: allProducts, error } = await supabase.from('products')

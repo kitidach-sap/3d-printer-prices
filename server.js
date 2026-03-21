@@ -2347,6 +2347,77 @@ app.get('/blog/:slug', async (req, res, next) => {
             <a href="/">Home</a> · <a href="/blog/">Blog</a> · <a href="/privacy.html">Privacy Policy</a> · <a href="/terms.html">Terms of Service</a>
         </p>
     </footer>
+    <script>
+    // Blog CTA Self-Optimization Tracking
+    (function() {
+        var slug = '${data.slug}';
+        var sid = 'b_' + Math.random().toString(36).substr(2, 9);
+        function detectSrc() {
+            var r = document.referrer || '';
+            if (r.includes('t.co') || r.includes('twitter.com') || r.includes('x.com')) return 'twitter';
+            if (r.includes('google') || r.includes('bing')) return 'search';
+            return r && !r.includes(location.hostname) ? 'referral' : 'direct';
+        }
+        var src = sessionStorage.getItem('_bsrc') || detectSrc();
+        sessionStorage.setItem('_bsrc', src);
+
+        function fire(type, d) {
+            try {
+                var payload = JSON.stringify(Object.assign({ type: type, source: src, session_id: sid, article_slug: slug }, d || {}));
+                if (navigator.sendBeacon) navigator.sendBeacon('/api/events', new Blob([payload], { type: 'application/json' }));
+                else fetch('/api/events', { method: 'POST', body: payload, headers: { 'Content-Type': 'application/json' }, keepalive: true }).catch(function(){});
+            } catch(e) {}
+        }
+
+        // Track page view
+        fire('blog_view');
+
+        // Track all CTA clicks via event delegation
+        var body = document.querySelector('.article-body');
+        if (body) body.addEventListener('click', function(e) {
+            var a = e.target.closest('a[href]');
+            if (!a) return;
+            var href = a.href || '';
+            if (!href.includes('/product.html') && !href.includes('/compare') && !href.includes('/?search=')) return;
+
+            // Detect CTA position from context
+            var bq = a.closest('blockquote');
+            var pos = 'inline';
+            if (bq) {
+                var text = bq.textContent || '';
+                if (text.includes('SAFE CHOICE') || text.includes('BEST VALUE') || text.includes('PERFORMANCE PICK') || text.includes('DETAIL CHAMPION') || text.includes("EDITOR'S PICK")) {
+                    var allBqs = body.querySelectorAll('blockquote');
+                    var idx = Array.prototype.indexOf.call(allBqs, bq);
+                    pos = idx <= 1 ? 'top' : 'end';
+                }
+                if (text.includes('Quick Check') || text.includes('Lock In')) pos = 'mid';
+                if (text.includes('Still deciding') || text.includes('Not sure') || text.includes('Want the best deal')) pos = 'scroll_hook';
+                if (text.includes('Ready to Choose')) pos = 'exit';
+            }
+            // Inside table
+            if (a.closest('table')) pos = 'table';
+            // Compare trigger
+            if (a.textContent.includes('Compare') && a.textContent.includes('with other')) pos = 'compare_trigger';
+
+            // Extract urgency variant from nearby text
+            var parent = bq || a.parentElement;
+            var ptext = parent ? parent.textContent : '';
+            var urgMatch = ptext.match(/\\((Updated|Lower|Limited|Selling|Lowest|Stock|Today|Price may|3 stores)[^)]*\\)/i);
+            var variant = urgMatch ? urgMatch[0] : null;
+
+            // Extract product name from context
+            var pname = null;
+            var bold = parent ? parent.querySelector('strong') : null;
+            if (bold && bold.textContent.length < 80 && !bold.textContent.includes('→')) pname = bold.textContent;
+
+            fire('blog_click', {
+                cta_position: pos,
+                cta_variant: variant,
+                product_name: pname,
+            });
+        });
+    })();
+    </script>
 </body>
 </html>`);
     } catch (e) {
@@ -4128,12 +4199,15 @@ app.post('/api/events', async (req, res) => {
             source: e.source ? String(e.source).substring(0, 30) : 'organic',
             session_id: e.session_id ? String(e.session_id).substring(0, 50) : null,
             user_agent: (req.headers['user-agent'] || '').substring(0, 200),
+            cta_variant: e.cta_variant ? String(e.cta_variant).substring(0, 50) : null,
+            article_slug: e.article_slug ? String(e.article_slug).substring(0, 100) : null,
+            cta_position: e.cta_position ? String(e.cta_position).substring(0, 20) : null,
         }));
         await supabase.from('click_events').insert(rows);
     } catch (e) { console.log('Event tracking error:', e.message); }
 });
 
-// GET /api/metrics — simple analytics dashboard (admin-only)
+// GET /api/metrics — analytics dashboard with blog CTA performance (admin-only)
 app.get('/api/metrics', async (req, res) => {
     const key = req.query.key || req.headers['x-admin-key'];
     if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
@@ -4148,16 +4222,37 @@ app.get('/api/metrics', async (req, res) => {
         const { data: badges } = await supabase.from('click_events')
             .select('badge').eq('event_type', 'click')
             .not('badge', 'is', null).gte('created_at', since).limit(500);
+
+        // Blog CTA analytics
+        const { data: blogEvents } = await supabase.from('click_events')
+            .select('event_type, product_name, cta_variant, article_slug, cta_position')
+            .in('event_type', ['blog_click', 'blog_view'])
+            .gte('created_at', since)
+            .order('created_at', { ascending: false }).limit(2000);
+
         const agg = (arr, k) => {
             const m = {};
-            (arr || []).forEach(r => { const v = r[k] || 'unknown'; m[v] = (m[v] || 0) + 1; });
+            (arr || []).forEach(r => { const v = r[k]; if (v) m[v] = (m[v] || 0) + 1; });
             return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([n, c]) => ({ name: n, count: c }));
         };
+
+        const bViews = (blogEvents || []).filter(e => e.event_type === 'blog_view');
+        const bClicks = (blogEvents || []).filter(e => e.event_type === 'blog_click');
+
         res.json({
             period: '7d', total_clicks: clicks?.length || 0, total_events: sources?.length || 0,
             top_products: agg(clicks, 'product_name'),
             top_sources: agg(sources, 'source'),
             top_badges: agg(badges, 'badge'),
+            blog: {
+                views: bViews.length,
+                clicks: bClicks.length,
+                ctr: bViews.length > 0 ? Math.round(bClicks.length / bViews.length * 10000) / 100 : 0,
+                top_cta_variants: agg(bClicks, 'cta_variant'),
+                top_cta_positions: agg(bClicks, 'cta_position'),
+                top_articles: agg(bClicks, 'article_slug'),
+                top_products: agg(bClicks, 'product_name'),
+            },
         });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
