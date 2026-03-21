@@ -31,6 +31,15 @@ async function selectProduct(supabase) {
         }
     });
 
+    // Load revenue boost data (non-blocking — falls back to default if unavailable)
+    let boostData = null;
+    try {
+        const boosters = require('../revenue/boosters');
+        boostData = await boosters.getBoosts(supabase);
+    } catch (e) {
+        // Revenue boosters not yet available — continue with default behavior
+    }
+
     // 80% chance = 3D printers, 20% = accessories/filament
     const isPrinter = Math.random() < 0.8;
     const categories = isPrinter ? ['3d_printer'] : ['accessories', 'filament'];
@@ -54,15 +63,40 @@ async function selectProduct(supabase) {
         return { product: fallback[0], usedAngles: [] };
     }
 
+    // Check for campaign-boosted products first
+    if (boostData && Object.keys(boostData.campaign_boosts).length > 0) {
+        const campaignBoostedProduct = products.find(p =>
+            boostData.campaign_boosts[String(p.id)] && !recentAsins.has(p.amazon_asin)
+        );
+        if (campaignBoostedProduct && Math.random() < 0.4) {
+            // 40% chance to prioritize campaign-boosted product
+            return {
+                product: campaignBoostedProduct,
+                usedAngles: recentAngles[campaignBoostedProduct.amazon_asin] || [],
+                boost_reason: 'campaign_boost',
+            };
+        }
+    }
+
     // Prefer products NOT in cooldown
     const fresh = products.filter(p => !recentAsins.has(p.amazon_asin));
     const pool = fresh.length > 0 ? fresh : products;
 
-    // Weighted random: higher-rated products get picked more
-    const weighted = pool.map((p, i) => ({
-        product: p,
-        weight: (p.rating || 4) * 10 + (pool.length - i),
-    }));
+    // Weighted random: rating + revenue boost data
+    const weighted = pool.map((p, i) => {
+        let weight = (p.rating || 4) * 10 + (pool.length - i);
+        
+        // Apply revenue boost multiplier if available
+        if (boostData && boostData.products) {
+            const name = p.display_name || p.product_name;
+            const boost = boostData.products[name];
+            if (boost && boost.rank_weight) {
+                weight *= boost.rank_weight;
+            }
+        }
+
+        return { product: p, weight };
+    });
     const totalWeight = weighted.reduce((sum, w) => sum + w.weight, 0);
     let rand = Math.random() * totalWeight;
     let selected = weighted[0].product;

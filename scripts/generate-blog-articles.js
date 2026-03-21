@@ -748,6 +748,37 @@ async function main() {
         console.log(`🧠 Optimization data loaded (confidence: ${conf})`);
         if (winners.winner_variant) console.log(`   Winner variant: ${winners.winner_variant}`);
         if (winners.winner_position) console.log(`   Winner position: ${winners.winner_position}`);
+
+        // Layer revenue boosters on top (Auto Money System Phase F)
+        try {
+            const boosters = require('../revenue/boosters');
+            const boosts = await boosters.getBoosts(supabase);
+            
+            // Merge urgency weights (booster weights override where present)
+            if (boosts.urgency_weights && Object.keys(boosts.urgency_weights).length > 0) {
+                Object.assign(OPT_DATA.variant_weights, boosts.urgency_weights);
+                console.log(`   💰 Revenue urgency weights: ${Object.keys(boosts.urgency_weights).length} variants`);
+            }
+            
+            // Merge badge overrides (booster badges take priority)
+            if (boosts.badge_overrides && Object.keys(boosts.badge_overrides).length > 0) {
+                Object.keys(boosts.badge_overrides).forEach(name => {
+                    OPT_DATA.product_boosts[name] = OPT_DATA.product_boosts[name] || {};
+                    OPT_DATA.product_boosts[name].badge = boosts.badge_overrides[name];
+                });
+                console.log(`   💰 Revenue badge overrides: ${Object.keys(boosts.badge_overrides).length} products`);
+            }
+            
+            // Merge featured articles for internal linking
+            if (boosts.featured_articles?.length > 0) {
+                OPT_DATA.featured_articles = boosts.featured_articles;
+                console.log(`   💰 Featured articles: ${boosts.featured_articles.length}`);
+            }
+            
+            console.log(`   💰 Revenue boosters loaded successfully`);
+        } catch (e) {
+            console.log(`   ℹ️  Revenue boosters not available: ${e.message}`);
+        }
         console.log(`   Trending products: ${Object.keys(trending).length}`);
         console.log(`   Blog product boosts: ${Object.keys(blogBoosts).length}`);
         console.log(`   Active campaigns: ${Object.keys(campaignBoosts).length}\n`);

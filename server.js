@@ -4328,6 +4328,28 @@ app.get('/api/admin/analytics/winners', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/admin/analytics/boosts — current auto-boost state
+app.get('/api/admin/analytics/boosts', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const boosters = require('./revenue/boosters');
+        const boosts = await boosters.getBoosts(supabase);
+        res.json(boosts);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/analytics/campaigns — campaign performance
+app.get('/api/admin/analytics/campaigns', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const winners = require('./revenue/winners');
+        const result = await winners.detectCampaignWinners(supabase);
+        res.json(result);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/trending — public trending product IDs (for frontend badge)
 app.get('/api/trending', async (req, res) => {
     try {
