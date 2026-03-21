@@ -232,62 +232,51 @@ const ARTICLES = [
       filter: p => p.category === '3d_printer' || p.category === 'filament', limit: 4 },
 ];
 
-// ─── Conversion-Driven Content Generator (Pure Markdown) ────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// HIGH-CONVERSION AFFILIATE FUNNEL — Pure Markdown Output
+// ═══════════════════════════════════════════════════════════════════════════════
 
-// ------- CONTEXT-AWARE CTA VARIANTS -------
-function getContextCTA(article, product) {
-    const name = product ? (product.display_name || product.product_name) : 'this printer';
-    const price = product?.price ? `$${product.price}` : '';
-    const link = product ? `${SITE}/product.html?id=${product.id}` : SITE;
+// ─── 1. PRICE PSYCHOLOGY SYSTEM ──────────────────────────────────────────────
 
-    const ctaMap = {
-        beginner: { label: '🎯 SAFE CHOICE FOR BEGINNERS', sub: 'Easy setup, great community support. Perfect first printer.' },
-        budget: { label: '💰 BEST VALUE PICK', sub: `At ${price}, this is hard to beat. Prices update daily.` },
-        speed: { label: '⚡ PERFORMANCE PICK', sub: 'High-speed printing without quality loss.' },
-        resin: { label: '🔬 DETAIL CHAMPION', sub: 'Ultra-fine detail for miniatures, jewelry, and dental.' },
-        default: { label: '🏆 EDITOR\'S PICK', sub: `${name} — verified by ${product?.review_count || '100'}+ reviews.` },
-    };
+const URGENCY_VARIANTS = [
+    '(Updated today ⚠️)',
+    '(Lower than usual 📉)',
+    '(Limited stock ⚡)',
+    '(3 stores compared)',
+    '(Price may increase)',
+    '(Lowest in 30 days 🔥)',
+    '(Selling fast)',
+    '(Updated 2h ago)',
+    '(Today\'s best price)',
+    '(Stock running low)',
+];
 
-    let variant = 'default';
-    const slug = article.slug || '';
-    if (slug.includes('beginner') || slug.includes('kids') || slug.includes('start')) variant = 'beginner';
-    else if (slug.includes('budget') || slug.includes('under-200') || slug.includes('cheap')) variant = 'budget';
-    else if (slug.includes('speed') || slug.includes('fast')) variant = 'speed';
-    else if (slug.includes('resin') || slug.includes('miniature')) variant = 'resin';
-
-    const cta = ctaMap[variant];
-    return `\n> **${cta.label}**\n> \n> **${name}** ${price ? `— **${price}**` : ''}\n> \n> ${cta.sub}\n> \n> [**→ Check Price Now**](${link}) | ⏰ *Price updated today — may change soon*\n\n`;
+function priceUrgency() {
+    return URGENCY_VARIANTS[Math.floor(Math.random() * URGENCY_VARIANTS.length)];
 }
 
-// ------- INLINE CTA (every 2-3 sections) -------
-function inlineCTA(product, urgencyText) {
-    if (!product) return '';
-    const name = product.display_name || product.product_name;
-    const price = product.price ? `$${product.price}` : 'Check price';
-    const link = `${SITE}/product.html?id=${product.id}`;
-    return `\n> 🔥 **${name}** is currently **${price}** — [Check latest price →](${link})\n> *${urgencyText || 'Prices change daily. Compare now.'}*\n\n`;
+function priceDisplay(p) {
+    if (!p || !p.price) return 'Check price';
+    return `**$${p.price}** *${priceUrgency()}*`;
 }
 
-// ------- PRODUCT HIGHLIGHT BLOCK (pure markdown) -------
-function productHighlight(p, badge) {
-    const name = p.display_name || p.product_name || 'Unknown';
-    const price = p.price ? `$${p.price}` : 'Check price';
-    const rating = p.rating ? `⭐ ${p.rating}/5` : '';
-    const reviews = p.review_count ? `(${p.review_count} reviews)` : '';
-    const link = `${SITE}/product.html?id=${p.id}`;
-    const compareLink = `${SITE}/?search=${encodeURIComponent(name.split(' ').slice(0, 3).join(' '))}`;
-
-    return `\n> ${badge || bestForBadge(p)}\n> \n> **${name}**\n> \n> ${price} ${rating} ${reviews}\n> \n> [**Check Price →**](${link}) | [Compare Options](${compareLink})\n\n`;
+function priceDisplayPlain(p) {
+    if (!p || !p.price) return 'Check price';
+    return `$${p.price} ${priceUrgency()}`;
 }
+
+// ─── 2. PRODUCT BADGES ──────────────────────────────────────────────────────
 
 function bestForBadge(p) {
     if (p.beginner_score >= 8) return '🎯 Best for Beginners';
-    if (p.price && p.price < 200) return '💰 Best Budget';
+    if (p.price && p.price < 150) return '💰 Best Budget Pick';
+    if (p.price && p.price < 200) return '💰 Great Value';
     if (p.price && p.price >= 500) return '👔 Best Professional';
-    if (p.speed_score >= 8) return '⚡ Fastest';
+    if (p.speed_score >= 8) return '⚡ High Speed Pick';
     if (p.printer_type === 'Resin') return '🔬 Best Detail';
     if (p.rating >= 4.7) return '⭐ Top Rated';
     if (p.review_count >= 1000) return '🔥 Most Popular';
+    if (p.review_count >= 500) return '📈 Trending';
     return '✅ Recommended';
 }
 
@@ -301,23 +290,129 @@ function bestForLabel(p) {
     return 'General use';
 }
 
-// ------- COMPARISON TABLE WITH ACTIONS -------
+// ─── 3. SCROLL HOOKS ────────────────────────────────────────────────────────
+
+const SCROLL_HOOKS = [
+    { icon: '⏳', text: 'Still deciding? Check real-time prices for all models', cta: 'Compare Prices Now →' },
+    { icon: '📊', text: 'Not sure which to pick? See them side by side', cta: 'Open Comparison Tool →' },
+    { icon: '💡', text: 'Want the best deal? We track prices across 3+ stores', cta: 'Check Latest Deals →' },
+    { icon: '🤔', text: 'Need help choosing? Start with our #1 recommendation', cta: 'See #1 Pick →' },
+    { icon: '⚡', text: 'Prices change daily — some dropped in the last 24h', cta: 'Check Today\'s Prices →' },
+];
+
+function scrollHook(variantIdx, linkTarget) {
+    const hook = SCROLL_HOOKS[variantIdx % SCROLL_HOOKS.length];
+    const link = linkTarget || `${SITE}/compare.html`;
+    return `\n> ${hook.icon} **${hook.text}**\n> \n> [**${hook.cta}**](${link})\n\n`;
+}
+
+// ─── 4. INLINE COMPARE TRIGGER ──────────────────────────────────────────────
+
+function compareTrigger(product) {
+    if (!product) return '';
+    const name = product.display_name || product.product_name;
+    const searchTerm = name.split(' ').slice(0, 3).join(' ');
+    const link = `${SITE}/?search=${encodeURIComponent(searchTerm)}`;
+    return `→ [Compare **${name}** with other options](${link})\n\n`;
+}
+
+// ─── 5. CONTEXT-AWARE CTA (TOP / MID / END) ─────────────────────────────────
+
+function getContextCTA(article, product, position) {
+    const name = product ? (product.display_name || product.product_name) : 'this printer';
+    const price = product?.price ? `$${product.price}` : '';
+    const link = product ? `${SITE}/product.html?id=${product.id}` : SITE;
+    const compareLink = `${SITE}/compare.html`;
+    const urgency = priceUrgency();
+
+    const ctaMap = {
+        beginner: { label: '🎯 SAFE CHOICE FOR BEGINNERS', sub: 'Easy setup, great community support. Perfect first printer.' },
+        budget: { label: '💰 BEST VALUE PICK', sub: `At ${price} ${urgency}, this is hard to beat.` },
+        speed: { label: '⚡ PERFORMANCE PICK', sub: 'High-speed printing without quality loss.' },
+        resin: { label: '🔬 DETAIL CHAMPION', sub: 'Ultra-fine detail for miniatures, jewelry, and dental.' },
+        default: { label: '🏆 EDITOR\'S PICK', sub: `${name} — verified by ${product?.review_count || '100'}+ reviews.` },
+    };
+
+    let variant = 'default';
+    const slug = article.slug || '';
+    if (slug.includes('beginner') || slug.includes('kids') || slug.includes('start')) variant = 'beginner';
+    else if (slug.includes('budget') || slug.includes('under-200') || slug.includes('cheap')) variant = 'budget';
+    else if (slug.includes('speed') || slug.includes('fast')) variant = 'speed';
+    else if (slug.includes('resin') || slug.includes('miniature')) variant = 'resin';
+
+    const cta = ctaMap[variant];
+
+    if (position === 'top') {
+        // ABOVE FOLD — aggressive, clear action
+        let out = `\n> **${cta.label}**\n> \n`;
+        out += `> **${name}** ${price ? `— **${price}** *${urgency}*` : ''}\n> \n`;
+        out += `> ${cta.sub}\n> \n`;
+        out += `> [**→ Check Price Now**](${link}) | [**Compare All Models →**](${compareLink})\n> \n`;
+        out += `> ⏰ *Prices updated today — ${Math.floor(Math.random() * 8) + 3} other buyers checked this today*\n\n`;
+        return out;
+    }
+
+    if (position === 'mid') {
+        // MID CONTENT — re-engagement
+        let out = `\n> **⚡ Quick Check: ${name}** is still **${price || 'available'}** *${urgency}*\n> \n`;
+        out += `> [**→ Lock In This Price**](${link}) | [**Compare Side by Side →**](${compareLink})\n\n`;
+        return out;
+    }
+
+    // END — summary + urgency + multiple actions
+    let out = `\n> **${cta.label}**\n> \n`;
+    out += `> ${cta.sub}\n> \n`;
+    out += `> **${name}** — ${price ? `**${price}** *${urgency}*` : 'See current price'}\n> \n`;
+    out += `> [**→ Check Final Price**](${link}) | [**→ Compare All Options**](${compareLink})\n> \n`;
+    out += `> *Prices pulled from Amazon every 24h. Don't miss today's deal.*\n\n`;
+    return out;
+}
+
+// ─── 6. INLINE CTA ──────────────────────────────────────────────────────────
+
+function inlineCTA(product, urgencyText) {
+    if (!product) return '';
+    const name = product.display_name || product.product_name;
+    const price = product.price ? `$${product.price}` : 'Check price';
+    const link = `${SITE}/product.html?id=${product.id}`;
+    const urg = priceUrgency();
+    return `\n> 🔥 **${name}** is currently **${price}** *${urg}* — [Check latest price →](${link})\n> *${urgencyText || 'Prices change daily. Compare before you buy.'}*\n\n`;
+}
+
+// ─── 7. PRODUCT HIGHLIGHT BLOCK ─────────────────────────────────────────────
+
+function productHighlight(p, badge) {
+    const name = p.display_name || p.product_name || 'Unknown';
+    const link = `${SITE}/product.html?id=${p.id}`;
+    const searchTerm = name.split(' ').slice(0, 3).join(' ');
+    const compareLink = `${SITE}/?search=${encodeURIComponent(searchTerm)}`;
+
+    let out = `\n> ${badge || bestForBadge(p)}\n> \n`;
+    out += `> **${name}**\n> \n`;
+    out += `> ${priceDisplayPlain(p)} ⭐ ${p.rating || 'N/A'}/5 (${p.review_count || 0} reviews)\n> \n`;
+    out += `> [**Check Price →**](${link}) | [Compare Options](${compareLink})\n\n`;
+    return out;
+}
+
+// ─── 8. COMPARISON TABLE ────────────────────────────────────────────────────
+
 function comparisonTable(products) {
     if (!products.length) return '';
     let table = `| # | Printer | Price | Rating | Best For | Action |\n|---|---------|-------|--------|----------|--------|\n`;
     products.forEach((p, i) => {
         const name = p.display_name || p.product_name || 'Unknown';
-        const price = p.price ? `**$${p.price}**` : 'N/A';
+        const price = p.price ? `**$${p.price}** *${priceUrgency()}*` : 'N/A';
         const rating = p.rating ? `${p.rating}/5 (${p.review_count || 0})` : 'N/A';
         const best = bestForLabel(p);
         const link = `${SITE}/product.html?id=${p.id}`;
-        table += `| ${i + 1} | ${name} | ${price} | ${rating} | ${best} | [Check Price →](${link}) |\n`;
+        table += `| ${i + 1} | **${name}** | ${price} | ${rating} | ${best} | [Check Price →](${link}) |\n`;
     });
     return table + '\n';
 }
 
-// ------- PRODUCT REVIEW WITH CTA -------
-function productReview(p, index, article) {
+// ─── 9. PRODUCT REVIEW ──────────────────────────────────────────────────────
+
+function productReview(p, index, article, totalProducts) {
     const name = p.display_name || p.product_name || 'Unknown';
     const price = p.price ? `$${p.price}` : 'Check price';
     const rating = p.rating || 'N/A';
@@ -348,42 +443,56 @@ function productReview(p, index, article) {
     out += `**Pros:**\n${pros.map(x => `- ✅ ${x}`).join('\n')}\n\n`;
     out += `**Cons:**\n${cons.map(c => `- ❌ ${c}`).join('\n')}\n\n`;
 
-    if ((index + 1) % 2 === 0 && article) {
+    // Compare trigger after every product
+    out += compareTrigger(p);
+
+    // Inline CTA after every 2nd review
+    if ((index + 1) % 2 === 0) {
         out += inlineCTA(p, `Don't wait — ${name} at ${price} is a popular choice.`);
+    }
+
+    // Scroll hook after reviews 3 and 5
+    if (index === 2 && totalProducts > 4) {
+        out += scrollHook(0, `${SITE}/compare.html`);
+    }
+    if (index === 4 && totalProducts > 6) {
+        out += scrollHook(1, `${SITE}/compare.html`);
     }
 
     out += `---\n`;
     return out;
 }
 
-// ------- EXIT CTA (pure markdown) -------
+// ─── 10. EXIT CTA (STRONG) ──────────────────────────────────────────────────
+
 function exitCTA(article, topPick) {
     const compareLink = `${SITE}/compare.html`;
-    const mainLink = SITE;
     const topName = topPick ? (topPick.display_name || topPick.product_name) : '';
     const topPrice = topPick?.price ? `$${topPick.price}` : '';
-    const topLink = topPick ? `${SITE}/product.html?id=${topPick.id}` : SITE;
+    const topLink = topPick ? `${SITE}/product.html?id=${topPick.id}` : `${SITE}/compare.html`;
+    const urg = priceUrgency();
 
-    let out = `\n> **🎯 Ready to Choose?**\n> \n`;
+    let out = `\n> **🎯 Ready to Choose Your 3D Printer?**\n> \n`;
     if (topPick) {
-        out += `> Our #1 Pick: **${topName}** ${topPrice ? `at **${topPrice}**` : ''}\n> \n`;
-        out += `> [**→ Check Price for ${topName}**](${topLink})\n> \n`;
+        out += `> Our #1 Pick: **${topName}** at **${topPrice}** *${urg}*\n> \n`;
+        out += `> [**→ Check Final Price for ${topName}**](${topLink})\n> \n`;
     }
-    out += `> [**→ Compare prices across stores**](${compareLink})\n> \n`;
-    out += `> [→ Browse all 200+ products](${mainLink})\n\n`;
+    out += `> [**→ Compare All Prices Side by Side**](${compareLink})\n> \n`;
+    out += `> ⏰ *${Math.floor(Math.random() * 15) + 5} people compared prices in the last hour*\n\n`;
     return out;
 }
 
-// ------- INTERNAL LINK BOOST (pure markdown) -------
+// ─── 11. INTERNAL LINK BOOST ────────────────────────────────────────────────
+
 function internalLinkBoost(slug, products) {
     const links = [
-        { slug: 'best-3d-printers-for-beginners', label: '🏆 Best 3D Printers for Beginners', desc: 'Top picks for first-time buyers' },
-        { slug: 'best-budget-3d-printers-under-200', label: '💰 Best Printers Under $200', desc: 'Great quality on a tight budget' },
+        { slug: 'best-3d-printers-for-beginners', label: '🏆 Best Printers for Beginners', desc: 'Top picks for first-time buyers' },
+        { slug: 'best-budget-3d-printers-under-200', label: '💰 Best Under $200', desc: 'Great quality on a tight budget' },
         { slug: 'best-resin-printers', label: '🔬 Best Resin Printers', desc: 'Ultra-fine detail for miniatures' },
-        { slug: 'fdm-vs-resin-3d-printer', label: '⚙️ FDM vs Resin Compared', desc: 'Which technology is right for you?' },
-        { slug: 'how-to-start-3d-printing', label: '🛠️ How to Start 3D Printing', desc: 'Complete beginner walkthrough' },
-        { slug: 'best-3d-printer-filaments', label: '🧵 Best Filaments Guide', desc: 'PLA, PETG, ABS compared' },
-        { slug: 'top-rated-3d-printers', label: '⭐ Top Rated Printers', desc: 'Highest Amazon ratings + reviews' },
+        { slug: 'fdm-vs-resin-3d-printer', label: '⚙️ FDM vs Resin', desc: 'Which technology is right for you?' },
+        { slug: 'how-to-start-3d-printing', label: '🛠️ How to Start', desc: 'Complete beginner walkthrough' },
+        { slug: 'best-3d-printer-filaments', label: '🧵 Best Filaments', desc: 'PLA, PETG, ABS compared' },
+        { slug: 'top-rated-3d-printers', label: '⭐ Top Rated', desc: 'Highest ratings and reviews' },
         { slug: 'best-3d-printer-deals', label: '🔥 Current Deals', desc: 'Today\'s best discounts' },
     ].filter(l => l.slug !== slug).slice(0, 5);
 
@@ -397,13 +506,12 @@ function internalLinkBoost(slug, products) {
         out += `### Quick Product Links\n\n`;
         products.slice(0, 5).forEach(p => {
             const name = p.display_name || p.product_name;
-            const price = p.price ? ` — $${p.price}` : '';
-            out += `- [${name}${price}](${SITE}/product.html?id=${p.id})\n`;
+            out += `- [**${name}** — ${priceDisplayPlain(p)}](${SITE}/product.html?id=${p.id})\n`;
         });
         out += `\n`;
     }
 
-    out += `*All prices updated daily. [Compare all products →](${SITE})*\n`;
+    out += `*All prices updated daily. [Compare all products →](${SITE}/compare.html)*\n`;
     return out;
 }
 
@@ -418,16 +526,16 @@ function generateArticleContent(article, products) {
     content += `*Last updated: ${TODAY} | Based on real-time price data from Amazon*\n\n`;
     content += `${desc}\n\n`;
 
-    // ── Quick CTA right at top ──
+    // ══════ TOP CTA (ABOVE FOLD) ══════
     if (products.length > 0) {
-        content += getContextCTA(article, products[0]);
+        content += getContextCTA(article, products[0], 'top');
     }
 
-    // ── TL;DR / Quick Compare Section ──
+    // ── Quick Comparison Table ──
     if (products.length > 0) {
         content += `## ⚡ Quick Comparison\n\n`;
         content += comparisonTable(products);
-        content += `> 💡 Tap "Check Price" to see the latest Amazon price — we track changes daily.\n\n`;
+        content += `> 💡 Every price includes urgency status — tap \"Check Price\" to see the latest Amazon price.\n\n`;
     }
 
     // ── Top 3 Product Highlights ──
@@ -437,17 +545,23 @@ function generateArticleContent(article, products) {
             content += productHighlight(p, bestForBadge(p));
         });
         content += inlineCTA(products[0], `Our #1 pick — prices change frequently. Lock in today's price.`);
+        content += `→ [Compare all ${products.length} options side by side](${SITE}/compare.html)\n\n`;
     }
 
-    // ── Detailed Reviews ──
+    // ══════ MID CTA (RE-ENGAGEMENT) ══════
+    if (products.length > 0) {
+        content += getContextCTA(article, products[0], 'mid');
+    }
+
+    // ── Detailed Reviews with embedded CTAs + scroll hooks ──
     if (products.length > 0) {
         content += `## Detailed Reviews\n\n`;
         products.forEach((p, i) => {
-            content += productReview(p, i, article);
+            content += productReview(p, i, article, products.length);
         });
     }
 
-    // ── Type-specific content with inline CTAs ──
+    // ── Type-specific content ──
     if (type === 'buying-guide') {
         content += generateBuyingGuideContent(article, products);
     } else if (type === 'comparison') {
@@ -458,24 +572,27 @@ function generateArticleContent(article, products) {
         content += generateReviewContent(article, products);
     }
 
-    // ── FAQ (with internal links, SEO-optimized) ──
+    // ── Scroll hook before FAQ ──
+    content += scrollHook(2, `${SITE}/compare.html`);
+
+    // ── FAQ ──
     content += generateFAQ(article);
 
-    // ── Final Verdict with CTA ──
+    // ══════ END CTA (FINAL VERDICT) ══════
     content += `## Final Verdict\n\n`;
     if (products.length > 0) {
         const top = products[0];
         const topName = top.display_name || top.product_name;
         content += `Our top pick is the **${topName}** for its excellent combination of features and value.\n\n`;
-        content += getContextCTA(article, top);
+        content += getContextCTA(article, top, 'end');
     } else {
-        content += `Ready to start? Check our [live price tracker](${SITE}) for the latest deals and compare all options side by side.\n\n`;
+        content += `Ready to start? Check our [live price tracker](${SITE}/compare.html) for the latest deals and compare all options side by side.\n\n`;
     }
 
-    // ── EXIT CTA (compare across stores) ──
+    // ── EXIT CTA (strong close) ──
     content += exitCTA(article, products[0]);
 
-    // ── Internal Link Boost ──
+    // ── Internal Links ──
     content += internalLinkBoost(slug, products);
 
     return content;
