@@ -97,12 +97,71 @@ app.use((req, res, next) => {
         console.log(`← ${req.method} ${req.url} ${res.statusCode} (${Date.now() - start}ms)`);
     });
     next();
-});
+});// Serve sitemap.xml dynamically (includes all blog posts + products)
+app.get('/sitemap.xml', async (req, res) => {
+    try {
+        // Static pages
+        const staticPages = [
+            { loc: '/', freq: 'daily', priority: '1.0' },
+            { loc: '/budget-3d-printers', freq: 'daily', priority: '0.9' },
+            { loc: '/professional-3d-printers', freq: 'daily', priority: '0.9' },
+            { loc: '/resin-3d-printers', freq: 'daily', priority: '0.9' },
+            { loc: '/3d-pens', freq: 'daily', priority: '0.8' },
+            { loc: '/filament', freq: 'daily', priority: '0.9' },
+            { loc: '/accessories', freq: 'daily', priority: '0.8' },
+            { loc: '/blog/', freq: 'daily', priority: '0.8' },
+            { loc: '/blog/best-3d-printers-under-300.html', freq: 'monthly', priority: '0.9' },
+            { loc: '/privacy.html', freq: 'yearly', priority: '0.3' },
+            { loc: '/terms.html', freq: 'yearly', priority: '0.3' },
+            { loc: '/methodology.html', freq: 'monthly', priority: '0.5' },
+            { loc: '/compatibility.html', freq: 'monthly', priority: '0.7' },
+            { loc: '/calculator.html', freq: 'monthly', priority: '0.6' },
+            { loc: '/compare.html', freq: 'daily', priority: '0.7' },
+        ];
 
-// Serve sitemap.xml and robots.txt with correct content types
-app.get('/sitemap.xml', (req, res) => {
-    res.setHeader('Content-Type', 'application/xml');
-    res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
+        // Dynamic blog posts from DB
+        const { data: posts } = await supabase.from('blog_posts')
+            .select('slug, published_at, updated_at')
+            .eq('is_published', true);
+
+        // Dynamic product pages
+        const { data: products } = await supabase.from('products')
+            .select('id, updated_at')
+            .eq('is_available', true)
+            .limit(300);
+
+        let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+        xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+
+        // Static pages
+        staticPages.forEach(p => {
+            xml += `  <url>\n    <loc>https://3d-printer-prices.com${p.loc}</loc>\n`;
+            xml += `    <changefreq>${p.freq}</changefreq>\n    <priority>${p.priority}</priority>\n  </url>\n`;
+        });
+
+        // Blog posts
+        (posts || []).forEach(p => {
+            const lastmod = (p.updated_at || p.published_at || '').split('T')[0];
+            xml += `  <url>\n    <loc>https://3d-printer-prices.com/blog/${p.slug}</loc>\n`;
+            if (lastmod) xml += `    <lastmod>${lastmod}</lastmod>\n`;
+            xml += `    <changefreq>monthly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
+        });
+
+        // Product pages
+        (products || []).forEach(p => {
+            const lastmod = (p.updated_at || '').split('T')[0];
+            xml += `  <url>\n    <loc>https://3d-printer-prices.com/product.html?id=${p.id}</loc>\n`;
+            if (lastmod) xml += `    <lastmod>${lastmod}</lastmod>\n`;
+            xml += `    <changefreq>daily</changefreq>\n    <priority>0.7</priority>\n  </url>\n`;
+        });
+
+        xml += '</urlset>';
+        res.set('Content-Type', 'application/xml');
+        res.send(xml);
+    } catch (e) {
+        // Fallback to static file
+        res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
+    }
 });
 
 app.get('/robots.txt', (req, res) => {
