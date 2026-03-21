@@ -1108,6 +1108,7 @@
 
         function doLogin() {
             adminKey = loginInput.value;
+            window.adminKey = adminKey; // expose for external scripts (scaling-admin.js)
             if (!adminKey) {
                 document.getElementById('login-error').textContent = 'Please enter admin key';
                 return;
