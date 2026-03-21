@@ -117,6 +117,45 @@ module.exports = {
     STRATEGY_RECALC_INTERVAL_MS: 3600000, // hourly recalc
 
     // ═══════════════════════════════════════════════════════════
+    // AUTONOMOUS COMPANY SYSTEM
+    // ═══════════════════════════════════════════════════════════
+    AUTONOMOUS_ENABLED: process.env.AUTONOMOUS_ENABLED === 'true' || false,
+
+    // Self-Monitoring
+    MONITOR_INTERVAL_MS: 1800000,       // check every 30 min
+    DEGRADATION_THRESHOLD: -0.2,        // -20% = degradation detected
+    TREND_WINDOW_HOURS: 6,              // look at last 6h for trends
+
+    // Auto Rollback
+    AUTO_ROLLBACK_ENABLED: process.env.AUTO_ROLLBACK_ENABLED === 'true' || false,
+    ROLLBACK_CLICK_DROP_THRESHOLD: -0.3,  // -30% click drop triggers rollback
+    ROLLBACK_LOOKBACK_ACTIONS: 10,      // check last 10 actions for culprit
+    MAX_ROLLBACKS_PER_HOUR: 3,          // prevent rollback storms
+
+    // KPI Guardrails
+    GUARDRAILS_ENABLED: process.env.GUARDRAILS_ENABLED === 'true' || false,
+    MIN_CLICK_RATE_HOURLY: 0.5,         // minimum 0.5 clicks/hour expected
+    MAX_BOOST_CONCENTRATION: 0.4,       // no single product > 40% of total boost
+    MIN_CONTENT_DIVERSITY: 3,           // minimum 3 active clusters
+    MAX_DECAY_RATIO: 0.5,              // max 50% of entities decaying
+
+    // Meta-Optimization
+    META_OPTIMIZE_ENABLED: process.env.META_OPTIMIZE_ENABLED === 'true' || false,
+    META_ADJUST_INTERVAL_MS: 7200000,   // every 2 hours
+    META_MAX_ADJUSTMENT: 0.1,           // max ±10% per adjustment cycle
+
+    // Resource Allocation
+    RESOURCE_ALLOC_ENABLED: process.env.RESOURCE_ALLOC_ENABLED === 'true' || false,
+    RESOURCE_CHANNELS: ['blog', 'social', 'campaign'],
+    DEFAULT_CHANNEL_WEIGHTS: { blog: 0.4, social: 0.35, campaign: 0.25 },
+
+    // Long-Term Memory
+    MEMORY_ENABLED: process.env.MEMORY_ENABLED === 'true' || false,
+    MEMORY_MAX_ENTRIES: 1000,
+    MEMORY_FAILURE_PENALTY_DURATION_MS: 604800000,  // 7 days
+    MEMORY_SUCCESS_BONUS_DURATION_MS: 2592000000,   // 30 days
+
+    // ═══════════════════════════════════════════════════════════
     // LOGGING
     // ═══════════════════════════════════════════════════════════
     BOOST_LOGGING_ENABLED: true,

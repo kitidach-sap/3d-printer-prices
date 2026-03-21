@@ -4559,6 +4559,8 @@ app.post('/api/admin/scaling/settings', express.json(), async (req, res) => {
             'DECAY_ENGINE_ENABLED', 'SCALING_DRY_RUN',
             'GROWTH_BRAIN_ENABLED', 'BRAIN_AUTO_EXECUTE',
             'STRATEGY_ENGINE_ENABLED',
+            'AUTONOMOUS_ENABLED', 'AUTO_ROLLBACK_ENABLED', 'GUARDRAILS_ENABLED',
+            'META_OPTIMIZE_ENABLED', 'RESOURCE_ALLOC_ENABLED', 'MEMORY_ENABLED',
         ];
         if (!allowedFlags.includes(flag)) {
             return res.status(400).json({ error: `Invalid flag: ${flag}. Allowed: ${allowedFlags.join(', ')}` });
@@ -4620,6 +4622,75 @@ app.get('/api/admin/strategy', async (req, res) => {
         const strategy = require('./revenue/strategyEngine');
         const data = await strategy.getStrategy(supabase);
         res.json(data);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// AUTONOMOUS COMPANY SYSTEM API
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// GET /api/admin/autonomous/status — full autonomous system status
+app.get('/api/admin/autonomous/status', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const monitor = require('./revenue/monitoring');
+        const rollback = require('./revenue/rollback');
+        const guardrails = require('./revenue/guardrails');
+        const metaOpt = require('./revenue/metaOptimizer');
+        const resources = require('./revenue/resourceAllocator');
+        const memory = require('./revenue/memory');
+        res.json({
+            monitoring: monitor.getStatus(),
+            rollback: rollback.getStatus(),
+            guardrails: guardrails.getStatus(),
+            meta_optimizer: metaOpt.getStatus(),
+            resources: resources.getStatus(),
+            memory: memory.getStatus(),
+        });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/autonomous/monitor — monitoring health + alerts
+app.get('/api/admin/autonomous/monitor', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const monitor = require('./revenue/monitoring');
+        res.json({ ...monitor.getStatus(), snapshots: monitor.getSnapshots(30) });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/autonomous/guardrails — guardrail status + violations
+app.get('/api/admin/autonomous/guardrails', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const guardrails = require('./revenue/guardrails');
+        res.json(guardrails.getStatus());
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/autonomous/memory — long-term memory status
+app.get('/api/admin/autonomous/memory', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const memory = require('./revenue/memory');
+        res.json(memory.getStatus());
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/autonomous/acknowledge — acknowledge an alert
+app.post('/api/admin/autonomous/acknowledge', express.json(), async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const monitor = require('./revenue/monitoring');
+        const { index } = req.body;
+        if (index == null) return res.status(400).json({ error: 'index required' });
+        const result = monitor.acknowledgeAlert(index);
+        res.json(result);
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

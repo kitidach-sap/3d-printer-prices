@@ -25,6 +25,14 @@ function getDecay() { if (!_decay) _decay = require('./decay'); return _decay; }
 function getBrain() { if (!_brain) _brain = require('./growthBrain'); return _brain; }
 function getPipeline() { if (!_pipeline) _pipeline = require('./actionPipeline'); return _pipeline; }
 
+// Autonomous Company System — lazy-loaded
+let _monitor = null, _rollback = null, _guardrails = null, _metaOpt = null, _memory = null;
+function getMonitor() { if (!_monitor) _monitor = require('./monitoring'); return _monitor; }
+function getRollback() { if (!_rollback) _rollback = require('./rollback'); return _rollback; }
+function getGuardrails() { if (!_guardrails) _guardrails = require('./guardrails'); return _guardrails; }
+function getMetaOpt() { if (!_metaOpt) _metaOpt = require('./metaOptimizer'); return _metaOpt; }
+function getMemory() { if (!_memory) _memory = require('./memory'); return _memory; }
+
 // In-memory cache (recalculated periodically)
 let _cache = null;
 let _cacheTime = 0;
@@ -180,6 +188,55 @@ async function getBoosts(supabase, forceRefresh = false) {
             console.log('Growth Brain error (non-fatal):', brainErr.message);
         }
 
+        // ─── AUTONOMOUS COMPANY SYSTEM: monitor → guardrails → meta-opt → rollback → memory ───
+        let autoStatus = null;
+        try {
+            // 1. Record performance snapshot for monitoring
+            getMonitor().recordSnapshot({
+                total_clicks: Object.values(products).reduce((s, p) => s + (p.clicks || 0), 0),
+                total_compares: Object.keys(products).length,
+                active_sources: Object.keys(x_post_weights.hooks || {}).length,
+                boosted_products: Object.values(products).filter(p => (p.rank_weight || 1) > 1.0).length,
+                decaying_products: Object.values(products).filter(p => (p.rank_weight || 1) < 1.0).length,
+                active_campaigns: Object.keys(campaign_boosts).length,
+                brain_actions: brainResult?.executed || 0,
+                avg_boost: Object.values(products).reduce((s, p) => s + (p.rank_weight || 1), 0) / Math.max(1, Object.keys(products).length),
+            });
+
+            // 2. Run health check (includes trend detection)
+            const healthStatus = getMonitor().checkHealth();
+
+            // 3. KPI guardrails check
+            const guardrailResult = getGuardrails().checkGuardrails({ products, articles: featured_articles });
+
+            // 4. Meta-optimizer adjusts parameters
+            const metaResult = getMetaOpt().optimize();
+
+            // 5. Auto-rollback if degradation detected
+            const rollbackResult = getRollback().evaluateRollback();
+
+            // 6. Apply memory weights to products
+            Object.entries(products).forEach(([name, p]) => {
+                const memWeight = getMemory().getMemoryWeight('product_boost', name);
+                if (memWeight !== 1.0) {
+                    p.rank_weight = Math.min(config.MAX_COMBINED_WEIGHT, (p.rank_weight || 1) * memWeight);
+                    p.memory_weight = memWeight;
+                }
+            });
+
+            // 7. Memory cleanup
+            getMemory().cleanup();
+
+            autoStatus = {
+                health: healthStatus.health,
+                guardrails_passed: guardrailResult.passed,
+                meta_adjusted: metaResult.adjusted,
+                rollback_triggered: rollbackResult.triggered,
+            };
+        } catch (autoErr) {
+            console.log('Autonomous System error (non-fatal):', autoErr.message);
+        }
+
         _cache = {
             generated_at: new Date().toISOString(),
             scaling_applied: scalingApplied,
@@ -241,7 +298,8 @@ async function getBoosts(supabase, forceRefresh = false) {
         // Console summary for Vercel logs
         const scalingInfo = scalingApplied ? ` | Scaling: ${scalingStats.products}p ${scalingStats.variants}v ${scalingStats.x}x ${scalingStats.campaigns}c` : '';
         const brainInfo = brainResult && brainResult.executed > 0 ? ` | Brain: ${brainResult.executed} exec, ${brainResult.deferred} defer` : '';
-        console.log(`💰 Boost computed: ${prodBoosts} products, ${urgBoosts} urgency, ${badgeCount} badges, ${campCount} campaigns${scalingInfo}${brainInfo}`);
+        const autoInfo = autoStatus ? ` | Auto: ${autoStatus.health}${autoStatus.rollback_triggered ? ' ROLLBACK' : ''}${autoStatus.meta_adjusted ? ' META' : ''}` : '';
+        console.log(`💰 Boost computed: ${prodBoosts} products, ${urgBoosts} urgency, ${badgeCount} badges, ${campCount} campaigns${scalingInfo}${brainInfo}${autoInfo}`);
     } catch (e) {
         console.log('Boost computation error:', e.message);
         _cache = _cache || getEmptyBoosts();

@@ -76,6 +76,9 @@
             case 'sc-recs': loadRecommendations(); break;
             case 'sc-brain': loadBrain(); break;
             case 'sc-strategy': loadStrategy(); break;
+            case 'sc-monitor': loadMonitor(); break;
+            case 'sc-guard': loadGuardrails(); break;
+            case 'sc-memory': loadMemory(); break;
             case 'sc-settings': loadSettings(); break;
         }
     }
@@ -470,6 +473,12 @@
                 { key: 'GROWTH_BRAIN_ENABLED', label: '🧠 Growth Brain', desc: 'Enable AI decision engine (evaluates recommendations)' },
                 { key: 'BRAIN_AUTO_EXECUTE', label: '⚡ Brain Auto-Execute', desc: 'Let brain auto-apply high-confidence decisions' },
                 { key: 'STRATEGY_ENGINE_ENABLED', label: '🎯 Strategy Engine', desc: 'Enable opportunity detection, forecasting, exploration' },
+                { key: 'AUTONOMOUS_ENABLED', label: '🤖 Autonomous System', desc: 'Master switch for self-monitoring and auto-optimization' },
+                { key: 'AUTO_ROLLBACK_ENABLED', label: '⏪ Auto Rollback', desc: 'Automatically revert harmful changes on degradation' },
+                { key: 'GUARDRAILS_ENABLED', label: '🛡️ KPI Guardrails', desc: 'Enforce performance thresholds and block violations' },
+                { key: 'META_OPTIMIZE_ENABLED', label: '🔧 Meta-Optimizer', desc: 'Auto-tune boost limits, cooldowns, action rates' },
+                { key: 'RESOURCE_ALLOC_ENABLED', label: '📊 Resource Allocator', desc: 'Auto-balance blog vs social vs campaign focus' },
+                { key: 'MEMORY_ENABLED', label: '💾 Long-Term Memory', desc: 'Remember successes/failures to avoid repeating mistakes' },
             ];
 
             el.innerHTML = `
@@ -582,6 +591,16 @@
             const d = await res.json();
             alert(d.ok ? `Reverted action #${actionId}` : 'Error: ' + (d.error || 'Revert failed'));
             loadBrain();
+        } catch (e) { alert('Error: ' + e.message); }
+    };
+
+    window._scAckAlert = async function (index) {
+        try {
+            await fetch('/api/admin/autonomous/acknowledge', {
+                method: 'POST', headers: hdr(),
+                body: JSON.stringify({ index })
+            });
+            loadMonitor();
         } catch (e) { alert('Error: ' + e.message); }
     };
 
@@ -790,6 +809,156 @@
             `;
         } catch (e) {
             el.innerHTML = `<div class="admin-card"><p style="color:var(--danger)">Error: ${esc(e.message)}</p></div>`;
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // MONITOR TAB
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    async function loadMonitor() {
+        const el = $('sc-monitor');
+        if (!el) return;
+        el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-muted)">Loading autonomous status...</div>';
+        try {
+            const data = await fetch(`/api/admin/autonomous/status?key=${adminKey()}`).then(r => r.json());
+            const mon = data.monitoring || {};
+            const rb = data.rollback || {};
+            const meta = data.meta_optimizer || {};
+            const res = data.resources || {};
+
+            const healthColor = mon.health === 'healthy' ? 'var(--success)' : mon.health === 'warning' ? 'var(--warning)' : 'var(--danger)';
+
+            el.innerHTML = `
+                <div class="admin-card" style="border-left:3px solid ${healthColor}">
+                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
+                        <h3 style="margin:0">📡 Autonomous System</h3>
+                        <div>
+                            <span style="font-size:0.72rem;color:var(--text-muted)">Health:</span>
+                            <span style="font-weight:700;color:${healthColor};font-size:0.85rem">${(mon.health || 'unknown').toUpperCase()}</span>
+                            <span style="font-size:0.68rem;color:var(--text-muted);margin-left:0.5rem">Last: ${timeAgo(mon.last_check)}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0.75rem;margin-bottom:1rem">
+                    ${metricCard('Snapshots', mon.snapshots_recorded || 0, '📸')}
+                    ${metricCard('Alerts', mon.alerts?.unacknowledged || 0, '🚨')}
+                    ${metricCard('Rollbacks', rb.total_rollbacks || 0, '⏪')}
+                    ${metricCard('Meta Adj.', meta.total_adjustments || 0, '🔧')}
+                    ${metricCard('Degrading', (mon.degrading_metrics || []).length, '⚠️')}
+                </div>
+
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:0.75rem">
+                    <div class="admin-card">
+                        <h4 style="margin-top:0;font-size:0.85rem">📉 Trends</h4>
+                        ${Object.keys(mon.trends || {}).length === 0 ? '<p style="color:var(--text-muted);font-size:0.75rem">Collecting data...</p>' :
+                        Object.entries(mon.trends || {}).map(([metric, trend]) =>
+                            '<div style="display:flex;justify-content:space-between;padding:0.2rem 0;font-size:0.75rem"><span>' + metric.replace(/_/g, ' ') + '</span>' + badge(trend, trend === 'improving' ? 'rising' : trend === 'degrading' ? 'falling' : 'stable') + '</div>'
+                        ).join('')}
+                    </div>
+                    <div class="admin-card">
+                        <h4 style="margin-top:0;font-size:0.85rem">📊 Resources</h4>
+                        ${Object.entries((res.current || {}).weights || {}).map(([ch, w]) =>
+                            '<div style="display:flex;justify-content:space-between;padding:0.2rem 0;font-size:0.75rem"><span>' + ch + '</span><strong>' + (w * 100).toFixed(0) + '%</strong></div>'
+                        ).join('') || '<p style="color:var(--text-muted);font-size:0.75rem">Not computed</p>'}
+                    </div>
+                </div>
+
+                ${meta.recent?.length ? '<div class="admin-card"><h4 style="margin-top:0;font-size:0.85rem">🔧 Meta-Optimizations</h4>' +
+                    meta.recent.slice(0, 5).map(m =>
+                        '<div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;padding:0.4rem 0.6rem;margin-bottom:0.3rem;font-size:0.7rem"><span style="color:var(--text-muted)">' + timeAgo(m.timestamp) + '</span>' + (m.adjustments || []).map(a => ' • ' + a.param + ': ' + a.from + ' → ' + a.to).join('') + '</div>'
+                    ).join('') + '</div>' : ''}
+
+                ${(mon.alerts?.recent || []).length ? '<div class="admin-card"><h4 style="margin-top:0;font-size:0.85rem">🚨 Alerts (' + (mon.alerts.unacknowledged || 0) + ' unread)</h4>' +
+                    mon.alerts.recent.map((a, i) =>
+                        '<div style="background:var(--bg-primary);border:1px solid ' + (a.severity === 'critical' ? 'var(--danger)' : 'var(--warning)') + '40;border-radius:6px;padding:0.4rem 0.6rem;margin-bottom:0.3rem;font-size:0.72rem;opacity:' + (a.acknowledged ? '0.4' : '1') + '"><div style="display:flex;justify-content:space-between;align-items:center">' + badge(a.severity, a.severity === 'critical' ? 'loser' : 'medium') + ' ' + esc(a.message) + (!a.acknowledged ? ' <button class="btn btn-sm" style="font-size:0.6rem;padding:0.1rem 0.3rem" onclick="window._scAckAlert(' + i + ')">Ack</button>' : '') + '</div><div style="font-size:0.62rem;color:var(--text-muted)">' + timeAgo(a.timestamp) + ' • ' + a.type + '</div></div>'
+                    ).join('') + '</div>' : ''}
+            `;
+        } catch (e) {
+            el.innerHTML = '<div class="admin-card"><p style="color:var(--danger)">Error: ' + esc(e.message) + '</p></div>';
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // GUARDRAILS TAB
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    async function loadGuardrails() {
+        const el = $('sc-guard');
+        if (!el) return;
+        el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-muted)">Loading guardrails...</div>';
+        try {
+            const data = await fetch(`/api/admin/autonomous/guardrails?key=${adminKey()}`).then(r => r.json());
+
+            let thresholdCards = '';
+            Object.entries(data.thresholds || {}).forEach(([k, v]) => {
+                thresholdCards += '<div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;padding:0.5rem"><div style="font-size:0.72rem;color:var(--text-muted)">' + k.replace(/_/g, ' ') + '</div><div style="font-size:1.1rem;font-weight:800;color:var(--primary)">' + (typeof v === 'number' && v < 1 ? (v * 100) + '%' : v) + '</div></div>';
+            });
+
+            let violationRows = '';
+            (data.recent_violations || []).forEach(v => {
+                violationRows += '<tr><td>' + timeAgo(v.timestamp) + '</td><td>' + badge(v.type, v.type) + '</td><td>' + badge(v.severity, v.severity === 'critical' ? 'loser' : 'medium') + '</td><td style="font-size:0.62rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(v.message) + '</td><td>' + (typeof v.value === 'number' ? v.value.toFixed(2) : v.value) + '</td><td>' + v.threshold + '</td></tr>';
+            });
+
+            el.innerHTML = `
+                <div class="admin-card">
+                    <h3 style="margin-top:0">🛡️ KPI Guardrails</h3>
+                    <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem">
+                        ${data.enabled ? badge('ENABLED', 'active') : badge('DISABLED', 'low')}
+                        · ${data.active_violations || 0} active · ${data.total_violations || 0} total
+                    </div>
+                </div>
+
+                <div class="admin-card">
+                    <h4 style="margin-top:0;font-size:0.85rem">📏 Thresholds</h4>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0.5rem">
+                        ${thresholdCards}
+                    </div>
+                </div>
+
+                ${violationRows ? '<div class="admin-card"><h4 style="margin-top:0;font-size:0.85rem">⚠️ Violations (' + (data.recent_violations || []).length + ')</h4><div class="admin-table-wrapper"><table class="admin-table" style="font-size:0.68rem"><thead><tr><th>Time</th><th>Type</th><th>Severity</th><th>Message</th><th>Value</th><th>Threshold</th></tr></thead><tbody>' + violationRows + '</tbody></table></div></div>' : '<div class="admin-card"><p style="color:var(--success);font-size:0.82rem">✅ All guardrails passing.</p></div>'}
+            `;
+        } catch (e) {
+            el.innerHTML = '<div class="admin-card"><p style="color:var(--danger)">Error: ' + esc(e.message) + '</p></div>';
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // MEMORY TAB
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    async function loadMemory() {
+        const el = $('sc-memory');
+        if (!el) return;
+        el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-muted)">Loading memory...</div>';
+        try {
+            const data = await fetch(`/api/admin/autonomous/memory?key=${adminKey()}`).then(r => r.json());
+
+            let successChips = (data.summary?.success_entities || []).map(e => '<span style="background:#22c55e15;border:1px solid #22c55e30;border-radius:6px;padding:0.25rem 0.5rem;font-size:0.7rem;color:#22c55e">' + esc(e) + '</span>').join('');
+            let failChips = (data.summary?.failure_entities || []).map(e => '<span style="background:#ef444415;border:1px solid #ef444430;border-radius:6px;padding:0.25rem 0.5rem;font-size:0.7rem;color:#ef4444">' + esc(e) + '</span>').join('');
+
+            let memRows = '';
+            (data.entries || []).slice(0, 25).forEach(m => {
+                memRows += '<tr><td>#' + m.id + '</td><td>' + timeAgo(m.timestamp) + '</td><td>' + badge(m.type, m.type) + '</td><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(m.entity) + '</td><td>' + badge(m.outcome, m.outcome === 'success' ? 'winner' : m.outcome === 'failure' ? 'loser' : 'stable') + '</td><td>' + m.score + '</td><td style="font-size:0.6rem">' + timeAgo(m.expiresAt) + '</td></tr>';
+            });
+
+            el.innerHTML = `
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0.75rem;margin-bottom:1rem">
+                    ${metricCard('Active', data.active_entries || 0, '🧠')}
+                    ${metricCard('Successes', data.successes || 0, '✅')}
+                    ${metricCard('Failures', data.failures || 0, '❌')}
+                    ${metricCard('Total', data.total_entries || 0, '💾')}
+                </div>
+
+                ${successChips ? '<div class="admin-card"><h4 style="margin-top:0;font-size:0.85rem">✅ Successes</h4><div style="display:flex;flex-wrap:wrap;gap:0.4rem">' + successChips + '</div></div>' : ''}
+
+                ${failChips ? '<div class="admin-card"><h4 style="margin-top:0;font-size:0.85rem">❌ Failures (penalized)</h4><div style="display:flex;flex-wrap:wrap;gap:0.4rem">' + failChips + '</div></div>' : ''}
+
+                ${memRows ? '<div class="admin-card"><h4 style="margin-top:0;font-size:0.85rem">📜 Memory Log (' + (data.entries || []).length + ')</h4><div class="admin-table-wrapper"><table class="admin-table" style="font-size:0.68rem"><thead><tr><th>ID</th><th>Time</th><th>Type</th><th>Entity</th><th>Outcome</th><th>Score</th><th>Expires</th></tr></thead><tbody>' + memRows + '</tbody></table></div></div>' : '<div class="admin-card"><p style="color:var(--text-muted);font-size:0.82rem">No memories stored yet.</p></div>'}
+            `;
+        } catch (e) {
+            el.innerHTML = '<div class="admin-card"><p style="color:var(--danger)">Error: ' + esc(e.message) + '</p></div>';
         }
     }
 
