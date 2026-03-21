@@ -4561,6 +4561,9 @@ app.post('/api/admin/scaling/settings', express.json(), async (req, res) => {
             'STRATEGY_ENGINE_ENABLED',
             'AUTONOMOUS_ENABLED', 'AUTO_ROLLBACK_ENABLED', 'GUARDRAILS_ENABLED',
             'META_OPTIMIZE_ENABLED', 'RESOURCE_ALLOC_ENABLED', 'MEMORY_ENABLED',
+            'MONETIZATION_ENABLED', 'MONETIZATION_BRAIN_ENABLED', 'REVENUE_WEIGHTED_BOOSTING_ENABLED',
+            'SMART_ROUTING_ENABLED', 'ROUTE_SIMULATION_ENABLED', 'CAMPAIGN_ROUTE_ENABLED',
+            'COMPARE_ROUTE_ENABLED', 'SOURCE_AWARE_ROUTING_ENABLED',
         ];
         if (!allowedFlags.includes(flag)) {
             return res.status(400).json({ error: `Invalid flag: ${flag}. Allowed: ${allowedFlags.join(', ')}` });
@@ -4691,6 +4694,207 @@ app.post('/api/admin/autonomous/acknowledge', express.json(), async (req, res) =
         if (index == null) return res.status(400).json({ error: 'index required' });
         const result = monitor.acknowledgeAlert(index);
         res.json(result);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MONETIZATION MAX LAYER API
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// GET /api/admin/monetization/overview — full monetization overview
+app.get('/api/admin/monetization/overview', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const analytics = require('./revenue/analytics');
+        const roi = require('./monetization/roi');
+        const config = require('./revenue/config');
+        const days = parseInt(req.query.days) || config.EXTENDED_ANALYTICS_DAYS || 14;
+
+        const [topProducts, topSources, topArticles, campaignPerf, compareUsage] = await Promise.all([
+            analytics.getTopProducts(supabase, days, 100),
+            analytics.getTopSources(supabase, days),
+            analytics.getTopArticles(supabase, days, 50),
+            analytics.getCampaignPerformance(supabase),
+            analytics.getCompareUsage(supabase, days, 50),
+        ]);
+
+        const { data: dbProducts } = await supabase.from('products').select('product_name, price, id').limit(500);
+        const priceMap = {};
+        const priceById = {};
+        (dbProducts || []).forEach(p => { if (p.price) { priceMap[p.product_name] = p.price; priceById[p.id] = p.price; } });
+
+        const enrichedProducts = topProducts.map(p => ({
+            ...p, price: priceMap[p.product_name] || 0,
+            compare_count: (compareUsage.find(c => c.name === p.product_name) || {}).count || 0,
+        }));
+
+        res.json(roi.getMonetizationOverview(enrichedProducts, campaignPerf, topArticles, topSources, priceMap));
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/monetization/products — product revenue ranking
+app.get('/api/admin/monetization/products', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const analytics = require('./revenue/analytics');
+        const valueScoring = require('./monetization/valueScoring');
+        const config = require('./revenue/config');
+        const days = parseInt(req.query.days) || config.EXTENDED_ANALYTICS_DAYS || 14;
+
+        const [topProducts, compareUsage] = await Promise.all([
+            analytics.getTopProducts(supabase, days, 100),
+            analytics.getCompareUsage(supabase, days, 50),
+        ]);
+        const { data: dbProducts } = await supabase.from('products').select('product_name, price').limit(500);
+        const priceMap = {};
+        (dbProducts || []).forEach(p => { if (p.price) priceMap[p.product_name] = p.price; });
+
+        const enriched = topProducts.map(p => ({
+            ...p, price: priceMap[p.product_name] || 0,
+            compare_count: (compareUsage.find(c => c.name === p.product_name) || {}).count || 0,
+        }));
+
+        res.json({ products: valueScoring.scoreProductValues(enriched) });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/monetization/campaigns — campaign revenue ranking
+app.get('/api/admin/monetization/campaigns', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const analytics = require('./revenue/analytics');
+        const valueScoring = require('./monetization/valueScoring');
+        const campPerf = await analytics.getCampaignPerformance(supabase);
+        const { data: dbProducts } = await supabase.from('products').select('id, price').limit(500);
+        const priceById = {};
+        (dbProducts || []).forEach(p => { if (p.price) priceById[p.id] = p.price; });
+        res.json({ campaigns: valueScoring.scoreCampaignValues(campPerf, priceById) });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/monetization/articles — article revenue ranking
+app.get('/api/admin/monetization/articles', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const analytics = require('./revenue/analytics');
+        const valueScoring = require('./monetization/valueScoring');
+        const config = require('./revenue/config');
+        const articles = await analytics.getTopArticles(supabase, config.EXTENDED_ANALYTICS_DAYS || 14, 50);
+        const { data: dbProducts } = await supabase.from('products').select('product_name, price').limit(500);
+        const priceMap = {};
+        (dbProducts || []).forEach(p => { if (p.price) priceMap[p.product_name] = p.price; });
+        res.json({ articles: valueScoring.scoreArticleValues(articles, priceMap) });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/monetization/sources — source revenue ranking
+app.get('/api/admin/monetization/sources', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const analytics = require('./revenue/analytics');
+        const valueScoring = require('./monetization/valueScoring');
+        const sources = await analytics.getTopSources(supabase, 14);
+        res.json({ sources: valueScoring.scoreSourceValues(sources) });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/monetization/recommendations — monetization brain output
+app.get('/api/admin/monetization/recommendations', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const brain = require('./monetization/monetizationBrain');
+        res.json(await brain.getRecommendations(supabase));
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SMART ROUTING ENGINE API
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// GET /api/admin/routing/overview — routing engine status
+app.get('/api/admin/routing/overview', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const router = require('./monetization/router');
+        res.json(router.getStatus());
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/routing/products — best route per product
+app.get('/api/admin/routing/products', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const analytics = require('./revenue/analytics');
+        const router = require('./monetization/router');
+        const config = require('./revenue/config');
+        const topProducts = await analytics.getTopProducts(supabase, config.EXTENDED_ANALYTICS_DAYS || 14, 50);
+        const compareUsage = await analytics.getCompareUsage(supabase, 14, 50);
+        const { data: dbProducts } = await supabase.from('products').select('product_name, price, id').limit(500);
+        const priceMap = {};
+        (dbProducts || []).forEach(p => { if (p.price) priceMap[p.product_name] = p.price; });
+        const enriched = topProducts.map(p => ({
+            ...p, price: priceMap[p.product_name] || 0,
+            compare_count: (compareUsage.find(c => c.name === p.product_name) || {}).count || 0,
+        }));
+        const source = req.query.source || 'direct';
+        res.json({ recommendations: router.getRoutingRecommendations(enriched, source) });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/routing/sources — source-aware routing analysis
+app.get('/api/admin/routing/sources', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const simulator = require('./monetization/routeSimulator');
+        const routingPolicy = require('./monetization/routingPolicy');
+        const sources = ['search', 'twitter', 'direct', 'referral', 'reddit', 'campaign'];
+        const testProduct = { product_name: 'test', price: 250, clicks: 50 };
+        const analysis = sources.map(s => ({
+            source: s, simulation: simulator.simulateRoutes(testProduct, s),
+            preferences: routingPolicy.getSourcePreferences(s),
+        }));
+        res.json({ source_analysis: analysis });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/routing/recommendations — smart routing recommendations
+app.get('/api/admin/routing/recommendations', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const analytics = require('./revenue/analytics');
+        const router = require('./monetization/router');
+        const topProducts = await analytics.getTopProducts(supabase, 14, 30);
+        const compareUsage = await analytics.getCompareUsage(supabase, 14, 30);
+        const { data: dbProducts } = await supabase.from('products').select('product_name, price').limit(500);
+        const priceMap = {};
+        (dbProducts || []).forEach(p => { if (p.price) priceMap[p.product_name] = p.price; });
+        const enriched = topProducts.map(p => ({
+            ...p, price: priceMap[p.product_name] || 0,
+            compare_count: (compareUsage.find(c => c.name === p.product_name) || {}).count || 0,
+        }));
+        const recs = router.getRoutingRecommendations(enriched, req.query.source || 'direct');
+        res.json({ recommendations: recs, total: recs.length });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/routing/decisions — recent routing decisions log
+app.get('/api/admin/routing/decisions', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const attribution = require('./monetization/attribution');
+        const limit = parseInt(req.query.limit) || 50;
+        res.json({ decisions: attribution.getDecisionLog(limit), stats: attribution.getStats() });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

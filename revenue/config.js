@@ -156,6 +156,42 @@ module.exports = {
     MEMORY_SUCCESS_BONUS_DURATION_MS: 2592000000,   // 30 days
 
     // ═══════════════════════════════════════════════════════════
+    // MONETIZATION MAX LAYER
+    // ═══════════════════════════════════════════════════════════
+    MONETIZATION_ENABLED: process.env.MONETIZATION_ENABLED === 'true' || false,
+    MONETIZATION_BRAIN_ENABLED: process.env.MONETIZATION_BRAIN_ENABLED === 'true' || false,
+    REVENUE_WEIGHTED_BOOSTING_ENABLED: process.env.REVENUE_WEIGHTED_BOOSTING_ENABLED === 'true' || false,
+
+    // Revenue Model Assumptions
+    AMAZON_COMMISSION_RATE: 0.04,           // 4% default
+    COMMISSION_TIERS: { under_100: 0.04, under_500: 0.035, under_1000: 0.03, over_1000: 0.025 },
+    CONVERSION_RATES: { under_100: 0.08, under_300: 0.05, under_600: 0.03, under_1000: 0.02, over_1000: 0.012 },
+    COMPARE_INTENT_MULTIPLIER: 1.8,
+    BLOG_INTENT_MULTIPLIER: 1.3,
+    SEARCH_INTENT_MULTIPLIER: 1.5,
+    SOCIAL_INTENT_MULTIPLIER: 0.6,
+    DIRECT_INTENT_MULTIPLIER: 1.0,
+    CAMPAIGN_COMMISSION_PREMIUM: 1.5,
+    CAMPAIGN_CONVERSION_BOOST: 1.2,
+    PRODUCT_PAGE_MULTIPLIER: 1.3,
+    MIN_CLICKS_FOR_ESTIMATE: 5,
+
+    // ═══════════════════════════════════════════════════════════
+    // SMART ROUTING ENGINE
+    // ═══════════════════════════════════════════════════════════
+    SMART_ROUTING_ENABLED: process.env.SMART_ROUTING_ENABLED === 'true' || false,
+    ROUTE_SIMULATION_ENABLED: process.env.ROUTE_SIMULATION_ENABLED === 'true' || false,
+    CAMPAIGN_ROUTE_ENABLED: process.env.CAMPAIGN_ROUTE_ENABLED === 'true' || false,
+    COMPARE_ROUTE_ENABLED: process.env.COMPARE_ROUTE_ENABLED === 'true' || false,
+    SOURCE_AWARE_ROUTING_ENABLED: process.env.SOURCE_AWARE_ROUTING_ENABLED === 'true' || false,
+    ROUTE_MIN_CONFIDENCE: 'medium',
+    ROUTE_MAX_TRAFFIC_PCT: 0.20,            // max 20% of traffic routed
+    ROUTE_PRODUCT_COOLDOWN_MS: 3600000,     // 1h per-product cooldown
+    ROUTE_MIN_UPLIFT: 10,                   // require 10% uplift
+    ROUTE_MAX_PER_HOUR: 100,
+    CAMPAIGN_EXPIRY_BOOST_DAYS: 3,
+
+    // ═══════════════════════════════════════════════════════════
     // LOGGING
     // ═══════════════════════════════════════════════════════════
     BOOST_LOGGING_ENABLED: true,

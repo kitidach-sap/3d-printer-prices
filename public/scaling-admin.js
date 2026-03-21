@@ -79,6 +79,8 @@
             case 'sc-monitor': loadMonitor(); break;
             case 'sc-guard': loadGuardrails(); break;
             case 'sc-memory': loadMemory(); break;
+            case 'sc-money': loadMonetization(); break;
+            case 'sc-routes': loadRoutes(); break;
             case 'sc-settings': loadSettings(); break;
         }
     }
@@ -479,6 +481,14 @@
                 { key: 'META_OPTIMIZE_ENABLED', label: '🔧 Meta-Optimizer', desc: 'Auto-tune boost limits, cooldowns, action rates' },
                 { key: 'RESOURCE_ALLOC_ENABLED', label: '📊 Resource Allocator', desc: 'Auto-balance blog vs social vs campaign focus' },
                 { key: 'MEMORY_ENABLED', label: '💾 Long-Term Memory', desc: 'Remember successes/failures to avoid repeating mistakes' },
+                { key: 'MONETIZATION_ENABLED', label: '💰 Monetization Layer', desc: 'Enable revenue estimation and value scoring' },
+                { key: 'MONETIZATION_BRAIN_ENABLED', label: '🧠💰 Monetization Brain', desc: 'Revenue-weighted recommendations engine' },
+                { key: 'REVENUE_WEIGHTED_BOOSTING_ENABLED', label: '📊 Revenue Boosting', desc: 'Weight boosts by revenue potential, not just clicks' },
+                { key: 'SMART_ROUTING_ENABLED', label: '🔀 Smart Routing', desc: 'Dynamic destination selection for highest EPC' },
+                { key: 'ROUTE_SIMULATION_ENABLED', label: '🎯 Route Simulation', desc: 'Simulate revenue outcomes per route' },
+                { key: 'CAMPAIGN_ROUTE_ENABLED', label: '📢 Campaign Routing', desc: 'Allow routing to campaign links when profitable' },
+                { key: 'COMPARE_ROUTE_ENABLED', label: '🔍 Compare Routing', desc: 'Route high-intent traffic to compare pages' },
+                { key: 'SOURCE_AWARE_ROUTING_ENABLED', label: '🌐 Source-Aware Routing', desc: 'Adjust routing based on traffic source' },
             ];
 
             el.innerHTML = `
@@ -956,6 +966,123 @@
                 ${failChips ? '<div class="admin-card"><h4 style="margin-top:0;font-size:0.85rem">❌ Failures (penalized)</h4><div style="display:flex;flex-wrap:wrap;gap:0.4rem">' + failChips + '</div></div>' : ''}
 
                 ${memRows ? '<div class="admin-card"><h4 style="margin-top:0;font-size:0.85rem">📜 Memory Log (' + (data.entries || []).length + ')</h4><div class="admin-table-wrapper"><table class="admin-table" style="font-size:0.68rem"><thead><tr><th>ID</th><th>Time</th><th>Type</th><th>Entity</th><th>Outcome</th><th>Score</th><th>Expires</th></tr></thead><tbody>' + memRows + '</tbody></table></div></div>' : '<div class="admin-card"><p style="color:var(--text-muted);font-size:0.82rem">No memories stored yet.</p></div>'}
+            `;
+        } catch (e) {
+            el.innerHTML = '<div class="admin-card"><p style="color:var(--danger)">Error: ' + esc(e.message) + '</p></div>';
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // MONETIZATION TAB
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    async function loadMonetization() {
+        const el = $('sc-money');
+        if (!el) return;
+        el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-muted)">Loading monetization data...</div>';
+        try {
+            const [overview, recs] = await Promise.all([
+                fetch(`/api/admin/monetization/overview?key=${adminKey()}`).then(r => r.json()),
+                fetch(`/api/admin/monetization/recommendations?key=${adminKey()}`).then(r => r.json()),
+            ]);
+
+            const s = overview.summary || {};
+            const metricCard = (label, value, icon) => `<div class="admin-card" style="text-align:center;padding:0.75rem"><div style="font-size:1.4rem">${icon}</div><div style="font-size:1.2rem;font-weight:700;color:var(--text-primary)">${value}</div><div style="font-size:0.68rem;color:var(--text-muted)">${label}</div></div>`;
+
+            const prodRows = (overview.top_revenue_products || []).slice(0, 10).map(p => `<tr style="font-size:0.72rem"><td>${esc(p.product_name)}</td><td>$${(p.price||0).toFixed(0)}</td><td>${p.clicks}</td><td>$${(p.epc||0).toFixed(4)}</td><td>$${(p.estimated_revenue||0).toFixed(2)}</td><td>${p.value_score}</td><td>${badge(p.verdict)}</td><td>${p.is_click_trap ? '⚠️' : p.is_hidden_gem ? '💎' : ''}${badge(p.confidence)}</td></tr>`).join('');
+
+            const recCards = (recs.recommendations || []).slice(0, 8).map(r => `<div class="admin-card" style="padding:0.6rem;border-left:3px solid ${r.priority === 'high' ? 'var(--success)' : r.priority === 'medium' ? 'var(--warning)' : 'var(--text-muted)'}">
+                <div style="display:flex;justify-content:space-between;align-items:center"><strong style="font-size:0.78rem">${esc(r.entity)}</strong>${badge(r.priority)}</div>
+                <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.2rem">${esc(r.action)}</div>
+                <div style="font-size:0.65rem;color:var(--text-muted);margin-top:0.1rem">💡 ${esc(r.reason)}</div>
+            </div>`).join('');
+
+            const srcCards = (overview.top_revenue_sources || []).slice(0, 6).map(s => `<div class="admin-card" style="text-align:center;padding:0.6rem"><div style="font-weight:600;font-size:0.82rem">${esc(s.source)}</div><div style="font-size:0.7rem;color:var(--text-muted)">${s.clicks} clicks · EPC $${(s.epc||0).toFixed(4)}</div><div style="font-size:0.65rem">${badge(s.value_tier)}</div></div>`).join('');
+
+            const insightCards = (recs.insights || []).map(i => `<div style="font-size:0.72rem;padding:0.3rem 0;border-bottom:1px solid var(--border)">${i.type === 'error' ? '❌' : '💡'} ${esc(i.message)}</div>`).join('');
+
+            el.innerHTML = `
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0.5rem;margin-bottom:0.75rem">
+                    ${metricCard('Est. Revenue', '$' + (s.total_estimated_revenue||0).toFixed(2), '💰')}
+                    ${metricCard('Avg EPC', '$' + (s.avg_epc||0).toFixed(4), '📊')}
+                    ${metricCard('Products', s.products_tracked||0, '📦')}
+                    ${metricCard('Click Traps', s.click_traps||0, '⚠️')}
+                    ${metricCard('Hidden Gems', s.hidden_gems||0, '💎')}
+                    ${metricCard('Recommendations', recs.total_recommendations||0, '💡')}
+                </div>
+
+                <div class="admin-card">
+                    <h4 style="margin-top:0;font-size:0.85rem">💰 Top Revenue Products</h4>
+                    ${prodRows ? '<div class="admin-table-wrapper"><table class="admin-table" style="font-size:0.72rem"><thead><tr><th>Product</th><th>Price</th><th>Clicks</th><th>EPC</th><th>Est. Rev</th><th>Value</th><th>Verdict</th><th>Notes</th></tr></thead><tbody>' + prodRows + '</tbody></table></div>' : '<p style="color:var(--text-muted);font-size:0.78rem">No product data yet.</p>'}
+                </div>
+
+                ${recCards ? '<div class="admin-card"><h4 style="margin-top:0;font-size:0.85rem">💡 Monetization Recommendations</h4><div style="display:grid;gap:0.4rem">' + recCards + '</div></div>' : ''}
+
+                <div class="admin-card">
+                    <h4 style="margin-top:0;font-size:0.85rem">🌐 Source Revenue Quality</h4>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.4rem">${srcCards || '<p style="color:var(--text-muted);font-size:0.78rem">No source data.</p>'}</div>
+                </div>
+
+                ${insightCards ? '<div class="admin-card"><h4 style="margin-top:0;font-size:0.85rem">🧠 Insights</h4>' + insightCards + '</div>' : ''}
+            `;
+        } catch (e) {
+            el.innerHTML = '<div class="admin-card"><p style="color:var(--danger)">Error: ' + esc(e.message) + '</p></div>';
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // ROUTES TAB
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    async function loadRoutes() {
+        const el = $('sc-routes');
+        if (!el) return;
+        el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-muted)">Loading routing data...</div>';
+        try {
+            const [overview, recs, sources, decisions] = await Promise.all([
+                fetch(`/api/admin/routing/overview?key=${adminKey()}`).then(r => r.json()),
+                fetch(`/api/admin/routing/recommendations?key=${adminKey()}`).then(r => r.json()),
+                fetch(`/api/admin/routing/sources?key=${adminKey()}`).then(r => r.json()),
+                fetch(`/api/admin/routing/decisions?key=${adminKey()}`).then(r => r.json()),
+            ]);
+
+            const enabled = overview.enabled;
+            const metricCard = (label, value, icon) => `<div class="admin-card" style="text-align:center;padding:0.75rem"><div style="font-size:1.4rem">${icon}</div><div style="font-size:1.2rem;font-weight:700;color:var(--text-primary)">${value}</div><div style="font-size:0.68rem;color:var(--text-muted)">${label}</div></div>`;
+
+            const recRows = (recs.recommendations || []).slice(0, 15).map(r => `<tr style="font-size:0.72rem"><td>${esc(r.product_name)}</td><td>${badge(r.current_route)}</td><td>${badge(r.recommended_route)}</td><td>$${(r.current_epc||0).toFixed(4)}</td><td>$${(r.recommended_epc||0).toFixed(4)}</td><td style="color:var(--success);font-weight:600">+${(r.uplift_pct||0).toFixed(1)}%</td><td>${badge(r.confidence)}</td></tr>`).join('');
+
+            const srcRows = (sources.source_analysis || []).map(sa => {
+                const sim = sa.simulation || {};
+                return `<tr style="font-size:0.72rem"><td>${esc(sa.source)}</td><td>${sim.best_route || '—'}</td><td>$${(sim.best_epc||0).toFixed(4)}</td><td>$${(sim.default_epc||0).toFixed(4)}</td><td style="color:var(--success)">+${(sim.potential_uplift||0).toFixed(1)}%</td><td>${(sa.preferences?.prefer || []).map(p => badge(p)).join(' ')}</td></tr>`;
+            }).join('');
+
+            const decRows = (decisions.decisions || []).slice(0, 10).map(d => `<tr style="font-size:0.68rem"><td>${timeAgo(d.timestamp)}</td><td>${esc(d.product_name || '—')}</td><td>${badge(d.route_chosen || d.type)}</td><td>${badge(d.confidence || '—')}</td><td style="font-size:0.65rem">${esc(d.reason || '—')}</td></tr>`).join('');
+
+            const stats = decisions.stats || {};
+            const policyState = overview.policy?.state || {};
+
+            el.innerHTML = `
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0.5rem;margin-bottom:0.75rem">
+                    ${metricCard('Routing', enabled ? 'ENABLED' : 'DISABLED', '🔀')}
+                    ${metricCard('Total Decisions', stats.total_decisions || 0, '📝')}
+                    ${metricCard('Routes/Hour', policyState.routes_this_hour || 0, '⏱️')}
+                    ${metricCard('Traffic Routed', (policyState.traffic_pct || 0) + '%', '📊')}
+                    ${metricCard('Recs Available', recs.total || 0, '💡')}
+                </div>
+
+                <div class="admin-card">
+                    <h4 style="margin-top:0;font-size:0.85rem">🔀 Routing Recommendations</h4>
+                    <p style="font-size:0.68rem;color:var(--text-muted);margin-bottom:0.5rem">Products where a different route could improve revenue</p>
+                    ${recRows ? '<div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>Product</th><th>Current</th><th>Recommended</th><th>Current EPC</th><th>Best EPC</th><th>Uplift</th><th>Confidence</th></tr></thead><tbody>' + recRows + '</tbody></table></div>' : '<p style="color:var(--text-muted);font-size:0.78rem">No routing improvements found.</p>'}
+                </div>
+
+                <div class="admin-card">
+                    <h4 style="margin-top:0;font-size:0.85rem">🌐 Source Routing Analysis</h4>
+                    <p style="font-size:0.68rem;color:var(--text-muted);margin-bottom:0.5rem">Best destination by traffic source (simulated $250 product)</p>
+                    ${srcRows ? '<div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>Source</th><th>Best Route</th><th>Best EPC</th><th>Default EPC</th><th>Uplift</th><th>Preferences</th></tr></thead><tbody>' + srcRows + '</tbody></table></div>' : '<p style="color:var(--text-muted)">No source data.</p>'}
+                </div>
+
+                ${decRows ? '<div class="admin-card"><h4 style="margin-top:0;font-size:0.85rem">📝 Recent Routing Decisions</h4><div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>Time</th><th>Product</th><th>Route</th><th>Confidence</th><th>Reason</th></tr></thead><tbody>' + decRows + '</tbody></table></div></div>' : '<div class="admin-card"><p style="color:var(--text-muted);font-size:0.78rem">No routing decisions yet. Enable Smart Routing to start.</p></div>'}
             `;
         } catch (e) {
             el.innerHTML = '<div class="admin-card"><p style="color:var(--danger)">Error: ' + esc(e.message) + '</p></div>';
