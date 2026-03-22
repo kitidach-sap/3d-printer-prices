@@ -1464,11 +1464,72 @@
                         ${invHtml}
                     </div>
                 </div>
+
+                <div class="admin-card" style="margin-bottom:1rem">
+                    <h4 style="margin-top:0;font-size:0.85rem">⚡ Auto-Scaling Triggers</h4>
+                    <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;flex-wrap:wrap">
+                        <button onclick="window._runTriggers(true)" style="padding:0.3rem 0.8rem;font-size:0.72rem;border:1px solid var(--border);border-radius:4px;background:var(--bg-card);cursor:pointer;color:var(--text-secondary)">🧪 Dry Run</button>
+                        <button onclick="window._runTriggers(false)" style="padding:0.3rem 0.8rem;font-size:0.72rem;border:1px solid var(--danger);border-radius:4px;background:var(--bg-card);cursor:pointer;color:var(--danger)">🚀 Run Live</button>
+                        <button onclick="window._resetTriggerCD()" style="padding:0.3rem 0.8rem;font-size:0.72rem;border:1px solid var(--border);border-radius:4px;background:var(--bg-card);cursor:pointer;color:var(--text-muted)">🔄 Reset Cooldowns</button>
+                    </div>
+                    <div id="trigger-status"></div>
+                    <div id="trigger-results" style="margin-top:0.5rem"></div>
+                </div>
             `;
+
+            // Load trigger status
+            _loadTriggerStatus();
         } catch (e) {
             el.innerHTML = '<div class="admin-card"><p style="color:var(--danger)">Error: ' + esc(e.message) + '</p></div>';
         }
     }
+
+    // Trigger helpers
+    async function _loadTriggerStatus() {
+        try {
+            const res = await fetch(`/api/admin/triggers/status?key=${adminKey()}`);
+            const data = await res.json();
+            const el = document.getElementById('trigger-status');
+            if (!el) return;
+            let html = '<table class="admin-table" style="font-size:0.7rem"><thead><tr><th>Rule</th><th>Severity</th><th>Cooldown</th><th>Status</th><th>Last Run</th></tr></thead><tbody>';
+            (data.rules || []).forEach(r => {
+                const cdColor = r.cooldown_active ? 'var(--warning)' : 'var(--success)';
+                html += `<tr><td>${esc(r.name)}</td><td>${badge(r.severity)}</td><td>${r.cooldown_minutes}m</td>`;
+                html += `<td style="color:${cdColor};font-weight:600">${r.cooldown_active ? '⏳ Cooling' : '✅ Ready'}</td>`;
+                html += `<td style="font-size:0.65rem">${r.last_triggered ? timeAgo(r.last_triggered) : '—'}</td></tr>`;
+            });
+            html += '</tbody></table>';
+            el.innerHTML = html;
+        } catch (e) { /* silent */ }
+    }
+
+    window._runTriggers = async function(dryRun) {
+        const el = document.getElementById('trigger-results');
+        if (!el) return;
+        el.innerHTML = '<div style="color:var(--text-muted);font-size:0.72rem">Running triggers...</div>';
+        try {
+            const res = await fetch(`/api/admin/triggers/run?key=${adminKey()}&dry_run=${dryRun}`, { method: 'POST', headers: hdr() });
+            const data = await res.json();
+            let html = `<div style="font-size:0.72rem;margin-bottom:0.4rem"><b>${data.total_triggered}</b> triggered, <b>${data.total_skipped}</b> skipped ${data.dry_run ? '<span style="color:var(--warning)">(DRY RUN)</span>' : '<span style="color:var(--success)">(LIVE)</span>'}</div>`;
+            if (data.triggered && data.triggered.length > 0) {
+                html += '<table class="admin-table" style="font-size:0.68rem"><thead><tr><th>Rule</th><th>Severity</th><th>Actions</th></tr></thead><tbody>';
+                data.triggered.forEach(t => {
+                    const actions = (t.results || []).map(r => `${r.type}: ${esc(r.detail)}`).join('<br>');
+                    html += `<tr><td>${esc(t.rule_name)}</td><td>${badge(t.severity)}</td><td>${actions}</td></tr>`;
+                });
+                html += '</tbody></table>';
+            }
+            el.innerHTML = html;
+            _loadTriggerStatus();
+        } catch (e) { el.innerHTML = '<div style="color:var(--danger);font-size:0.72rem">Error: ' + esc(e.message) + '</div>'; }
+    };
+
+    window._resetTriggerCD = async function() {
+        try {
+            await fetch(`/api/admin/triggers/reset?key=${adminKey()}`, { method: 'POST', headers: hdr() });
+            _loadTriggerStatus();
+        } catch (e) { alert('Error: ' + e.message); }
+    };
 
     // ═══════════════════════════════════════════════════════════════════════════
     // INIT — hook into admin tabs system

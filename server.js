@@ -5055,6 +5055,57 @@ app.get('/api/admin/predict/plan', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// AUTO-SCALING TRIGGERS — ADMIN API
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Run triggers (dry_run=false to execute for real)
+app.post('/api/admin/triggers/run', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const prediction = require('./revenue/prediction');
+        const triggers = require('./revenue/autoTriggers');
+        const predictionData = await prediction.runPredictionCycle(supabase);
+        const dryRun = req.query.dry_run !== 'false' && req.body?.dry_run !== false;
+        let boosters = null, contentExpander = null;
+        try { boosters = require('./revenue/boosters'); } catch (e) {}
+        try { contentExpander = require('./monetization/contentExpander'); } catch (e) {}
+        const result = triggers.runTriggerCycle(predictionData, { dryRun, boosters, contentExpander });
+        res.json(result);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Trigger status
+app.get('/api/admin/triggers/status', (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const triggers = require('./revenue/autoTriggers');
+        res.json(triggers.getStatus());
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Trigger log
+app.get('/api/admin/triggers/log', (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const triggers = require('./revenue/autoTriggers');
+        res.json({ log: triggers.getLog(parseInt(req.query.limit) || 50) });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Reset cooldowns
+app.post('/api/admin/triggers/reset', (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const triggers = require('./revenue/autoTriggers');
+        res.json(triggers.resetCooldowns());
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/routing/recommendations — smart routing recommendations
 app.get('/api/admin/routing/recommendations', async (req, res) => {
     const key = req.query.key || req.headers['x-admin-key'];
