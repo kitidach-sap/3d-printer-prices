@@ -6,6 +6,8 @@
  */
 
 const { createClient } = require('@supabase/supabase-js');
+let contentExpander;
+try { contentExpander = require('../../monetization/contentExpander'); } catch (e) { contentExpander = null; }
 
 const supabase = createClient(
     process.env.SUPABASE_URL,
@@ -144,25 +146,62 @@ module.exports = async function handler(req, res) {
             `- ${p.product_name} | $${p.price} | ${p.brand || 'Unknown'} | Rating: ${p.rating || 'N/A'} (${p.review_count || 0} reviews) | ${p.amazon_url || ''}`
         ).join('\n');
 
-        // Step 1: Auto-pick a topic
-        console.log('   🤖 Generating topic...');
-        const topicPrompt = `You are a content strategist for 3D Printer Prices (3d-printer-prices.com), a 3D printer price comparison site.
+        let topic = '';
+        let contentPrompt = null;
+        let expanderUsed = false;
+
+        // Try content expander first (monetization-driven topics)
+        if (contentExpander) {
+            try {
+                const { data: existingPosts } = await supabase.from('blog_posts').select('slug');
+                const existingSlugs = new Set((existingPosts || []).map(p => p.slug));
+
+                const { data: clickEvents } = await supabase.from('click_events')
+                    .select('product_id, session_id, timestamp')
+                    .order('timestamp', { ascending: false })
+                    .limit(500);
+
+                const opportunities = contentExpander.analyzeContentGaps({
+                    products: products || [],
+                    clickEvents: clickEvents || [],
+                    existingSlugs,
+                });
+
+                if (opportunities.length > 0) {
+                    const top = opportunities[0];
+                    topic = top.title;
+                    contentPrompt = contentExpander.buildContentPrompt(top, products || []);
+                    contentExpander.queueContent(opportunities);
+                    contentExpander.markGenerated(top.slug, { title: top.title });
+                    expanderUsed = true;
+                    console.log(`   🧠 Content Expander: ${top.strategy} — ${top.reason}`);
+                }
+            } catch (e) {
+                console.log(`   ⚠️ Content expander error: ${e.message}`);
+            }
+        }
+
+        // Fallback to AI topic generation
+        if (!topic) {
+            console.log('   🤖 Generating topic (AI fallback)...');
+            const topicPrompt = `You are a content strategist for 3D Printer Prices (3d-printer-prices.com), a 3D printer price comparison site.
 
 Based on these products:
 ${productList.slice(0, 2000)}
 
 Suggest ONE compelling blog post topic that would drive organic traffic. Just reply with the topic title, nothing else. Make it SEO-friendly. Examples:
 - "Best Budget 3D Printers Under $300 in 2026"
-- "Creality vs Bambu Lab: Which 3D Printer Brand is Better?"
+- "Creality vs Bambu Lab: Which Brand is Better?"
 - "Top PLA Filaments Ranked by Print Quality"`;
 
-        let topic = await callAI(topicPrompt, 200);
-        topic = topic.replace(/^["'\s]+|["'\s]+$/g, '').trim();
-        console.log(`   📌 Topic: ${topic}`);
+            topic = await callAI(topicPrompt, 200);
+            topic = topic.replace(/^["'\s]+|["'\s]+$/g, '').trim();
+        }
+        console.log(`   📌 Topic: ${topic}${expanderUsed ? ' (monetization-driven)' : ''}`);
 
         // Step 2: Write the blog post
         console.log('   ✍️ Writing article...');
-        const blogPrompt = `You are an expert 3D printing content writer for **3D Printer Prices** (3d-printer-prices.com), a price comparison site with affiliate links.
+        const blogPrompt = contentPrompt || `You are an expert 3D printing content writer for **3D Printer Prices** (3d-printer-prices.com), a price comparison site with affiliate links.
 
 ## Task
 Write a comprehensive, SEO-optimized blog article.

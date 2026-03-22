@@ -4964,6 +4964,49 @@ app.get('/api/admin/ab/history', (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// CONTENT AUTO-EXPANSION — ADMIN API
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Analyze content gaps
+app.get('/api/admin/content/opportunities', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const expander = require('./monetization/contentExpander');
+        const { data: products } = await supabase.from('products')
+            .select('id, product_name, display_name, brand, price, discount_percent, category, rating, review_count, clicks, amazon_url')
+            .eq('is_available', true).order('review_count', { ascending: false }).limit(100);
+        const { data: clickEvents } = await supabase.from('click_events')
+            .select('product_id, session_id, timestamp')
+            .order('timestamp', { ascending: false }).limit(500);
+        const { data: existingPosts } = await supabase.from('blog_posts').select('slug');
+        const existingSlugs = new Set((existingPosts || []).map(p => p.slug));
+        const opportunities = expander.analyzeContentGaps({ products: products || [], clickEvents: clickEvents || [], existingSlugs });
+        res.json({ opportunities: opportunities.slice(0, 20), total: opportunities.length });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Get content queue
+app.get('/api/admin/content/queue', (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const expander = require('./monetization/contentExpander');
+        res.json({ queue: expander.getQueue(), status: expander.getStatus(), history: expander.getHistory() });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Get content expansion status
+app.get('/api/admin/content/status', (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const expander = require('./monetization/contentExpander');
+        res.json(expander.getStatus());
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/routing/recommendations — smart routing recommendations
 app.get('/api/admin/routing/recommendations', async (req, res) => {
     const key = req.query.key || req.headers['x-admin-key'];
