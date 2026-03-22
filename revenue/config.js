@@ -179,7 +179,7 @@ module.exports = {
     // ═══════════════════════════════════════════════════════════
     // SMART ROUTING ENGINE
     // ═══════════════════════════════════════════════════════════
-    SMART_ROUTING_ENABLED: process.env.SMART_ROUTING_ENABLED === 'true' || false,
+    SMART_ROUTING_ENABLED: process.env.SMART_ROUTING_ENABLED !== 'false',
     ROUTE_SIMULATION_ENABLED: process.env.ROUTE_SIMULATION_ENABLED === 'true' || false,
     CAMPAIGN_ROUTE_ENABLED: process.env.CAMPAIGN_ROUTE_ENABLED === 'true' || false,
     COMPARE_ROUTE_ENABLED: process.env.COMPARE_ROUTE_ENABLED === 'true' || false,
