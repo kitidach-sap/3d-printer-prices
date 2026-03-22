@@ -5007,6 +5007,54 @@ app.get('/api/admin/content/status', (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// REVENUE PREDICTION & ALLOCATION — ADMIN API
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Full prediction cycle
+app.get('/api/admin/predict/full', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const prediction = require('./revenue/prediction');
+        const results = await prediction.runPredictionCycle(supabase);
+        res.json(results);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Predictions only
+app.get('/api/admin/predict/revenue', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const prediction = require('./revenue/prediction');
+        const results = await prediction.runPredictionCycle(supabase);
+        res.json({ predictions: results.predictions, summary: results.predictions?.summary });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Risks only
+app.get('/api/admin/predict/risks', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const prediction = require('./revenue/prediction');
+        const results = await prediction.runPredictionCycle(supabase);
+        res.json(results.risks);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Weekly plan
+app.get('/api/admin/predict/plan', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const prediction = require('./revenue/prediction');
+        const results = await prediction.runPredictionCycle(supabase);
+        res.json(results.plan);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/routing/recommendations — smart routing recommendations
 app.get('/api/admin/routing/recommendations', async (req, res) => {
     const key = req.query.key || req.headers['x-admin-key'];

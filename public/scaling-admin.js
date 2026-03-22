@@ -82,6 +82,7 @@
             case 'sc-money': loadMonetization(); break;
             case 'sc-routes': loadRoutes(); break;
             case 'sc-ab': loadABTest(); break;
+            case 'sc-predict': loadPredict(); break;
             case 'sc-settings': loadSettings(); break;
         }
     }
@@ -1196,6 +1197,102 @@
             loadABTest();
         } catch (e) { alert('Error: ' + e.message); }
     };
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // PREDICTION TAB
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    async function loadPredict() {
+        const el = document.getElementById('sc-predict');
+        el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-muted)">Running predictions...</div>';
+        try {
+            const res = await fetch(`/api/admin/predict/full?key=${adminKey}`);
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+
+            const plan = data.plan || {};
+            const risks = data.risks || { risks: [], summary: {} };
+            const allocation = data.allocation || { channels: [] };
+            const investment = data.investment || { investments: [], summary: {} };
+            const predictions = data.predictions || { summary: {} };
+            const summary = predictions.summary || {};
+
+            // Trend color
+            const trendColor = summary.overall_trend === 'growing' ? 'var(--success)'
+                : summary.overall_trend === 'declining' ? 'var(--danger)' : 'var(--text-muted)';
+
+            // Risk cards
+            let riskHtml = '';
+            if (risks.risks.length > 0) {
+                riskHtml = '<div class="admin-card" style="margin-bottom:1rem"><h4 style="margin-top:0;font-size:0.85rem">⚠️ Risk Alerts</h4>';
+                risks.risks.slice(0, 5).forEach(r => {
+                    const sevColor = r.severity === 'critical' ? 'var(--danger)' : 'var(--warning)';
+                    riskHtml += `<div style="padding:0.3rem 0;font-size:0.75rem;border-bottom:1px solid var(--border)">`;
+                    riskHtml += `<span style="color:${sevColor};font-weight:bold">${r.severity.toUpperCase()}</span> `;
+                    riskHtml += `${esc(r.message)} → <b>${esc(r.action)}</b></div>`;
+                });
+                riskHtml += '</div>';
+            }
+
+            // Channel allocation table
+            let chHtml = '<table class="admin-table" style="font-size:0.75rem"><thead><tr><th>Channel</th><th>Efficiency</th><th>Allocation</th><th>EPC</th><th>ROI</th></tr></thead><tbody>';
+            allocation.channels.forEach(ch => {
+                chHtml += `<tr><td>${esc(ch.channel)}</td><td>${ch.efficiency_score}/100</td><td><b>${ch.allocation_pct}%</b></td><td>$${ch.epc}</td><td>${ch.roi}%</td></tr>`;
+            });
+            chHtml += '</tbody></table>';
+
+            // Product investment table (top 10)
+            let invHtml = '<table class="admin-table" style="font-size:0.75rem"><thead><tr><th>Product</th><th>Tier</th><th>Score</th><th>Boost</th><th>Content</th></tr></thead><tbody>';
+            investment.investments.slice(0, 10).forEach(inv => {
+                const tierColor = inv.tier === 'star' ? 'var(--success)' : inv.tier === 'growth' ? 'var(--info)' : inv.tier === 'monitor' ? 'var(--danger)' : 'var(--text-muted)';
+                invHtml += `<tr><td>${esc(inv.name)}</td><td style="color:${tierColor}"><b>${inv.tier}</b></td><td>${inv.investment_score}</td><td>${inv.boost_level}</td><td>${inv.content_action}</td></tr>`;
+            });
+            invHtml += '</tbody></table>';
+
+            // Weekly plan actions
+            let planHtml = '';
+            if (plan.priority_actions && plan.priority_actions.length > 0) {
+                planHtml = '<div class="admin-card" style="margin-bottom:1rem"><h4 style="margin-top:0;font-size:0.85rem">📋 Weekly Plan — Priority Actions</h4>';
+                plan.priority_actions.slice(0, 8).forEach(a => {
+                    const pColor = a.priority === 'P0' ? 'var(--danger)' : a.priority === 'P1' ? 'var(--warning)' : 'var(--info)';
+                    planHtml += `<div style="padding:0.3rem 0;font-size:0.75rem;border-bottom:1px solid var(--border)">`;
+                    planHtml += `<span style="color:${pColor};font-weight:bold">${a.priority}</span> `;
+                    planHtml += `<b>${esc(a.action)}</b> → ${esc(a.target)} — <i>${esc(a.reason)}</i></div>`;
+                });
+                planHtml += '</div>';
+            }
+
+            el.innerHTML = `
+                <div class="admin-card" style="margin-bottom:1rem">
+                    <h4 style="margin-top:0;font-size:0.85rem">📈 Revenue Prediction</h4>
+                    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;font-size:0.78rem">
+                        <div>Current Weekly: <b>$${summary.current_weekly_total || 0}</b></div>
+                        <div>Predicted Weekly: <b>$${summary.predicted_weekly_total || 0}</b></div>
+                        <div>Trend: <b style="color:${trendColor}">${summary.overall_trend || 'N/A'}</b></div>
+                        <div>Risks: <b style="color:${risks.summary.critical > 0 ? 'var(--danger)' : 'var(--success)'}">${risks.summary.total || 0}</b></div>
+                    </div>
+                </div>
+                ${riskHtml}
+                ${planHtml}
+                <div class="admin-card" style="margin-bottom:1rem">
+                    <h4 style="margin-top:0;font-size:0.85rem">📡 Channel Allocation</h4>
+                    ${chHtml}
+                </div>
+                <div class="admin-card" style="margin-bottom:1rem">
+                    <h4 style="margin-top:0;font-size:0.85rem">🏷️ Product Investment</h4>
+                    <div style="display:flex;gap:1rem;flex-wrap:wrap;font-size:0.75rem;margin-bottom:0.5rem">
+                        <span>⭐ Stars: <b>${investment.summary.stars || 0}</b></span>
+                        <span>📈 Growth: <b>${investment.summary.growth || 0}</b></span>
+                        <span>🔄 Maintain: <b>${investment.summary.maintain || 0}</b></span>
+                        <span>👁 Monitor: <b>${investment.summary.monitor || 0}</b></span>
+                    </div>
+                    ${invHtml}
+                </div>
+            `;
+        } catch (e) {
+            el.innerHTML = '<div class="admin-card"><p style="color:var(--danger)">Error: ' + esc(e.message) + '</p></div>';
+        }
+    }
 
     // ═══════════════════════════════════════════════════════════════════════════
     // INIT — hook into admin tabs system
