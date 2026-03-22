@@ -14,6 +14,7 @@ const attribution = require('./attribution');
 const revenueModel = require('./revenueModel');
 const routeLock = require('./routeLock');
 const routeFeedback = require('./routeFeedback');
+const abTest = require('./abTest');
 
 const AFFILIATE_TAG = 'kiti09-20';
 
@@ -104,7 +105,48 @@ function chooseBestRoute(product, source, context = {}) {
             };
         }
 
-        // ── 2. Simulate all routes ──
+        // ── 2. A/B Test — check if experiment overrides routing ──
+        const abOverride = abTest.getRouteOverride(sessionId);
+        if (abOverride && abOverride.route_override) {
+            const overrideUrl = buildRouteUrl(abOverride.route_override, product, context);
+            if (overrideUrl && overrideUrl !== '#') {
+                // Track A/B impression
+                abTest.trackEvent(abOverride.experiment_id, abOverride.variant_id, 'impression', { product_id: productId });
+
+                // Lock the A/B route for session stability
+                routeLock.lockRoute(sessionId, productId, abOverride.route_override, overrideUrl, {
+                    source, confidence: 'medium',
+                });
+
+                routeFeedback.logFeedback({
+                    session_id: sessionId,
+                    product_id: productId,
+                    product_name: product.product_name,
+                    route: abOverride.route_override,
+                    source,
+                    action: 'impression',
+                    page: context.page,
+                    metadata: { ab_test: abOverride.experiment_id, variant: abOverride.variant_id },
+                });
+
+                return {
+                    route: abOverride.route_override,
+                    url: overrideUrl,
+                    reason: `A/B test: ${abOverride.variant_name}`,
+                    confidence: 'medium',
+                    uplift: 0,
+                    overridden: abOverride.route_override !== 'direct_affiliate',
+                    locked: false,
+                    ab_test: { experiment_id: abOverride.experiment_id, variant_id: abOverride.variant_id },
+                };
+            }
+        }
+        // If A/B test says null route_override → use normal routing (but still track)
+        if (abOverride) {
+            abTest.trackEvent(abOverride.experiment_id, abOverride.variant_id, 'impression', { product_id: productId });
+        }
+
+        // ── 3. Simulate all routes ──
         const sim = simulator.simulateRoutes(product, source, context);
 
         // ── 3. Confidence from data volume ──
@@ -341,4 +383,5 @@ module.exports = {
     // Expose sub-modules for API layer
     routeLock,
     routeFeedback,
+    abTest,
 };

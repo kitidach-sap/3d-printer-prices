@@ -4564,6 +4564,7 @@ app.post('/api/admin/scaling/settings', express.json(), async (req, res) => {
             'MONETIZATION_ENABLED', 'MONETIZATION_BRAIN_ENABLED', 'REVENUE_WEIGHTED_BOOSTING_ENABLED',
             'SMART_ROUTING_ENABLED', 'ROUTE_SIMULATION_ENABLED', 'CAMPAIGN_ROUTE_ENABLED',
             'COMPARE_ROUTE_ENABLED', 'SOURCE_AWARE_ROUTING_ENABLED',
+            'AB_TESTING_ENABLED',
         ];
         if (!allowedFlags.includes(flag)) {
             return res.status(400).json({ error: `Invalid flag: ${flag}. Allowed: ${allowedFlags.join(', ')}` });
@@ -4863,6 +4864,103 @@ app.get('/api/admin/routing/sources', async (req, res) => {
             preferences: routingPolicy.getSourcePreferences(s),
         }));
         res.json({ source_analysis: analysis });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// A/B TESTING — ADMIN API
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// List experiments
+app.get('/api/admin/ab/experiments', (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const router = require('./monetization/router');
+        const ab = router.abTest;
+        res.json({ experiments: ab.listExperiments(), status: ab.getStatus() });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Get experiment detail + analysis
+app.get('/api/admin/ab/experiments/:id', (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const router = require('./monetization/router');
+        const ab = router.abTest;
+        const exp = ab.getExperiment(req.params.id);
+        if (!exp) return res.status(404).json({ error: 'Experiment not found' });
+        res.json(exp);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Analyze experiment
+app.get('/api/admin/ab/experiments/:id/analyze', (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const router = require('./monetization/router');
+        const analysis = router.abTest.analyzeExperiment(req.params.id);
+        if (!analysis) return res.status(404).json({ error: 'Experiment not found' });
+        res.json(analysis);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Create experiment
+app.post('/api/admin/ab/experiments', (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const router = require('./monetization/router');
+        const result = router.abTest.createExperiment(req.body);
+        res.json(result);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Toggle experiment status (active/paused)
+app.post('/api/admin/ab/experiments/:id/status', (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const router = require('./monetization/router');
+        const result = router.abTest.updateExperimentStatus(req.params.id, req.body.status);
+        if (!result) return res.status(404).json({ error: 'Experiment not found or invalid status' });
+        res.json({ ok: true, experiment: result });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Promote winning variant
+app.post('/api/admin/ab/experiments/:id/promote', (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const router = require('./monetization/router');
+        const result = router.abTest.promoteVariant(req.params.id, req.body.variant_id, 'admin');
+        if (!result) return res.status(404).json({ error: 'Experiment not found' });
+        res.json(result);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Reset experiment
+app.post('/api/admin/ab/experiments/:id/reset', (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const router = require('./monetization/router');
+        const result = router.abTest.resetExperiment(req.params.id);
+        if (!result) return res.status(404).json({ error: 'Experiment not found' });
+        res.json({ ok: true, experiment: result });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// A/B Test History
+app.get('/api/admin/ab/history', (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const router = require('./monetization/router');
+        res.json({ history: router.abTest.getHistory() });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

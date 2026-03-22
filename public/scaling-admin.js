@@ -81,6 +81,7 @@
             case 'sc-memory': loadMemory(); break;
             case 'sc-money': loadMonetization(); break;
             case 'sc-routes': loadRoutes(); break;
+            case 'sc-ab': loadABTest(); break;
             case 'sc-settings': loadSettings(); break;
         }
     }
@@ -489,6 +490,7 @@
                 { key: 'CAMPAIGN_ROUTE_ENABLED', label: '📢 Campaign Routing', desc: 'Allow routing to campaign links when profitable' },
                 { key: 'COMPARE_ROUTE_ENABLED', label: '🔍 Compare Routing', desc: 'Route high-intent traffic to compare pages' },
                 { key: 'SOURCE_AWARE_ROUTING_ENABLED', label: '🌐 Source-Aware Routing', desc: 'Adjust routing based on traffic source' },
+                { key: 'AB_TESTING_ENABLED', label: '🧪 A/B Testing', desc: 'Enable routing experiments with auto-promotion' },
             ];
 
             el.innerHTML = `
@@ -1088,6 +1090,112 @@
             el.innerHTML = '<div class="admin-card"><p style="color:var(--danger)">Error: ' + esc(e.message) + '</p></div>';
         }
     }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // A/B TESTING TAB
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    async function loadABTest() {
+        const el = document.getElementById('sc-ab');
+        el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-muted)">Loading A/B tests...</div>';
+        try {
+            const res = await fetch(`/api/admin/ab/experiments?key=${adminKey}`);
+            const data = await res.json();
+            const exps = data.experiments || [];
+            const status = data.status || {};
+
+            let cardsHtml = '';
+            for (const exp of exps) {
+                // Fetch analysis for each
+                let analysis = null;
+                try {
+                    const aRes = await fetch(`/api/admin/ab/experiments/${exp.id}/analyze?key=${adminKey}`);
+                    analysis = await aRes.json();
+                } catch {}
+
+                const statusBadge = exp.status === 'active' ? '<span style="color:var(--success)">● Active</span>'
+                    : exp.status === 'completed' ? '<span style="color:var(--info)">✓ Completed</span>'
+                    : '<span style="color:var(--text-muted)">⏸ Paused</span>';
+
+                let variantsHtml = '';
+                if (analysis && analysis.variants) {
+                    variantsHtml = '<table class="admin-table" style="font-size:0.75rem;margin-top:0.5rem"><thead><tr><th>Variant</th><th>Impressions</th><th>Successes</th><th>Rate</th></tr></thead><tbody>';
+                    analysis.variants.forEach(v => {
+                        const isWinner = analysis.winner === v.id;
+                        variantsHtml += `<tr style="${isWinner ? 'background:rgba(0,200,100,0.08)' : ''}">`;
+                        variantsHtml += `<td>${esc(v.name)} ${isWinner ? '🏆' : ''}</td>`;
+                        variantsHtml += `<td>${v.impressions}</td>`;
+                        variantsHtml += `<td>${v.successes}</td>`;
+                        variantsHtml += `<td><b>${v.rate}%</b></td>`;
+                        variantsHtml += '</tr>';
+                    });
+                    variantsHtml += '</tbody></table>';
+                }
+
+                let sigHtml = '';
+                if (analysis) {
+                    const sigColor = analysis.significance >= 95 ? 'var(--success)' : analysis.significance >= 90 ? 'var(--warning)' : 'var(--text-muted)';
+                    sigHtml = `<div style="margin-top:0.5rem;font-size:0.78rem">`;
+                    sigHtml += `<span>Significance: <b style="color:${sigColor}">${analysis.significance}%</b></span>`;
+                    sigHtml += analysis.winner ? ` &nbsp;|&nbsp; Winner: <b style="color:var(--success)">${esc(analysis.winner_name)}</b> (+${analysis.lift_pct}%)` : '';
+                    sigHtml += ` &nbsp;|&nbsp; Data: ${analysis.has_enough_data ? '✅ Enough' : '⏳ Collecting'}`;
+                    sigHtml += `</div>`;
+                }
+
+                let actionsHtml = '<div style="margin-top:0.5rem;display:flex;gap:0.5rem">';
+                if (exp.status === 'paused') {
+                    actionsHtml += `<button class="btn btn-primary" style="font-size:0.7rem;padding:0.2rem 0.5rem" onclick="abAction('${exp.id}','activate')">▶ Activate</button>`;
+                } else if (exp.status === 'active') {
+                    actionsHtml += `<button class="btn btn-secondary" style="font-size:0.7rem;padding:0.2rem 0.5rem" onclick="abAction('${exp.id}','pause')">⏸ Pause</button>`;
+                }
+                actionsHtml += `<button class="btn btn-tertiary" style="font-size:0.7rem;padding:0.2rem 0.5rem" onclick="abAction('${exp.id}','reset')">🔄 Reset</button>`;
+                actionsHtml += '</div>';
+
+                cardsHtml += `
+                    <div class="admin-card" style="margin-bottom:1rem">
+                        <div style="display:flex;justify-content:space-between;align-items:center">
+                            <h4 style="margin:0;font-size:0.85rem">🧪 ${esc(exp.name)}</h4>
+                            ${statusBadge}
+                        </div>
+                        <p style="font-size:0.75rem;color:var(--text-muted);margin:0.3rem 0">Metric: ${esc(exp.metric)} | Variants: ${exp.variants} | Auto-promote: ${exp.auto_promote ? '✅' : '❌'}</p>
+                        ${variantsHtml}
+                        ${sigHtml}
+                        ${actionsHtml}
+                    </div>
+                `;
+            }
+
+            el.innerHTML = `
+                <div class="admin-card" style="margin-bottom:1rem">
+                    <h4 style="margin-top:0;font-size:0.85rem">🧪 A/B Testing Overview</h4>
+                    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;font-size:0.78rem">
+                        <div>Status: <b>${status.enabled ? '✅ Enabled' : '❌ Disabled'}</b></div>
+                        <div>Experiments: <b>${status.total || 0}</b></div>
+                        <div>Active: <b style="color:var(--success)">${status.active || 0}</b></div>
+                        <div>Completed: <b>${status.completed || 0}</b></div>
+                    </div>
+                </div>
+                ${cardsHtml || '<div class="admin-card"><p style="color:var(--text-muted);font-size:0.78rem">No experiments defined.</p></div>'}
+            `;
+        } catch (e) {
+            el.innerHTML = '<div class="admin-card"><p style="color:var(--danger)">Error: ' + esc(e.message) + '</p></div>';
+        }
+    }
+
+    // A/B Test action helper
+    window.abAction = async function(expId, action) {
+        try {
+            if (action === 'activate' || action === 'pause') {
+                await fetch(`/api/admin/ab/experiments/${expId}/status?key=${adminKey}`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: action === 'activate' ? 'active' : 'paused' }),
+                });
+            } else if (action === 'reset') {
+                await fetch(`/api/admin/ab/experiments/${expId}/reset?key=${adminKey}`, { method: 'POST' });
+            }
+            loadABTest();
+        } catch (e) { alert('Error: ' + e.message); }
+    };
 
     // ═══════════════════════════════════════════════════════════════════════════
     // INIT — hook into admin tabs system
