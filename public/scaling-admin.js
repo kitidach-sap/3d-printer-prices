@@ -24,6 +24,100 @@
     function $(id) { return document.getElementById(id); }
     function esc(s) { return String(s || '').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
     function pct(v) { return (v * 100).toFixed(0) + '%'; }
+
+    // ── Chart Utilities (pure inline SVG — no external deps) ──────────────
+
+    /**
+     * Mini vertical bar chart
+     * @param {number[]} values - data points
+     * @param {object} opts - { width, height, color, label }
+     */
+    function miniBar(values, opts = {}) {
+        const w = opts.width || 220, h = opts.height || 60;
+        const color = opts.color || '#818cf8';
+        const max = Math.max(...values, 1);
+        const barW = Math.max(2, Math.floor((w - 4) / values.length) - 2);
+        let bars = '';
+        values.forEach((v, i) => {
+            const bh = Math.max(1, (v / max) * (h - 14));
+            const x = 2 + i * (barW + 2);
+            const y = h - 12 - bh;
+            bars += `<rect x="${x}" y="${y}" width="${barW}" height="${bh}" rx="1" fill="${color}" opacity="0.8"><title>${v}</title></rect>`;
+        });
+        const label = opts.label ? `<text x="${w / 2}" y="${h - 1}" text-anchor="middle" font-size="8" fill="var(--text-muted)">${opts.label}</text>` : '';
+        return `<svg width="${w}" height="${h}" style="display:block">${bars}${label}</svg>`;
+    }
+
+    /**
+     * Sparkline (trend line)
+     */
+    function sparkline(values, opts = {}) {
+        const w = opts.width || 120, h = opts.height || 30;
+        const color = opts.color || '#22d3ee';
+        if (!values.length) return '';
+        const max = Math.max(...values, 1);
+        const min = Math.min(...values, 0);
+        const range = max - min || 1;
+        const points = values.map((v, i) => {
+            const x = (i / (values.length - 1 || 1)) * w;
+            const y = h - ((v - min) / range) * (h - 4) - 2;
+            return `${x},${y}`;
+        }).join(' ');
+        return `<svg width="${w}" height="${h}" style="display:inline-block;vertical-align:middle"><polyline points="${points}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+    }
+
+    /**
+     * Donut chart
+     */
+    function donut(segments, opts = {}) {
+        const size = opts.size || 80;
+        const r = size / 2 - 6;
+        const cx = size / 2, cy = size / 2;
+        const total = segments.reduce((s, seg) => s + seg.value, 0) || 1;
+        let angle = -90;
+        let paths = '';
+        const colors = ['#818cf8', '#22d3ee', '#f59e0b', '#10b981', '#f97316', '#ef4444', '#a78bfa', '#6366f1'];
+        segments.forEach((seg, i) => {
+            const pct = seg.value / total;
+            const sweep = pct * 360;
+            const startRad = (angle * Math.PI) / 180;
+            const endRad = ((angle + sweep) * Math.PI) / 180;
+            const x1 = cx + r * Math.cos(startRad), y1 = cy + r * Math.sin(startRad);
+            const x2 = cx + r * Math.cos(endRad), y2 = cy + r * Math.sin(endRad);
+            const largeArc = sweep > 180 ? 1 : 0;
+            const c = seg.color || colors[i % colors.length];
+            paths += `<path d="M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${largeArc},1 ${x2},${y2} Z" fill="${c}" opacity="0.85"><title>${seg.label}: ${seg.value} (${(pct * 100).toFixed(0)}%)</title></path>`;
+            angle += sweep;
+        });
+        // White center for donut effect
+        paths += `<circle cx="${cx}" cy="${cy}" r="${r * 0.55}" fill="var(--bg-card)"/>`;
+        return `<svg width="${size}" height="${size}" style="display:block">${paths}</svg>`;
+    }
+
+    /**
+     * Horizontal bar chart (e.g. for allocation %)
+     */
+    function hBar(items, opts = {}) {
+        const w = opts.width || 200;
+        const colors = ['#818cf8', '#22d3ee', '#f59e0b', '#10b981', '#f97316', '#ef4444'];
+        const max = Math.max(...items.map(i => i.value), 1);
+        let html = '<div style="display:flex;flex-direction:column;gap:4px;font-size:0.7rem">';
+        items.forEach((item, i) => {
+            const pctW = Math.max(2, (item.value / max) * 100);
+            const c = item.color || colors[i % colors.length];
+            html += `<div style="display:flex;align-items:center;gap:6px">`;
+            html += `<span style="min-width:60px;text-align:right;color:var(--text-muted)">${esc(item.label)}</span>`;
+            html += `<div style="flex:1;height:12px;background:var(--bg-body);border-radius:3px;overflow:hidden">`;
+            html += `<div style="width:${pctW}%;height:100%;background:${c};border-radius:3px;transition:width 0.3s" title="${item.value}"></div>`;
+            html += `</div>`;
+            html += `<span style="min-width:30px;color:var(--text-secondary);font-weight:600">${item.value}${item.unit || ''}</span>`;
+            html += `</div>`;
+        });
+        html += '</div>';
+        return html;
+    }
+
+
     function badge(text, type) {
         const colors = {
             winner: 'var(--success)', loser: 'var(--danger)', normal: 'var(--text-muted)',
@@ -156,6 +250,20 @@
                             <td>${a.clicks}</td>
                             <td>${a.ctr || 0}%</td>
                         </tr>`).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--text-muted)">No data yet</td></tr>'}</tbody></table>
+                    </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.75rem;margin-top:0.75rem">
+                    <div class="admin-card">
+                        <h4 style="margin-top:0;font-size:0.85rem">📊 Product Scores</h4>
+                        ${topProducts.length ? miniBar(topProducts.map(p => p.global_score || 0), { color: '#818cf8', label: topProducts.map(p => (p.entity || '').slice(0, 6)).join(' · ') }) : '<p style="color:var(--text-muted);font-size:0.72rem">No data</p>'}
+                    </div>
+                    <div class="admin-card">
+                        <h4 style="margin-top:0;font-size:0.85rem">🌐 Source Distribution</h4>
+                        <div style="display:flex;align-items:center;gap:1rem">
+                            ${(scaling.sources || []).length ? donut((scaling.sources || []).slice(0, 6).map(s => ({ label: s.source || '?', value: s.affiliate_clicks || 1 })), { size: 70 }) : ''}
+                            <div style="font-size:0.65rem;color:var(--text-muted)">${(scaling.sources || []).slice(0, 4).map(s => `<div>${esc(s.source)}: ${s.affiliate_clicks}</div>`).join('')}</div>
+                        </div>
                     </div>
                 </div>
 
@@ -1004,6 +1112,11 @@
 
             const insightCards = (recs.insights || []).map(i => `<div style="font-size:0.72rem;padding:0.3rem 0;border-bottom:1px solid var(--border)">${i.type === 'error' ? '❌' : '💡'} ${esc(i.message)}</div>`).join('');
 
+            // Revenue chart
+            const topRevProducts = (overview.top_revenue_products || []).slice(0, 8);
+            const revChart = topRevProducts.length ? miniBar(topRevProducts.map(p => p.estimated_revenue || 0), { color: '#10b981', label: 'Est. Revenue' }) : '';
+            const epcChart = (overview.top_revenue_sources || []).length ? hBar((overview.top_revenue_sources || []).slice(0, 5).map(s => ({ label: s.source, value: Math.round((s.epc || 0) * 10000) / 100, unit: '¢' }))) : '';
+
             el.innerHTML = `
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0.5rem;margin-bottom:0.75rem">
                     ${metricCard('Est. Revenue', '$' + (s.total_estimated_revenue||0).toFixed(2), '💰')}
@@ -1012,6 +1125,17 @@
                     ${metricCard('Click Traps', s.click_traps||0, '⚠️')}
                     ${metricCard('Hidden Gems', s.hidden_gems||0, '💎')}
                     ${metricCard('Recommendations', recs.total_recommendations||0, '💡')}
+                </div>
+
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.75rem;margin-bottom:0.75rem">
+                    <div class="admin-card">
+                        <h4 style="margin-top:0;font-size:0.85rem">📊 Revenue Distribution</h4>
+                        ${revChart || '<p style="color:var(--text-muted);font-size:0.72rem">No data</p>'}
+                    </div>
+                    <div class="admin-card">
+                        <h4 style="margin-top:0;font-size:0.85rem">💹 Source EPC</h4>
+                        ${epcChart || '<p style="color:var(--text-muted);font-size:0.72rem">No data</p>'}
+                    </div>
                 </div>
 
                 <div class="admin-card">
@@ -1064,6 +1188,12 @@
             const stats = decisions.stats || {};
             const policyState = overview.policy?.state || {};
 
+            // Route distribution donut + uplift chart
+            const routeTypes = {};
+            (decisions.decisions || []).forEach(d => { const rt = d.route_chosen || d.type || 'unknown'; routeTypes[rt] = (routeTypes[rt] || 0) + 1; });
+            const routeDonut = Object.keys(routeTypes).length ? donut(Object.entries(routeTypes).map(([k, v]) => ({ label: k, value: v })), { size: 80 }) : '';
+            const upliftChart = (recs.recommendations || []).slice(0, 6).length ? hBar((recs.recommendations || []).slice(0, 6).map(r => ({ label: (r.product_name || '').slice(0, 12), value: Math.round(r.uplift_pct || 0), unit: '%' }))) : '';
+
             el.innerHTML = `
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0.5rem;margin-bottom:0.75rem">
                     ${metricCard('Routing', enabled ? 'ENABLED' : 'DISABLED', '🔀')}
@@ -1071,6 +1201,20 @@
                     ${metricCard('Routes/Hour', policyState.routes_this_hour || 0, '⏱️')}
                     ${metricCard('Traffic Routed', (policyState.traffic_pct || 0) + '%', '📊')}
                     ${metricCard('Recs Available', recs.total || 0, '💡')}
+                </div>
+
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.75rem;margin-bottom:0.75rem">
+                    <div class="admin-card">
+                        <h4 style="margin-top:0;font-size:0.85rem">🔀 Route Distribution</h4>
+                        <div style="display:flex;align-items:center;gap:1rem">
+                            ${routeDonut}
+                            <div style="font-size:0.65rem;color:var(--text-muted)">${Object.entries(routeTypes).slice(0, 5).map(([k, v]) => `<div>${esc(k)}: ${v}</div>`).join('')}</div>
+                        </div>
+                    </div>
+                    <div class="admin-card">
+                        <h4 style="margin-top:0;font-size:0.85rem">📈 Potential Uplift</h4>
+                        ${upliftChart || '<p style="color:var(--text-muted);font-size:0.72rem">No uplift data</p>'}
+                    </div>
                 </div>
 
                 <div class="admin-card">
@@ -1262,31 +1406,63 @@
                 planHtml += '</div>';
             }
 
+            // Top product forecasts with sparklines
+            const topPredProducts = (predictions.products || []).slice(0, 8);
+            let forecastHtml = '';
+            if (topPredProducts.length) {
+                forecastHtml = '<table class="admin-table" style="font-size:0.72rem"><thead><tr><th>Product</th><th>Current</th><th>Predicted</th><th>Change</th><th>Forecast</th><th>Trend</th></tr></thead><tbody>';
+                topPredProducts.forEach(p => {
+                    const changeColor = p.change_pct > 0 ? 'var(--success)' : p.change_pct < 0 ? 'var(--danger)' : 'var(--text-muted)';
+                    const trendIcon = p.trend === 'rising' ? '↗' : p.trend === 'declining' ? '↘' : '→';
+                    forecastHtml += `<tr><td>${esc((p.name || '').slice(0, 30))}</td><td>$${p.current_weekly}</td><td><b>$${p.predicted_weekly}</b></td>`;
+                    forecastHtml += `<td style="color:${changeColor};font-weight:600">${p.change_pct > 0 ? '+' : ''}${p.change_pct}%</td>`;
+                    forecastHtml += `<td>${sparkline(p.daily_forecast || [], { width: 80, height: 20, color: changeColor })}</td>`;
+                    forecastHtml += `<td>${trendIcon}</td></tr>`;
+                });
+                forecastHtml += '</tbody></table>';
+            }
+
+            // Channel allocation donut + hBar
+            const chDonut = allocation.channels.length ? donut(allocation.channels.map(c => ({ label: c.channel, value: c.allocation_pct || 1 })), { size: 90 }) : '';
+            const chBar = allocation.channels.length ? hBar(allocation.channels.map(c => ({ label: c.channel, value: c.allocation_pct, unit: '%' }))) : '';
+
+            // Investment scores bar chart
+            const invScores = investment.investments.slice(0, 10).map(i => i.investment_score || 0);
+            const invBar = invScores.length ? miniBar(invScores, { color: '#10b981', width: 250, height: 50, label: 'Investment Scores' }) : '';
+
             el.innerHTML = `
                 <div class="admin-card" style="margin-bottom:1rem">
                     <h4 style="margin-top:0;font-size:0.85rem">📈 Revenue Prediction</h4>
-                    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;font-size:0.78rem">
+                    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;font-size:0.78rem;margin-bottom:0.75rem">
                         <div>Current Weekly: <b>$${summary.current_weekly_total || 0}</b></div>
                         <div>Predicted Weekly: <b>$${summary.predicted_weekly_total || 0}</b></div>
                         <div>Trend: <b style="color:${trendColor}">${summary.overall_trend || 'N/A'}</b></div>
                         <div>Risks: <b style="color:${risks.summary.critical > 0 ? 'var(--danger)' : 'var(--success)'}">${risks.summary.total || 0}</b></div>
                     </div>
+                    ${forecastHtml}
                 </div>
                 ${riskHtml}
                 ${planHtml}
-                <div class="admin-card" style="margin-bottom:1rem">
-                    <h4 style="margin-top:0;font-size:0.85rem">📡 Channel Allocation</h4>
-                    ${chHtml}
-                </div>
-                <div class="admin-card" style="margin-bottom:1rem">
-                    <h4 style="margin-top:0;font-size:0.85rem">🏷️ Product Investment</h4>
-                    <div style="display:flex;gap:1rem;flex-wrap:wrap;font-size:0.75rem;margin-bottom:0.5rem">
-                        <span>⭐ Stars: <b>${investment.summary.stars || 0}</b></span>
-                        <span>📈 Growth: <b>${investment.summary.growth || 0}</b></span>
-                        <span>🔄 Maintain: <b>${investment.summary.maintain || 0}</b></span>
-                        <span>👁 Monitor: <b>${investment.summary.monitor || 0}</b></span>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:0.75rem;margin-bottom:1rem">
+                    <div class="admin-card">
+                        <h4 style="margin-top:0;font-size:0.85rem">📡 Channel Allocation</h4>
+                        <div style="display:flex;align-items:flex-start;gap:1rem">
+                            ${chDonut}
+                            <div style="flex:1">${chBar}</div>
+                        </div>
+                        ${chHtml}
                     </div>
-                    ${invHtml}
+                    <div class="admin-card">
+                        <h4 style="margin-top:0;font-size:0.85rem">🏷️ Product Investment</h4>
+                        <div style="display:flex;gap:1rem;flex-wrap:wrap;font-size:0.75rem;margin-bottom:0.5rem">
+                            <span>⭐ Stars: <b>${investment.summary.stars || 0}</b></span>
+                            <span>📈 Growth: <b>${investment.summary.growth || 0}</b></span>
+                            <span>🔄 Maintain: <b>${investment.summary.maintain || 0}</b></span>
+                            <span>👁 Monitor: <b>${investment.summary.monitor || 0}</b></span>
+                        </div>
+                        ${invBar}
+                        ${invHtml}
+                    </div>
                 </div>
             `;
         } catch (e) {
