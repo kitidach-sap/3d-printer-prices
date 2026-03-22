@@ -4997,10 +4997,10 @@ app.post('/api/admin/generate-x-post', async (req, res) => {
             const gRes = await fetch(
                 `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiSetting.value}`,
                 {
-                    method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 120 } }),
                     signal: AbortSignal.timeout(30000),
+                    method: 'POST',
                 }
             );
             if (gRes.ok) {

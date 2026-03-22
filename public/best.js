@@ -195,7 +195,7 @@ function renderRankings(products) {
                     </div>
                     
                     <div class="rank-actions-grid">
-                        <a href="${p.amazon_url ? (p.amazon_url.includes('?') ? p.amazon_url + '&tag=kiti09-20' : p.amazon_url + '?tag=kiti09-20') : '#'}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-lg w-full">Check Price</a>
+                        <a href="${p.amazon_url ? (p.amazon_url.includes('?') ? p.amazon_url + '&tag=kiti09-20' : p.amazon_url + '?tag=kiti09-20') : '#'}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-lg w-full" data-product-id="${p.id}" data-smart-link="1">Check Price</a>
                         <a href="/product.html?id=${p.id}" class="btn btn-secondary btn-md w-full" style="display:flex; align-items:center; justify-content:center;">View Details</a>
                     </div>
                 </div>
@@ -204,4 +204,7 @@ function renderRankings(products) {
     });
     
     container.innerHTML = html;
+
+    // Smart routing — upgrade links async (non-blocking)
+    if (window.smartLink) window.smartLink.upgradeAll('best');
 }

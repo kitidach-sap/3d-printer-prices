@@ -77,7 +77,7 @@ function renderComparison(products) {
             <div class="compare-title"><a href="/product.html?id=${p.id}" target="_blank" style="color:inherit; text-decoration:none;">${escapeHtml(p.display_name || p.product_name)}</a></div>
             <div class="compare-price">$${p.price?.toFixed(2) || '---'}</div>
             <div style="display: flex; flex-direction: column; gap: var(--sp-2);">
-                <a href="${p.amazon_url ? (p.amazon_url.includes('?') ? p.amazon_url + '&tag=kiti09-20' : p.amazon_url + '?tag=kiti09-20') : '#'}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-md w-full">Check Price</a>
+                <a href="${p.amazon_url ? (p.amazon_url.includes('?') ? p.amazon_url + '&tag=kiti09-20' : p.amazon_url + '?tag=kiti09-20') : '#'}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-md w-full" data-product-id="${p.id}" data-smart-link="1">Check Price</a>
                 <button class="btn btn-tertiary btn-sm text-danger w-full" onclick="removeCompareItem('${p.id}')">Remove</button>
             </div>
         `},
@@ -145,6 +145,9 @@ function renderComparison(products) {
     });
     
     table.innerHTML = html;
+
+    // Smart routing — upgrade links async (non-blocking)
+    if (window.smartLink) window.smartLink.upgradeAll('compare');
 }
 
 function removeCompareItem(id) {

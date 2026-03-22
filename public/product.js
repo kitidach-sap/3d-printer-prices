@@ -82,6 +82,10 @@ function renderProduct(p) {
 
     // Affilate Link
     document.getElementById('pd-buy-btn').href = affiliateUrl(p.amazon_url);
+    document.getElementById('pd-buy-btn').setAttribute('data-product-id', p.id);
+    document.getElementById('pd-buy-btn').setAttribute('data-smart-link', '1');
+    // Smart routing upgrade (non-blocking)
+    if (window.smartLink) window.smartLink.upgradeOne(p.id, document.getElementById('pd-buy-btn'), 'product');
 
     // Badges
     const badgeContainer = document.getElementById('pd-badges');

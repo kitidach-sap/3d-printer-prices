@@ -401,7 +401,7 @@ async function loadProducts() {
                         </div>
                         
                         <div class="action-buttons">
-                            <a href="${affiliateUrl(p.amazon_url)}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-full" onclick="trackEvent('click',{product_id:'${p.id}',product_name:'${escapeHtml(p.display_name||p.product_name).replace(/'/g,"\\'")}',price:${p.price||0},badge:'${getSmartBadges(p).map(b=>b.text).join(',')}',position:${data.indexOf(p)}})">Check Price — $${p.price?.toFixed(2) || '—'} <span class="urgency-tag">${getUrgencyTag(p)}</span></a>
+                            <a href="${affiliateUrl(p.amazon_url)}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-full" data-product-id="${p.id}" data-smart-link="1" onclick="trackEvent('click',{product_id:'${p.id}',product_name:'${escapeHtml(p.display_name||p.product_name).replace(/'/g,"\\'")}',price:${p.price||0},badge:'${getSmartBadges(p).map(b=>b.text).join(',')}',position:${data.indexOf(p)}})">Check Price — $${p.price?.toFixed(2) || '—'} <span class="urgency-tag">${getUrgencyTag(p)}</span></a>
                             <label class="btn btn-secondary btn-full compare-btn ${compareList.some(c => c.id === p.id) ? 'active' : ''}">
                                 <input type="checkbox" class="sr-only" onchange="toggleCompare('${p.id}', this.dataset.name, this.dataset.image, ${p.price || 0}, this.dataset.url); this.parentElement.classList.toggle('active', this.checked); trackEvent('compare',{product_id:'${p.id}',product_name:this.dataset.name,price:${p.price||0}});" data-name="${escapeHtml(p.display_name || p.product_name)}" data-image="${p.image_url || ''}" data-url="${p.amazon_url}" ${compareList.some(c => c.id === p.id) ? 'checked' : ''}>
                                 ${compareList.some(c => c.id === p.id) ? '✓ Added' : '➕ Compare'}
@@ -424,6 +424,9 @@ async function loadProducts() {
             renderTrustBanner(totalProducts);
             initStickyMobileCTA();
         }
+
+        // Smart routing — upgrade links async (non-blocking)
+        if (window.smartLink) window.smartLink.upgradeAll('index');
 
     } catch (err) {
         console.error('Products error:', err);
