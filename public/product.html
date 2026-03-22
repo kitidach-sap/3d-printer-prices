@@ -9,6 +9,10 @@
   <meta name="description" content="Detailed specs and prices for 3D printers.">
   <link rel="canonical" href="https://3d-printer-prices.com/product.html">
   
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="font" type="font/woff2" href="https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw.woff2" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <style>
     /* Product Page Specific Styles */
@@ -270,7 +274,7 @@
     document.getElementById('mobile-nav-close')?.addEventListener('click', () => { document.getElementById('mobile-nav').classList.remove('open'); document.getElementById('mobile-nav-overlay').classList.remove('open'); });
     document.getElementById('mobile-nav-overlay')?.addEventListener('click', () => { document.getElementById('mobile-nav').classList.remove('open'); document.getElementById('mobile-nav-overlay').classList.remove('open'); });
   </script>
-  <script src="smart-link.js"></script>
-  <script src="product.js"></script>
+  <script defer src="smart-link.js"></script>
+  <script defer src="product.js"></script>
 </body>
 </html>

@@ -353,6 +353,8 @@ async function loadProducts() {
                         src="${p.image_url || ''}"
                         alt="${escapeHtml(p.display_name || p.product_name)}"
                         class="product-thumb"
+                        width="200"
+                        height="200"
                         loading="lazy"
                         onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
                     />
