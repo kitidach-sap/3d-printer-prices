@@ -5304,6 +5304,144 @@ app.all('/api/cron/blog', (req, res) => {
     cronBlogHandler(req, res);
 });
 
+// Cron: Auto-Scaling Triggers
+const cronTriggerHandler = require('./api/cron/triggers');
+app.all('/api/cron/triggers', (req, res) => {
+    if (!req.headers['authorization'] && !req.headers['x-admin-key'] && !req.query.key) {
+        req.headers['x-admin-key'] = process.env.ADMIN_KEY || '';
+    }
+    cronTriggerHandler(req, res);
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DYNAMIC SITEMAP
+// ═══════════════════════════════════════════════════════════════════════════════
+
+app.get('/sitemap.xml', async (req, res) => {
+    try {
+        const { generateSitemap } = require('./utils/sitemapGenerator');
+        const xml = await generateSitemap(supabase);
+        res.set('Content-Type', 'application/xml');
+        res.send(xml);
+    } catch (e) {
+        // Fallback to static sitemap
+        res.sendFile(require('path').join(__dirname, 'public', 'sitemap.xml'));
+    }
+});
+
+app.get('/api/admin/sitemap/stats', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const { getSitemapStats } = require('./utils/sitemapGenerator');
+        res.json(await getSitemapStats(supabase));
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SOCIAL AUTO-POST
+// ═══════════════════════════════════════════════════════════════════════════════
+
+app.post('/api/admin/social/generate', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const prediction = require('./revenue/prediction');
+        const social = require('./marketing/socialAutoPost');
+        const predData = await prediction.runPredictionCycle(supabase);
+        res.json(social.runSocialCycle(predData));
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/admin/social/queue', (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const social = require('./marketing/socialAutoPost');
+        res.json({ queue: social.getQueue(parseInt(req.query.limit) || 20) });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/admin/social/clear', (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const social = require('./marketing/socialAutoPost');
+        res.json(social.clearQueue());
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DATA EXPORT (CSV/JSON)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+app.get('/api/admin/export/:type', async (req, res) => {
+    const key = req.query.key || req.headers['x-admin-key'];
+    if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+    const format = req.query.format || 'json';
+    const exportType = req.params.type;
+
+    try {
+        let data = [];
+        let filename = `export_${exportType}`;
+
+        switch (exportType) {
+            case 'products': {
+                const r = await supabase.from('products').select('*').limit(500);
+                data = r.data || [];
+                break;
+            }
+            case 'clicks': {
+                const since = req.query.since || new Date(Date.now() - 7 * 86400000).toISOString();
+                const r = await supabase.from('clicks').select('*').gte('created_at', since).limit(1000);
+                data = r.data || [];
+                break;
+            }
+            case 'campaigns': {
+                const r = await supabase.from('campaigns').select('*').limit(200);
+                data = r.data || [];
+                break;
+            }
+            case 'predictions': {
+                const prediction = require('./revenue/prediction');
+                const result = await prediction.runPredictionCycle(supabase);
+                data = result;
+                break;
+            }
+            case 'triggers': {
+                const triggers = require('./revenue/autoTriggers');
+                data = triggers.getLog(100);
+                break;
+            }
+            default:
+                return res.status(400).json({ error: `Unknown export type: ${exportType}. Valid: products, clicks, campaigns, predictions, triggers` });
+        }
+
+        if (format === 'csv') {
+            // Convert to CSV
+            const rows = Array.isArray(data) ? data : [data];
+            if (rows.length === 0) return res.status(200).send('');
+            const headers = Object.keys(rows[0] || {});
+            let csv = headers.join(',') + '\n';
+            rows.forEach(row => {
+                csv += headers.map(h => {
+                    const val = row[h];
+                    if (val === null || val === undefined) return '';
+                    const str = String(val);
+                    return str.includes(',') || str.includes('"') || str.includes('\n') ? `"${str.replace(/"/g, '""')}"` : str;
+                }).join(',') + '\n';
+            });
+            res.set('Content-Type', 'text/csv');
+            res.set('Content-Disposition', `attachment; filename="${filename}.csv"`);
+            return res.send(csv);
+        }
+
+        // JSON (default)
+        res.set('Content-Disposition', `attachment; filename="${filename}.json"`);
+        res.json({ export_type: exportType, count: Array.isArray(data) ? data.length : 1, data });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // Start server
 // Start server (only when running locally, not on Vercel)
 if (process.env.VERCEL !== '1') {
