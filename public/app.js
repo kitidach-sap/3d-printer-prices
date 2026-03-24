@@ -145,16 +145,16 @@ async function loadStats() {
         const stats = await res.json();
 
         const elTotal = document.getElementById('stat-total');
-        if (elTotal) elTotal.textContent = stats.total?.toLocaleString() || '0';
+        if (elTotal && stats.total) elTotal.textContent = stats.total.toLocaleString();
         const _statsTotal = stats.total || 0;
 
         const printerCount = (stats.byCategory?.['3d_printer']?.count || 0);
         const elPrinters = document.getElementById('stat-printers');
-        if (elPrinters) elPrinters.textContent = printerCount.toLocaleString();
+        if (elPrinters && printerCount) elPrinters.textContent = printerCount.toLocaleString();
 
         const filamentCount = (stats.byCategory?.['filament']?.count || 0) + (stats.byCategory?.['resin']?.count || 0);
         const elFilament = document.getElementById('stat-filament');
-        if (elFilament) elFilament.textContent = filamentCount.toLocaleString();
+        if (elFilament && filamentCount) elFilament.textContent = filamentCount.toLocaleString();
 
         // Fetch last scrape time
         try {
@@ -166,16 +166,15 @@ async function loadStats() {
                     elUpdated.textContent = timeAgo(scrapeData.lastScrape);
                     elUpdated.title = new Date(scrapeData.lastScrape).toLocaleString();
                     updateTrustBanner(_statsTotal, scrapeData.lastScrape);
-                } else {
-                    elUpdated.textContent = '—';
                 }
+                // On missing data, keep HTML default ("Daily") — no dash fallback
             }
         } catch (e) {
-            const elUpdated = document.getElementById('stat-updated');
-            if (elUpdated) elUpdated.textContent = '—';
+            // Keep HTML default ("Daily") — never render a dash
         }
     } catch (err) {
         console.error('Stats error:', err);
+        // Keep HTML defaults (500+, 200+, 100+, Daily) — never render broken state
     }
 }
 
