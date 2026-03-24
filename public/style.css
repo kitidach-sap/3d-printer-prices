@@ -820,8 +820,8 @@ select:focus-visible {
    ============================================ */
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: var(--sp-4);
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--sp-5);
 }
 
 .product-card {
@@ -3522,5 +3522,482 @@ td.loading {
   }
   main {
     padding-bottom: 70px;
+  }
+}
+
+/* ============================================
+   Section Titles & Subtitles
+   ============================================ */
+.section-subtitle {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  margin-top: calc(var(--sp-2) * -1);
+  margin-bottom: var(--sp-6);
+  max-width: 600px;
+  margin-inline: auto;
+}
+
+/* ============================================
+   Quick Entry Paths
+   ============================================ */
+.quick-paths-section {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--sp-4) var(--sp-6) var(--sp-8);
+}
+
+.quick-paths-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-4);
+}
+
+.quick-path-card {
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-6);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: var(--text-primary);
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.quick-path-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.qp-learn::before { background: linear-gradient(90deg, #10b981, #34d399); }
+.qp-browse::before { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+.qp-quiz::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+
+.quick-path-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--accent);
+}
+
+.qp-icon {
+  font-size: 2.5rem;
+  margin-bottom: var(--sp-3);
+}
+
+.quick-path-card h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: var(--sp-2);
+}
+
+.quick-path-card p {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: var(--sp-3);
+  flex: 1;
+}
+
+.qp-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: var(--sp-3);
+}
+
+.qp-cta {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--accent);
+}
+
+@media (max-width: 768px) {
+  .quick-paths-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================
+   Featured Picks
+   ============================================ */
+.featured-picks-section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--sp-8) var(--sp-6);
+  border-top: 1px solid var(--border);
+}
+
+.featured-picks-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-4);
+}
+
+.featured-pick-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  text-decoration: none;
+  color: var(--text-primary);
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+.featured-pick-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--accent);
+}
+
+.fp-badge {
+  position: absolute;
+  top: var(--sp-3);
+  left: var(--sp-3);
+  padding: 0.2rem 0.6rem;
+  background: var(--bg-card);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--accent);
+  z-index: 1;
+  backdrop-filter: blur(8px);
+}
+
+.fp-image {
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-4);
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border);
+}
+
+.fp-image img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.fp-content {
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.fp-brand {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.fp-content h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: var(--sp-1) 0 var(--sp-2);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.fp-decision {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  flex: 1;
+  margin-bottom: var(--sp-3);
+}
+
+.fp-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--border);
+  padding-top: var(--sp-3);
+}
+
+.fp-price {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--success);
+}
+
+.fp-rating {
+  font-size: 0.78rem;
+  color: var(--warning);
+  font-weight: 500;
+}
+
+@media (max-width: 1024px) {
+  .featured-picks-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .featured-picks-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================
+   Guides Section
+   ============================================ */
+.guides-section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--sp-8) var(--sp-6);
+  border-top: 1px solid var(--border);
+}
+
+.guides-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--sp-4);
+}
+
+.guide-card {
+  display: block;
+  padding: var(--sp-5);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+}
+
+.guide-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.guide-card strong {
+  display: block;
+  margin-bottom: var(--sp-2);
+  font-size: 0.95rem;
+}
+
+.guide-card p {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* ============================================
+   View Toggle (Grid / List)
+   ============================================ */
+.view-toggle {
+  display: flex;
+  gap: 2px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+
+.view-btn {
+  border: none;
+  background: transparent;
+  padding: 4px 10px;
+  font-size: 1rem;
+  cursor: pointer;
+  border-radius: calc(var(--radius-sm) - 2px);
+  color: var(--text-muted);
+  transition: all 0.15s ease;
+  line-height: 1;
+}
+
+.view-btn.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.view-btn:hover:not(.active) {
+  background: var(--bg-hover);
+}
+
+/* ============================================
+   Card: Type Tag
+   ============================================ */
+.type-tag {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  background: var(--bg-primary);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+/* ============================================
+   Card: Price Row (combined price + rating)
+   ============================================ */
+.price-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+.price-row .rating-mini {
+  margin-left: auto;
+  font-size: 0.78rem;
+}
+
+/* ============================================
+   Card: Compare Icon Button
+   ============================================ */
+.compare-btn-icon {
+  width: 38px !important;
+  height: 38px;
+  min-width: 38px;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm) !important;
+}
+
+.compare-btn-icon.active {
+  background: var(--accent) !important;
+  color: #fff !important;
+  border-color: var(--accent) !important;
+}
+
+/* ============================================
+   Action Buttons: Side-by-side CTA + Compare
+   ============================================ */
+.action-buttons {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: stretch;
+}
+
+.action-buttons .btn-full {
+  flex: 1;
+}
+
+/* ============================================
+   List View Mode
+   ============================================ */
+.product-grid.list-view {
+  grid-template-columns: 1fr !important;
+  gap: var(--sp-3) !important;
+}
+
+.product-grid.list-view .product-card {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+}
+
+.product-grid.list-view .card-image-link {
+  width: 160px;
+  min-width: 160px;
+  max-height: 160px;
+  flex-shrink: 0;
+  border-radius: var(--radius) 0 0 var(--radius);
+}
+
+.product-grid.list-view .product-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: var(--radius) 0 0 var(--radius);
+}
+
+.product-grid.list-view .card-content {
+  display: flex;
+  flex: 1;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  min-width: 0;
+}
+
+.product-grid.list-view .card-meta {
+  display: none;
+}
+
+.product-grid.list-view .product-title {
+  flex: 1;
+  min-width: 120px;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.product-grid.list-view .ai-badges {
+  flex: 1;
+  min-width: 100px;
+}
+
+.product-grid.list-view .card-footer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-width: 200px;
+  margin-top: 0;
+}
+
+.product-grid.list-view .price-row {
+  justify-content: flex-end;
+}
+
+.product-grid.list-view .current-price {
+  font-size: 1.2rem;
+}
+
+.product-grid.list-view .action-buttons {
+  flex-direction: row;
+}
+
+@media (max-width: 768px) {
+  .product-grid.list-view .product-card {
+    flex-direction: column;
+  }
+
+  .product-grid.list-view .card-image-link {
+    width: 100%;
+    max-height: 200px;
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+
+  .product-grid.list-view .product-thumb {
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+
+  .product-grid.list-view .card-content {
+    flex-direction: column;
+    align-items: stretch;
+    padding: var(--sp-3);
+  }
+
+  .view-toggle {
+    display: none;
   }
 }

@@ -148,6 +148,87 @@ function renderComparison(products) {
 
     // Smart routing — upgrade links async (non-blocking)
     if (window.smartLink) window.smartLink.upgradeAll('compare');
+
+    // Winner Highlight
+    renderWinnerHighlight(products);
+
+    // Decision Loop CTAs
+    renderCompareDecisionCTAs();
+}
+
+// -----------------------------------------
+// Winner Highlight
+// -----------------------------------------
+function renderWinnerHighlight(products) {
+    if (products.length < 2) return;
+
+    // Score: weighted combination of rating and value
+    const scored = products.map(p => {
+        let s = 0;
+        if (p.rating) s += p.rating * 2;
+        if (p.review_count > 100) s += 1;
+        if (p.price && p.price < 300) s += 0.5;
+        if (p.beginner_score) s += p.beginner_score * 0.3;
+        return { product: p, score: s };
+    }).sort((a, b) => b.score - a.score);
+
+    const winner = scored[0].product;
+    const runner = scored.length > 1 ? scored[1].product : null;
+
+    let reason = 'Best combination of rating, value, and features.';
+    if (winner.rating > 4.4 && winner.price < 300) reason = 'Top-rated AND budget-friendly — the best of both worlds.';
+    else if (winner.rating > 4.4) reason = 'Highest user satisfaction with outstanding reviews.';
+    else if (winner.price && runner && runner.price && winner.price < runner.price) reason = 'Best value per dollar with strong community ratings.';
+
+    const winnerHTML = `
+        <div style="max-width:900px; margin:var(--sp-6) auto 0; padding:var(--sp-6); background:var(--bg-card); border:2px solid var(--accent); border-radius:var(--radius); position:relative;">
+            <span style="position:absolute; top:calc(var(--sp-3) * -1); left:var(--sp-4); padding:0.2rem 0.8rem; background:var(--accent); color:#fff; font-size:0.78rem; font-weight:700; border-radius:999px;">🏆 OUR PICK</span>
+            <div style="display:flex; align-items:center; gap:var(--sp-5); flex-wrap:wrap;">
+                ${winner.image_url ? `<img src="${winner.image_url}" alt="${escapeHtml(winner.display_name || winner.product_name)}" style="width:120px; height:120px; object-fit:contain; border-radius:var(--radius-sm); background:var(--bg-primary); padding:var(--sp-2);" loading="lazy">` : ''}
+                <div style="flex:1; min-width:200px;">
+                    <h3 style="margin:0 0 var(--sp-2); font-size:1.1rem;">${escapeHtml(winner.display_name || winner.product_name)}</h3>
+                    <p style="margin:0 0 var(--sp-3); font-size:0.85rem; color:var(--text-secondary);">${reason}</p>
+                    <div style="display:flex; align-items:center; gap:var(--sp-4); flex-wrap:wrap;">
+                        <span style="font-size:1.3rem; font-weight:700; color:var(--success);">$${winner.price?.toFixed(2) || '—'}</span>
+                        <span style="font-size:0.85rem; color:var(--warning); font-weight:500;">⭐ ${winner.rating?.toFixed(1) || 'N/A'} (${winner.review_count || 0} reviews)</span>
+                        <a href="/product.html?id=${winner.id}" class="btn btn-primary btn-sm">View Full Details →</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    const content = document.getElementById('compare-content');
+    if (content) content.insertAdjacentHTML('beforeend', winnerHTML);
+}
+
+// -----------------------------------------
+// Decision Loop CTAs (Compare Page)
+// -----------------------------------------
+function renderCompareDecisionCTAs() {
+    const content = document.getElementById('compare-content');
+    if (!content) return;
+
+    const ctaHTML = `
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--sp-3); max-width:900px; margin:var(--sp-5) auto 0;">
+            <a href="/" style="display:flex; align-items:center; gap:var(--sp-3); padding:var(--sp-4); background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text-primary); transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                <span style="font-size:1.5rem;">🔍</span>
+                <div>
+                    <strong style="display:block; font-size:0.85rem;">Browse All Products</strong>
+                    <span style="font-size:0.78rem; color:var(--text-muted);">Find more options to compare</span>
+                </div>
+            </a>
+            <a href="/blog/how-to-choose-3d-printer.html" style="display:flex; align-items:center; gap:var(--sp-3); padding:var(--sp-4); background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text-primary); transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                <span style="font-size:1.5rem;">📖</span>
+                <div>
+                    <strong style="display:block; font-size:0.85rem;">Read the Buying Guide</strong>
+                    <span style="font-size:0.78rem; color:var(--text-muted);">Learn what specs really matter</span>
+                </div>
+            </a>
+        </div>
+    `; 
+
+    content.insertAdjacentHTML('beforeend', ctaHTML);
 }
 
 function removeCompareItem(id) {

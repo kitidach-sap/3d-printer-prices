@@ -142,6 +142,110 @@ function renderProduct(p) {
         specTable += '</div>';
         document.getElementById('pd-specs-table').innerHTML = specTable;
     }
+
+    // Our Verdict — Decision Section
+    renderVerdict(p);
+
+    // Decision Loop CTAs
+    renderDecisionCTAs(p);
+}
+
+// -----------------------------------------
+// Our Verdict — Decision Support
+// -----------------------------------------
+function renderVerdict(p) {
+    const container = document.getElementById('product-content');
+    if (!container) return;
+
+    // Calculate verdict score (1-10) from available data
+    let score = 5;
+    if (p.rating) score = Math.min(10, Math.round(p.rating * 2));
+    if (p.review_count > 500) score = Math.min(10, score + 1);
+    if (p.price && p.price < 300 && p.rating > 4.0) score = Math.min(10, score + 1);
+
+    const scoreLabel = score >= 8 ? 'Highly Recommended' : score >= 6 ? 'Worth Considering' : 'Proceed With Caution';
+    const scoreColor = score >= 8 ? 'var(--success)' : score >= 6 ? 'var(--warning)' : 'var(--danger, #ef4444)';
+
+    // Who should buy
+    let shouldBuy = [];
+    if (p.price && p.price < 300) shouldBuy.push('Budget-conscious buyers looking for a great value');
+    if (p.beginner_score && p.beginner_score > 7) shouldBuy.push('Complete beginners who want an easy first experience');
+    if (p.rating && p.rating > 4.3) shouldBuy.push('Anyone looking for a community-verified, reliable machine');
+    if (p.printer_type === 'Resin') shouldBuy.push('Miniature painters and detail-oriented creators');
+    if (p.printer_type === 'FDM' || !p.printer_type) shouldBuy.push('Hobbyists, makers, and prototyping enthusiasts');
+    if (shouldBuy.length === 0) shouldBuy.push('Users looking for a solid 3D printing experience');
+
+    // Who should skip
+    let shouldSkip = [];
+    if (p.price && p.price > 800) shouldSkip.push('First-time buyers on a strict budget');
+    if (p.rating && p.rating < 4.0) shouldSkip.push('Users who want a plug-and-play experience with no issues');
+    if (p.printer_type === 'Resin') shouldSkip.push('Users who prefer low-maintenance FDM printing');
+    if (p.printer_type === 'FDM') shouldSkip.push('Users who need ultra-fine detail for miniatures');
+    if (shouldSkip.length === 0) shouldSkip.push('No major dealbreakers for most users');
+
+    const verdictHTML = `
+        <section class="verdict-section" style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:var(--sp-6); margin-top:var(--sp-6);">
+            <h2 style="margin:0 0 var(--sp-4); font-size:1.3rem;">🎯 Our Verdict</h2>
+            <div style="display:flex; align-items:center; gap:var(--sp-4); margin-bottom:var(--sp-5); padding-bottom:var(--sp-4); border-bottom:1px solid var(--border);">
+                <div style="font-size:2.5rem; font-weight:800; color:${scoreColor}; line-height:1;">${score}<span style="font-size:1rem; color:var(--text-muted);">/10</span></div>
+                <div>
+                    <div style="font-weight:700; font-size:1.05rem; color:${scoreColor};">${scoreLabel}</div>
+                    <div style="font-size:0.85rem; color:var(--text-secondary); margin-top:2px;">Based on price, rating, and specifications analysis</div>
+                </div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--sp-4);">
+                <div>
+                    <h3 style="font-size:0.9rem; margin:0 0 var(--sp-3); color:var(--success);">✅ Who Should Buy This</h3>
+                    <ul style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:var(--sp-2);">
+                        ${shouldBuy.map(s => `<li style="font-size:0.85rem; color:var(--text-secondary); padding-left:1.2rem; position:relative;"><span style="position:absolute;left:0;">→</span> ${escapeHtml(s)}</li>`).join('')}
+                    </ul>
+                </div>
+                <div>
+                    <h3 style="font-size:0.9rem; margin:0 0 var(--sp-3); color:var(--danger, #ef4444);">⚠️ Who Should Skip This</h3>
+                    <ul style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:var(--sp-2);">
+                        ${shouldSkip.map(s => `<li style="font-size:0.85rem; color:var(--text-secondary); padding-left:1.2rem; position:relative;"><span style="position:absolute;left:0;">→</span> ${escapeHtml(s)}</li>`).join('')}
+                    </ul>
+                </div>
+            </div>
+        </section>
+    `;
+
+    // Insert after pd-badges or summary-section
+    const summarySection = document.getElementById('summary-section');
+    if (summarySection) {
+        summarySection.insertAdjacentHTML('afterend', verdictHTML);
+    } else {
+        container.insertAdjacentHTML('beforeend', verdictHTML);
+    }
+}
+
+// -----------------------------------------
+// Decision Loop CTAs
+// -----------------------------------------
+function renderDecisionCTAs(p) {
+    const container = document.getElementById('product-content');
+    if (!container) return;
+
+    const ctaHTML = `
+        <section class="decision-ctas" style="display:grid; grid-template-columns:1fr 1fr; gap:var(--sp-3); margin-top:var(--sp-5);">
+            <a href="/" style="display:flex; align-items:center; gap:var(--sp-3); padding:var(--sp-4); background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text-primary); transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                <span style="font-size:1.5rem;">🔍</span>
+                <div>
+                    <strong style="display:block; font-size:0.85rem;">Compare With Others</strong>
+                    <span style="font-size:0.78rem; color:var(--text-muted);">See how this stacks up against similar models</span>
+                </div>
+            </a>
+            <a href="/blog/how-to-choose-3d-printer.html" style="display:flex; align-items:center; gap:var(--sp-3); padding:var(--sp-4); background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text-primary); transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                <span style="font-size:1.5rem;">📖</span>
+                <div>
+                    <strong style="display:block; font-size:0.85rem;">Read the Buying Guide</strong>
+                    <span style="font-size:0.78rem; color:var(--text-muted);">Not sure yet? Learn what matters most</span>
+                </div>
+            </a>
+        </section>
+    `;
+
+    container.insertAdjacentHTML('beforeend', ctaHTML);
 }
 
 // -----------------------------------------

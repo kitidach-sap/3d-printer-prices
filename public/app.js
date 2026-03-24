@@ -3,7 +3,7 @@
 // ============================================
 
 const API_BASE = '/api';
-const PAGE_SIZE = 100;
+const PAGE_SIZE = 24;
 
 // Amazon Affiliate Tag — replace with your Associates tag
 // สมัครได้ที่: https://affiliate-program.amazon.com
@@ -87,6 +87,7 @@ function syncUiFromFilters() {
 document.addEventListener('DOMContentLoaded', () => {
     readUrlFilters();
     loadStats();
+    renderFeaturedPicks();
     loadFilters();
     loadFeaturedCampaigns();
     loadProducts();
@@ -196,6 +197,43 @@ function timeAgo(dateStr) {
     const days = Math.floor(hours / 24);
     if (days < 30) return `${days}d ago`;
     return `${Math.floor(days / 30)}mo ago`;
+}
+
+// Featured Picks — Curated Editor Recommendations
+async function renderFeaturedPicks() {
+    const grid = document.getElementById('featured-picks-grid');
+    if (!grid) return;
+    try {
+        const res = await fetch(`${API_BASE}/products?category=3d_printer&condition=new&sort=rating:desc&limit=4&offset=0`);
+        const { data } = await res.json();
+        if (!data || data.length === 0) { grid.closest('section')?.remove(); return; }
+        const labels = ['🏆 Best Overall', '💰 Best Value', '🎓 Best for Beginners', '⚡ Fastest Printer'];
+        const lines = [
+            'Top-rated by buyers. Reliable out of the box.',
+            'Maximum features for the money. Hard to beat.',
+            'Easy setup, great community support, forgiving.',
+            'Speed without compromise. Built for productivity.'
+        ];
+        grid.innerHTML = data.slice(0, 4).map((p, i) => `
+            <a href="/product.html?id=${p.id}" class="featured-pick-card">
+                <span class="fp-badge">${labels[i]}</span>
+                <div class="fp-image">
+                    <img src="${p.image_url || ''}" alt="${escapeHtml(p.display_name || p.product_name)}" loading="lazy" onerror="this.style.display='none'" />
+                </div>
+                <div class="fp-content">
+                    <span class="fp-brand">${p.brand ? escapeHtml(p.brand) : ''}</span>
+                    <h3>${escapeHtml(p.display_name || p.product_name)}</h3>
+                    <p class="fp-decision">${lines[i]}</p>
+                    <div class="fp-footer">
+                        <span class="fp-price">$${p.price?.toFixed(2) || '—'}</span>
+                        <span class="fp-rating">${formatRating(p.rating, p.review_count)}</span>
+                    </div>
+                </div>
+            </a>
+        `).join('');
+    } catch (e) {
+        grid.closest('section')?.remove();
+    }
 }
 
 // ============================================
@@ -329,7 +367,7 @@ async function loadProducts() {
         const { data, pagination } = await res.json();
 
         totalProducts = pagination.total;
-        document.getElementById('result-count').textContent = `${totalProducts.toLocaleString()} products found`;
+        document.getElementById('result-count').textContent = totalProducts.toLocaleString() + ' products found';
 
         if (!data || data.length === 0) {
             tbody.classList.remove('product-grid');
@@ -345,73 +383,52 @@ async function loadProducts() {
         }
 
         tbody.classList.add('product-grid');
-        tbody.innerHTML = data.map(p => `
-            <div class="product-card ${isCampaignProduct(p.id) ? 'campaign-featured' : ''}">
-                <a href="/product.html?id=${p.id}" class="card-image-link">
-                    <img
-                        src="${p.image_url || ''}"
-                        alt="${escapeHtml(p.display_name || p.product_name)}"
-                        class="product-thumb"
-                        width="200"
-                        height="200"
-                        loading="lazy"
-                        onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
-                    />
-                    <span class="product-thumb-fallback" style="display:${p.image_url ? 'none' : 'flex'}">
-                        ${p.category === 'filament' ? '🧵' : p.category === 'resin' ? '💧' : p.category === '3d_pen' ? '✏️' : p.category === 'accessories' ? '🔧' : '🖨️'}
-                    </span>
-                    ${p.condition === 'new' ? '' : `<span class="condition-badge condition-${p.condition}">♻️ Used</span>`}
-                    ${isCampaignProduct(p.id) ? '<span class="badge-featured-deal">🔥 Featured Deal</span>' : ''}
-                </a>
-                
-                <div class="card-content">
-                    <div class="card-meta">
-                        <span class="brand-name">${p.brand ? escapeHtml(p.brand) : 'Generic'}</span>
-                        <div class="rating-mini">
-                            ${formatRating(p.rating, p.review_count)}
-                        </div>
-                    </div>
-                    
-                    <h3 class="product-title">
-                        <a href="/product.html?id=${p.id}">${escapeHtml(p.display_name || p.product_name)}</a>
-                    </h3>
+        const viewMode = localStorage.getItem('viewMode') || 'grid';
+        if (viewMode === 'list') tbody.classList.add('list-view');
+        tbody.innerHTML = data.map((p, idx) => {
+            const badges = getSmartBadges(p);
+            const typeLabel = p.category === '3d_printer'
+                ? (p.printer_type && p.printer_type !== 'Unknown' ? p.printer_type : 'FDM')
+                : (p.category ? p.category.replace('_', ' ') : '');
+            const isCompared = compareList.some(c => c.id === p.id);
+            const conditionBadge = p.condition !== 'new' ? '<span class="condition-badge condition-' + p.condition + '">♻️ Used</span>' : '';
+            const campaignBadge = isCampaignProduct(p.id) ? '<span class="badge-featured-deal">🔥 Featured Deal</span>' : '';
+            const discountBadge = (p.original_price && p.discount_percent) ? '<span class="discount-badge">-' + p.discount_percent + '%</span>' : '';
+            const escapedName = escapeHtml(p.display_name || p.product_name);
 
-                    <div class="ai-badges">
-                        ${getSmartBadges(p).map(b => `<span class="${b.class}">${escapeHtml(b.text)}</span>`).join('')}
-                    </div>
-
-                    <div class="specs-grid">
-                        <div class="spec-item">
-                            <span class="spec-label">Type</span>
-                            <span class="spec-val">${escapeHtml(
-                                p.category === '3d_printer' 
-                                    ? (p.printer_type && p.printer_type !== 'Unknown' ? p.printer_type : 'FDM')
-                                    : (p.category ? p.category.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase()) : formatType(p.product_type))
-                            )}</span>
-                        </div>
-                        <div class="spec-item">
-                            <span class="spec-label">Build Vol.</span>
-                            <span class="spec-val" title="${escapeHtml(p.build_volume)}">${p.build_volume ? escapeHtml(p.build_volume) : '—'}</span>
-                        </div>
-                    </div>
-
-                    <div class="card-footer">
-                        <div class="price-block">
-                            <div class="current-price">$${p.price?.toFixed(2) || '—'}</div>
-                            ${p.original_price && p.discount_percent ? `<div class="orig-price-row"><span class="orig-price">$${p.original_price.toFixed(2)}</span> <span class="discount-badge">-${p.discount_percent}%</span></div>` : ''}
-                        </div>
-                        
-                        <div class="action-buttons">
-                            <a href="${affiliateUrl(p.amazon_url)}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-full" data-product-id="${p.id}" data-smart-link="1" onclick="trackEvent('click',{product_id:'${p.id}',product_name:'${escapeHtml(p.display_name||p.product_name).replace(/'/g,"\\'")}',price:${p.price||0},badge:'${getSmartBadges(p).map(b=>b.text).join(',')}',position:${data.indexOf(p)}})">Check Price — $${p.price?.toFixed(2) || '—'} <span class="urgency-tag">${getUrgencyTag(p)}</span></a>
-                            <label class="btn btn-secondary btn-full compare-btn ${compareList.some(c => c.id === p.id) ? 'active' : ''}">
-                                <input type="checkbox" class="sr-only" onchange="toggleCompare('${p.id}', this.dataset.name, this.dataset.image, ${p.price || 0}, this.dataset.url); this.parentElement.classList.toggle('active', this.checked); trackEvent('compare',{product_id:'${p.id}',product_name:this.dataset.name,price:${p.price||0}});" data-name="${escapeHtml(p.display_name || p.product_name)}" data-image="${p.image_url || ''}" data-url="${p.amazon_url}" ${compareList.some(c => c.id === p.id) ? 'checked' : ''}>
-                                ${compareList.some(c => c.id === p.id) ? '✓ Added' : '➕ Compare'}
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `).join('');
+            return '<div class="product-card ' + (isCampaignProduct(p.id) ? 'campaign-featured' : '') + '">'
+                + '<a href="/product.html?id=' + p.id + '" class="card-image-link">'
+                + '<img src="' + (p.image_url || '') + '" alt="' + escapedName + '" class="product-thumb" width="200" height="200" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'" />'
+                + '<span class="product-thumb-fallback" style="display:' + (p.image_url ? 'none' : 'flex') + '">'
+                + (p.category === 'filament' ? '🧵' : p.category === 'resin' ? '💧' : p.category === '3d_pen' ? '✏️' : p.category === 'accessories' ? '🔧' : '🖨️')
+                + '</span>'
+                + conditionBadge
+                + campaignBadge
+                + '</a>'
+                + '<div class="card-content">'
+                + '<div class="card-meta">'
+                + '<span class="brand-name">' + (p.brand ? escapeHtml(p.brand) : 'Generic') + '</span>'
+                + '<span class="type-tag">' + escapeHtml(typeLabel) + '</span>'
+                + '</div>'
+                + '<h3 class="product-title"><a href="/product.html?id=' + p.id + '">' + escapedName + '</a></h3>'
+                + '<div class="ai-badges">' + badges.map(b => '<span class="' + b.class + '">' + escapeHtml(b.text) + '</span>').join('') + '</div>'
+                + '<div class="card-footer">'
+                + '<div class="price-row">'
+                + '<div class="current-price">$' + (p.price ? p.price.toFixed(2) : '—') + '</div>'
+                + discountBadge
+                + '<div class="rating-mini">' + formatRating(p.rating, p.review_count) + '</div>'
+                + '</div>'
+                + '<div class="action-buttons">'
+                + '<a href="' + affiliateUrl(p.amazon_url) + '" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-full" data-product-id="' + p.id + '" data-smart-link="1">View Deal</a>'
+                + '<label class="btn btn-secondary compare-btn-icon ' + (isCompared ? 'active' : '') + '" title="' + (isCompared ? 'Remove from compare' : 'Add to compare') + '">'
+                + '<input type="checkbox" class="sr-only" onchange="toggleCompare(\'' + p.id + '\', this.dataset.name, this.dataset.image, ' + (p.price || 0) + ', this.dataset.url); this.parentElement.classList.toggle(\'active\', this.checked);" data-name="' + escapedName + '" data-image="' + (p.image_url || '') + '" data-url="' + (p.amazon_url || '') + '" ' + (isCompared ? 'checked' : '') + '>'
+                + (isCompared ? '✓' : '⚖')
+                + '</label>'
+                + '</div>'
+                + '</div>'
+                + '</div>'
+                + '</div>';
+        }).join('');
 
         // Pagination
         const totalPages = Math.ceil(totalProducts / PAGE_SIZE);
@@ -713,6 +730,25 @@ function processQuizResults() {
 // ============================================
 // Compare Tool Logic
 // ============================================
+// View Mode Toggle (Grid / List)
+function setViewMode(mode) {
+    localStorage.setItem('viewMode', mode);
+    const grid = document.getElementById('products-body');
+    if (grid) {
+        grid.classList.toggle('list-view', mode === 'list');
+    }
+    document.querySelectorAll('.view-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.view === mode);
+    });
+}
+// Initialize view mode on load
+document.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem('viewMode') || 'grid';
+    document.querySelectorAll('.view-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.view === saved);
+    });
+});
+
 function toggleCompare(id, name, image, price, url) {
     const existingIdx = compareList.findIndex(c => c.id === id);
     if (existingIdx >= 0) {

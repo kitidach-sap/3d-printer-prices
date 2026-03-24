@@ -301,6 +301,33 @@
     </div>
   </section>
 
+  <!-- Quick Entry Paths — Decision-First -->
+  <section class="quick-paths-section">
+    <div class="quick-paths-grid">
+      <a href="/blog/beginners-guide-3d-printing.html" class="quick-path-card qp-learn">
+        <span class="qp-icon">🎓</span>
+        <h3>I'm New to 3D Printing</h3>
+        <p>Start with the basics — learn what to look for before you spend a dollar.</p>
+        <span class="qp-meta">📖 8 min read</span>
+        <span class="qp-cta">Read the Beginner Guide →</span>
+      </a>
+      <a href="#main-content" class="quick-path-card qp-browse" onclick="document.getElementById('search-input')?.focus()">
+        <span class="qp-icon">🔍</span>
+        <h3>I Know What I Want</h3>
+        <p>Jump straight to our database — filter by price, type, brand, and specs.</p>
+        <span class="qp-meta">⚡ Instant results</span>
+        <span class="qp-cta">Browse All Products →</span>
+      </a>
+      <a href="#" class="quick-path-card qp-quiz" id="take-quiz-path" onclick="event.preventDefault(); document.getElementById('take-quiz-btn-hero')?.click()">
+        <span class="qp-icon">🎯</span>
+        <h3>Help Me Decide</h3>
+        <p>Answer 3 quick questions and get a personalized printer match in 30 seconds.</p>
+        <span class="qp-meta">⏱️ 30 seconds</span>
+        <span class="qp-cta">Take the Quiz →</span>
+      </a>
+    </div>
+  </section>
+
   <!-- Trust Banner -->
   <div class="trust-banner" id="trust-banner">
     <span class="trust-badge">✅ Prices verified</span>
@@ -309,88 +336,70 @@
     <span class="trust-text"><strong id="trust-product-count">Hundreds of</strong> products tracked</span>
   </div>
 
-    <!-- Top Picks (Best For) Links -->
-    <section class="top-picks-section">
-      <h2 class="section-title">🏆 Top Picks for 2026</h2>
-      <div class="top-picks-grid">
-        <a href="/best.html?type=beginners" class="top-pick-card">
-          <span class="icon">🎓</span>
-          <h3>Beginners</h3>
-          <p>Easy to use & reliable</p>
-        </a>
-        <a href="/best.html?type=budget" class="top-pick-card">
-          <span class="icon">💰</span>
-          <h3>Under $300</h3>
-          <p>Best value for money</p>
-        </a>
-        <a href="/best.html?type=resin-detail" class="top-pick-card">
-          <span class="icon">💧</span>
-          <h3>Resin</h3>
-          <p>High detail & miniatures</p>
-        </a>
-        <a href="/best.html?type=speed" class="top-pick-card">
-          <span class="icon">⚡</span>
-          <h3>High-Speed</h3>
-          <p>Fastest prototyping</p>
-        </a>
-      </div>
-    </section>
+  <!-- Featured Picks — Curated Recommendations -->
+  <section class="featured-picks-section" id="featured-picks-section">
+    <h2 class="section-title">🏆 Editor's Picks</h2>
+    <p class="section-subtitle">Hand-selected by our editorial team based on value, reviews, and real-world performance.</p>
+    <div class="featured-picks-grid" id="featured-picks-grid">
+      <!-- JS renders 4 featured cards here -->
+    </div>
+  </section>
 
-    <!-- How We Compare 3D Printers — Editorial Trust Section -->
-    <section class="article-wrapper" style="margin-top: 0; padding-top: 0;">
-      <div class="article-content" style="max-width: 900px; margin: 0 auto; padding: var(--sp-6) var(--sp-6) var(--sp-8);">
-        <h2>🔍 How We Compare 3D Printers</h2>
-        <p>At <strong>3D Printer Prices</strong>, we believe buying a 3D printer shouldn't require opening 20 browser tabs. Our comparison engine aggregates real-time product data from Amazon to give you a single, unbiased view of the market — updated every day.</p>
+  <!-- Start Here: Guides -->
+  <section class="guides-section">
+    <h2 class="section-title">📚 Start Here: Buying Guides</h2>
+    <p class="section-subtitle">Written by our editorial team with hands-on 3D printing experience.</p>
+    <div class="guides-grid">
+      <a href="/blog/beginners-guide-3d-printing.html" class="guide-card">
+        <strong>🎓 Beginner's Guide to 3D Printing</strong>
+        <p>Everything you need to know before buying your first printer.</p>
+      </a>
+      <a href="/blog/fdm-vs-resin.html" class="guide-card">
+        <strong>⚔️ FDM vs Resin — Which Is Right for You?</strong>
+        <p>Compare the two main printing technologies side by side.</p>
+      </a>
+      <a href="/blog/how-to-choose-3d-printer.html" class="guide-card">
+        <strong>🔍 How to Choose Your First 3D Printer</strong>
+        <p>A step-by-step decision framework for first-time buyers.</p>
+      </a>
+      <a href="/blog/best-3d-printers-under-300.html" class="guide-card">
+        <strong>💰 Best 3D Printers Under $300</strong>
+        <p>Top budget picks that don't compromise on quality.</p>
+      </a>
+    </div>
+  </section>
 
-        <h3>Where Our Data Comes From</h3>
-        <p>We use a multi-step data pipeline to collect and verify every listing in our database. Our automated discovery system identifies 3D printer products on Amazon, then an AI-powered classifier categorizes them (FDM printers, resin printers, filaments, accessories, 3D pens). Each product goes through a detail-page verification step to extract accurate pricing, specifications, and customer ratings.</p>
-        <p>Listings that don't pass our quality gates — such as unrelated products, duplicate entries, or items with incomplete data — are automatically filtered out. The result is a clean, curated catalog that only shows genuine 3D printing products.</p>
+  <!-- Top Picks Category Chips -->
+  <section class="top-picks-section">
+    <h2 class="section-title">🔥 Browse by Category</h2>
+    <div class="top-picks-grid">
+      <a href="/best.html?type=beginners" class="top-pick-card">
+        <span class="icon">🎓</span>
+        <h3>Beginners</h3>
+        <p>Easy to use & reliable</p>
+      </a>
+      <a href="/best.html?type=budget" class="top-pick-card">
+        <span class="icon">💰</span>
+        <h3>Under $300</h3>
+        <p>Best value for money</p>
+      </a>
+      <a href="/best.html?type=resin-detail" class="top-pick-card">
+        <span class="icon">💧</span>
+        <h3>Resin</h3>
+        <p>High detail & miniatures</p>
+      </a>
+      <a href="/best.html?type=speed" class="top-pick-card">
+        <span class="icon">⚡</span>
+        <h3>High-Speed</h3>
+        <p>Fastest prototyping</p>
+      </a>
+    </div>
+  </section>
 
-        <h3>How Rankings Work</h3>
-        <p>By default, products are sorted by <strong>customer rating</strong> — the aggregate star rating from verified Amazon buyers. You can also sort by price, review count, or recency. We do not manipulate rankings or accept payment for placement. Every product you see is ranked by the same objective criteria.</p>
-
-        <h3>What Factors We Track</h3>
-        <ul style="columns: 2; -webkit-columns: 2; column-gap: 2rem;">
-          <li>Current price & price drops</li>
-          <li>Customer rating (stars)</li>
-          <li>Total review count</li>
-          <li>Brand and model</li>
-          <li>Category classification</li>
-          <li>Product condition (new/used)</li>
-        </ul>
-
-        <h3>Why You Can Trust Our Results</h3>
-        <p>Unlike review sites that hand-pick products, our catalog is <strong>programmatically comprehensive</strong> — we track everything available, not just products we want to promote. Our revenue comes from affiliate commissions <a href="/disclosure.html">(see our disclosure)</a>, but commission never influences which products appear or how they're ranked. We show the same data whether a product has a commission or not.</p>
-        <p>For a detailed breakdown of our data collection and verification process, visit our <a href="/methodology.html">Methodology page</a>. If you're new to 3D printing and need help deciding, start with our <a href="/blog/">buying guides</a>.</p>
-      </div>
-    </section>
-
-    <!-- Start Here: Editorial Publisher Section -->
-    <section class="article-wrapper" style="margin-top: 0; padding-top: 0;">
-      <div class="article-content" style="max-width: 900px; margin: 0 auto; padding: 0 var(--sp-6) var(--sp-6);">
-        <h2>📚 Start Here: 3D Printing Guides</h2>
-        <p>Whether you're researching your first printer or upgrading your workshop, our expert guides cover everything you need to make an informed decision. Each article is written by our editorial team with hands-on 3D printing experience — not generated from spec sheets.</p>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--sp-4); margin-top: var(--sp-4);">
-          <a href="/blog/beginners-guide-3d-printing.html" style="display:block; padding: var(--sp-4); background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); text-decoration: none; color: var(--text-primary); transition: border-color 0.2s;">
-            <strong>🎓 Beginner's Guide to 3D Printing</strong>
-            <p style="margin: var(--sp-2) 0 0; font-size: var(--text-sm); color: var(--text-muted);">Everything you need to know before buying your first printer.</p>
-          </a>
-          <a href="/blog/fdm-vs-resin.html" style="display:block; padding: var(--sp-4); background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); text-decoration: none; color: var(--text-primary); transition: border-color 0.2s;">
-            <strong>⚔️ FDM vs Resin — Which Is Right for You?</strong>
-            <p style="margin: var(--sp-2) 0 0; font-size: var(--text-sm); color: var(--text-muted);">Compare the two main 3D printing technologies side by side.</p>
-          </a>
-          <a href="/blog/how-to-choose-3d-printer.html" style="display:block; padding: var(--sp-4); background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); text-decoration: none; color: var(--text-primary); transition: border-color 0.2s;">
-            <strong>🔍 How to Choose Your First 3D Printer</strong>
-            <p style="margin: var(--sp-2) 0 0; font-size: var(--text-sm); color: var(--text-muted);">A step-by-step decision framework for first-time buyers.</p>
-          </a>
-        </div>
-      </div>
-    </section>
-
-    <!-- Consolidated Quick Filters -->
-    <section class="use-cases consolidated-filters" id="consolidated-filters">
-      <div class="use-case-row">
-        <span class="uc-label">⚡ Quick filter:</span>
+  <!-- Quick Filters -->
+  <section class="use-cases consolidated-filters" id="consolidated-filters">
+    <div class="use-case-row">
+      <span class="uc-label">⚡ Quick filter:</span>
       <button class="use-case-chip" data-filter='{"category":"3d_printer","max_price":"300"}'>🎮 Hobby</button>
       <button class="use-case-chip" data-filter='{"category":"3d_printer","min_price":"300"}'>🏗️ Pro</button>
       <button class="use-case-chip" data-filter='{"category":"3d_pen"}'>✏️ Pen</button>
@@ -446,6 +455,10 @@
       <div id="featured-campaigns-container" style="display:none; margin-bottom: 2rem;"></div>
       <div class="table-header">
         <span id="result-count" aria-live="polite">Browsing products...</span>
+        <div class="view-toggle" role="group" aria-label="View mode">
+          <button class="view-btn active" data-view="grid" title="Grid view" onclick="setViewMode('grid')">⊞</button>
+          <button class="view-btn" data-view="list" title="List view" onclick="setViewMode('list')">☰</button>
+        </div>
         <div class="sort-controls">
           <label for="sort-select">Sort by:</label>
           <select id="sort-select" aria-label="Sort products by">
@@ -461,7 +474,7 @@
 
       <div id="products-body" class="product-grid">
         <div class="loading" style="padding: 3rem; text-align: center; width: 100%;">
-          Loading products...
+          Discovering the best deals for you...
         </div>
       </div>
 
@@ -537,6 +550,20 @@
       data-ad-slot="BOTTOM_BANNER_SLOT" data-ad-format="horizontal" data-full-width-responsive="true"></ins>
     <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
   </div>
+
+  <!-- How We Compare — Editorial Trust Section -->
+  <section class="article-wrapper" style="margin-top: 0; padding-top: 0;">
+    <div class="article-content" style="max-width: 900px; margin: 0 auto; padding: var(--sp-6) var(--sp-6) var(--sp-8);">
+      <h2>🔍 How We Compare 3D Printers</h2>
+      <p>At <strong>3D Printer Prices</strong>, we believe buying a 3D printer shouldn't require opening 20 browser tabs. Our comparison engine aggregates real-time product data from Amazon to give you a single, unbiased view of the market — updated every day.</p>
+      <h3>Where Our Data Comes From</h3>
+      <p>We use a multi-step data pipeline to collect and verify every listing. Our automated discovery system identifies products on Amazon, then an AI classifier categorizes them. Each product goes through detail-page verification to extract accurate pricing, specifications, and customer ratings. Listings that don't pass quality gates are automatically filtered out.</p>
+      <h3>How Rankings Work</h3>
+      <p>Products are sorted by <strong>customer rating</strong> by default. You can also sort by price, review count, or recency. We do not manipulate rankings or accept payment for placement.</p>
+      <h3>Why You Can Trust Our Results</h3>
+      <p>Our catalog is <strong>programmatically comprehensive</strong> — we track everything available, not just products we want to promote. Our revenue comes from affiliate commissions <a href="/disclosure.html">(see our disclosure)</a>, but commission never influences rankings. Visit our <a href="/methodology.html">Methodology page</a> for details.</p>
+    </div>
+  </section>
 
   <!-- SEO Content Section -->
   <section class="article-wrapper" style="margin-top: 0;">
