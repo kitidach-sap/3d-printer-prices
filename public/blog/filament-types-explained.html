@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Printing Filament Types Explained — PLA, PETG, ABS, TPU & More</title>
+    <meta name="description" content="Complete guide to 3D printing filament types. Compare PLA, PETG, ABS, TPU, Nylon, and specialty filaments — properties, temperatures, pros and cons for each material.">
+    <link rel="canonical" href="https://3d-printer-prices.com/blog/filament-types-explained.html">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="3D Printing Filament Types Explained">
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"Article","headline":"3D Printing Filament Types Explained","datePublished":"2026-03-24","dateModified":"2026-03-24","author":{"@type":"Person","name":"Alex Chen","jobTitle":"3D Printing Specialist"},"publisher":{"@type":"Organization","name":"3D Printer Prices"}}
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="blog.css">
+</head>
+<body>
+    <header class="header"><div class="header-content"><div class="logo"><a href="/" class="logo-link"><span class="logo-icon">🖨️</span><div><h1>3D Printer Prices</h1><p class="tagline">Materials Guide</p></div></a></div><nav class="header-actions"><a href="/blog/" class="nav-link">← Blog</a><a href="/" class="nav-link">Compare Prices</a></nav></div></header>
+
+    <main class="article-wrapper">
+        <header class="article-header">
+            <h1>🧵 3D Printing Filament Types Explained: PLA, PETG, ABS, TPU & More</h1>
+            <div class="article-meta"><span>📅 March 24, 2026</span><span>⏱️ 11 min read</span><span>✍️ Alex Chen</span></div>
+        </header>
+        <div class="article-content">
+
+        <div class="author-box" style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:var(--sp-6);margin-bottom:var(--sp-8);display:flex;gap:var(--sp-4);align-items:flex-start;">
+            <div style="width:48px;height:48px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;">👨‍💻</div>
+            <div><strong>Alex Chen</strong> — <span style="color:var(--text-muted);">3D Printing Specialist at 3D Printer Prices</span><p style="font-size:0.85rem;color:var(--text-secondary);margin-top:4px;">Alex has tested over 40 FDM and resin machines since 2018 and helps beginners choose their first printer through data-driven recommendations.</p></div>
+        </div>
+
+        <p>Choosing the right filament is just as important as choosing the right printer. Each 3D printing material has unique properties — print temperature, strength, flexibility, heat resistance, and ease of printing — that make it suited for specific applications. Using the wrong material won't just give you bad prints; it can damage your printer or create objects that fail under real-world conditions.</p>
+
+        <p>This guide covers every major filament type available in 2026, with practical advice on when to use each one, what temperature settings to start with, and the real-world tradeoffs you should know about.</p>
+
+        <div class="toc">
+            <h4>📋 Table of Contents</h4>
+            <ol>
+                <li><a href="#comparison">Quick Comparison Table</a></li>
+                <li><a href="#pla">PLA — The Universal Starter</a></li>
+                <li><a href="#petg">PETG — The Functional Workhorse</a></li>
+                <li><a href="#abs">ABS — The Heat-Resistant Classic</a></li>
+                <li><a href="#tpu">TPU — The Flexible Choice</a></li>
+                <li><a href="#nylon">Nylon — The Industrial Performer</a></li>
+                <li><a href="#specialty">Specialty Filaments</a></li>
+                <li><a href="#choosing">How to Choose</a></li>
+                <li><a href="#faq">FAQ</a></li>
+            </ol>
+        </div>
+
+        <h2 id="comparison">Quick Comparison Table</h2>
+        <div style="overflow-x:auto">
+            <table class="comparison-table">
+                <thead><tr><th>Material</th><th>Nozzle Temp</th><th>Bed Temp</th><th>Strength</th><th>Flexibility</th><th>Difficulty</th><th>Best For</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>PLA</strong></td><td>190–220°C</td><td>0–60°C</td><td>Medium</td><td>Rigid</td><td>⭐ Easy</td><td>Decorative, prototypes</td></tr>
+                    <tr><td><strong>PETG</strong></td><td>230–250°C</td><td>70–80°C</td><td>High</td><td>Slightly flexible</td><td>⭐⭐ Moderate</td><td>Functional parts</td></tr>
+                    <tr><td><strong>ABS</strong></td><td>230–260°C</td><td>90–110°C</td><td>High</td><td>Slightly flexible</td><td>⭐⭐⭐ Hard</td><td>Heat-resistant parts</td></tr>
+                    <tr><td><strong>TPU</strong></td><td>220–240°C</td><td>0–60°C</td><td>Medium</td><td>Very flexible</td><td>⭐⭐⭐ Hard</td><td>Cases, gaskets, wheels</td></tr>
+                    <tr><td><strong>Nylon</strong></td><td>240–270°C</td><td>70–90°C</td><td>Very high</td><td>Semi-flexible</td><td>⭐⭐⭐ Hard</td><td>Gears, hinges, tools</td></tr>
+                    <tr><td><strong>ASA</strong></td><td>240–260°C</td><td>90–110°C</td><td>High</td><td>Rigid</td><td>⭐⭐⭐ Hard</td><td>Outdoor use</td></tr>
+                    <tr><td><strong>CF-PLA/PETG</strong></td><td>210–250°C</td><td>60–80°C</td><td>Very high</td><td>Rigid</td><td>⭐⭐ Moderate</td><td>Stiff lightweight parts</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 id="pla">PLA — The Universal Starter Material</h2>
+        <p>PLA (Polylactic Acid) is made from renewable resources like corn starch and is the most popular 3D printing filament worldwide. It's the material every beginner should start with.</p>
+
+        <h3>Pros</h3>
+        <ul>
+            <li>Easiest material to print — forgiving of imperfect settings</li>
+            <li>No heated bed required (though 50-60°C helps adhesion)</li>
+            <li>Minimal odor — safe to print in living spaces without special ventilation</li>
+            <li>Huge variety of colors, finishes (matte, silk, marble, wood-fill)</li>
+            <li>Biodegradable under industrial composting conditions</li>
+            <li>Cheapest filament available (~$15-22/kg)</li>
+        </ul>
+
+        <h3>Cons</h3>
+        <ul>
+            <li>Low heat resistance — deforms above ~55-60°C (can't leave in a hot car)</li>
+            <li>Brittle under sudden impact — shatters rather than flexes</li>
+            <li>Not food-safe without post-processing (layer lines harbor bacteria)</li>
+            <li>Degrades over time with UV exposure (not ideal for outdoor use)</li>
+        </ul>
+
+        <p><strong>Best for:</strong> Decorative items, prototypes, desk accessories, toys, models, and almost everything that stays indoors at room temperature. If you're not sure what to use, start with PLA.</p>
+
+        <h2 id="petg">PETG — The Functional Workhorse</h2>
+        <p>PETG (Polyethylene Terephthalate Glycol) bridges the gap between PLA's ease of use and ABS's functionality. It's the go-to choice for functional parts that need to be stronger than PLA.</p>
+
+        <h3>Pros</h3>
+        <ul>
+            <li>Significantly stronger than PLA — higher impact resistance</li>
+            <li>Better heat resistance (~75-80°C) — won't deform in warm environments</li>
+            <li>Chemical resistance — resistant to many common solvents</li>
+            <li>FDA-approved base polymer (though printed parts have issues due to layer lines)</li>
+            <li>Minimal warping — doesn't need an enclosure</li>
+            <li>Good layer adhesion — produces strong bonds between layers</li>
+        </ul>
+
+        <h3>Cons</h3>
+        <ul>
+            <li>Stringing — PETG is notorious for stringing; requires tuned retraction settings</li>
+            <li>Slightly harder to dial in than PLA — temperature and speed matter more</li>
+            <li>Can stick too well to certain build surfaces (especially glass) — use a release agent</li>
+            <li>Slightly more expensive than PLA (~$20-28/kg)</li>
+        </ul>
+
+        <p><strong>Best for:</strong> Brackets, tool holders, enclosures, phone cases, replacement parts, and anything that needs to be stronger or more heat-resistant than PLA without the difficulty of ABS.</p>
+
+        <h2 id="abs">ABS — The Heat-Resistant Classic</h2>
+        <p>ABS (Acrylonitrile Butadiene Styrene) is the same material used in LEGO bricks. It's been a 3D printing staple for years, but it's losing ground to PETG and ASA for most consumer applications.</p>
+
+        <h3>Pros</h3>
+        <ul>
+            <li>Excellent heat resistance (~100°C) — handles under-hood and near-heat applications</li>
+            <li>High impact strength — tough, doesn't shatter like PLA</li>
+            <li>Acetone smoothable — vapor smoothing produces glass-like surfaces</li>
+            <li>Good machinability — can be drilled, tapped, sanded, and painted easily</li>
+        </ul>
+
+        <h3>Cons</h3>
+        <ul>
+            <li><strong>Requires enclosed printer</strong> — warps badly without temperature-controlled environment</li>
+            <li><strong>Produces fumes</strong> — needs ventilation; should NOT be printed in bedrooms</li>
+            <li>Warps on large prints even with enclosure if temperature isn't controlled</li>
+            <li>Has largely been replaced by ASA for outdoor applications and PETG for general use</li>
+        </ul>
+
+        <p><strong>Best for:</strong> Heat-resistant brackets, mechanical housings, automotive parts, and situations where acetone smoothing is desired. <strong>Not recommended for beginners.</strong></p>
+
+        <h2 id="tpu">TPU — The Flexible Choice</h2>
+        <p>TPU (Thermoplastic Polyurethane) produces rubber-like flexible prints. Shore hardness varies from soft (85A) to semi-rigid (98A).</p>
+
+        <h3>Pros</h3>
+        <ul>
+            <li>Flexible and elastic — can be stretched and compressed</li>
+            <li>Excellent impact absorption — won't crack or shatter</li>
+            <li>Good abrasion resistance — handles friction well</li>
+            <li>No heated bed required for most TPU variants</li>
+        </ul>
+
+        <h3>Cons</h3>
+        <ul>
+            <li>Difficult to print — must be printed very slowly (25-30mm/s)</li>
+            <li>Stringing is extreme — retraction must be minimized or disabled</li>
+            <li><strong>Direct drive extruder recommended</strong> — Bowden systems struggle with flexible materials</li>
+            <li>Supports are nearly impossible to remove from flexible prints</li>
+        </ul>
+
+        <p><strong>Best for:</strong> Phone cases, watch bands, gaskets, vibration dampeners, wheels, grip covers, and any application requiring flexibility or shock absorption.</p>
+
+        <h2 id="nylon">Nylon — The Industrial Performer</h2>
+        <p>Nylon (PA6/PA12) produces extremely strong, durable parts with excellent wear resistance. It's the closest to injection-molded quality available on consumer printers.</p>
+
+        <h3>Pros</h3>
+        <ul>
+            <li>Extremely strong and durable — highest tensile strength of common filaments</li>
+            <li>Outstanding wear resistance — ideal for moving parts and gears</li>
+            <li>Self-lubricating — low friction between parts</li>
+            <li>Semi-flexible — bends without breaking</li>
+        </ul>
+
+        <h3>Cons</h3>
+        <ul>
+            <li><strong>Extremely hygroscopic</strong> — absorbs moisture very rapidly; must be dried before every use</li>
+            <li>Requires high temperatures (240-270°C nozzle, 70-90°C bed)</li>
+            <li>Severe warping — enclosed printer strongly recommended</li>
+            <li>Expensive (~$30-50/kg)</li>
+        </ul>
+
+        <p><strong>Best for:</strong> Gears, bushings, hinges, tool handles, jigs, fixtures, and applications requiring maximum durability. <strong>Advanced users only.</strong></p>
+
+        <h2 id="specialty">Specialty Filaments</h2>
+
+        <h3>ASA (Outdoor Alternative to ABS)</h3>
+        <p>UV-resistant and weather-resistant. Prints similarly to ABS but doesn't yellow or degrade in sunlight. Ideal for outdoor enclosures, garden fixtures, and automotive trim pieces. Requires enclosure and ventilation like ABS.</p>
+
+        <h3>Carbon Fiber Composites (CF-PLA, CF-PETG, CF-Nylon)</h3>
+        <p>Short carbon fiber strands mixed into a base filament for dramatically increased <strong>stiffness</strong> and <strong>reduced weight</strong>. Excellent for drone frames, RC car parts, and structural components. Requires a hardened steel nozzle — carbon fiber rapidly wears brass nozzles. Price: $30-60/kg.</p>
+
+        <h3>Wood-Fill PLA</h3>
+        <p>PLA mixed with wood particles. Produces prints that look and feel like wood. Can be stained, sanded, and finished like real wood. Great for decorative items. Clogs easily — use 0.6mm+ nozzle.</p>
+
+        <h3>Metal-Fill PLA</h3>
+        <p>PLA mixed with metal powder (copper, bronze, iron). Prints are heavier than standard PLA and can be polished to achieve a metallic finish. Some variants can develop a patina over time. Abrasive — use hardened nozzle.</p>
+
+        <h2 id="choosing">How to Choose the Right Material</h2>
+        <p>Ask yourself these questions:</p>
+        <ol>
+            <li><strong>Will it be exposed to heat above 60°C?</strong> → Use PETG, ABS, or ASA</li>
+            <li><strong>Does it need to be strong/functional?</strong> → Use PETG or Nylon</li>
+            <li><strong>Does it need to flex?</strong> → Use TPU</li>
+            <li><strong>Will it be outdoors?</strong> → Use ASA or PETG</li>
+            <li><strong>Is it purely decorative?</strong> → Use PLA (most colors and finishes)</li>
+            <li><strong>Is it my first time?</strong> → Always start with PLA</li>
+        </ol>
+        <p>Not sure which filaments work with your specific printer? Use our <a href="/compatibility.html">Material Compatibility Explorer</a> to check compatibility, or <a href="/">compare filament prices</a> across brands. Unsure which printer to buy for multi-material use? Read our <a href="/blog/how-to-choose-3d-printer.html">Printer Buying Guide</a>.</p>
+
+        <h2 id="faq">FAQ</h2>
+        <p><strong>Is PLA food-safe?</strong></p>
+        <p>The raw PLA polymer is FDA-approved for food contact. However, FDM-printed PLA is not food-safe because layer lines create pockets where bacteria can grow. For food contact, coat with food-safe epoxy or use for single-use applications only.</p>
+
+        <p><strong>Why does my PETG string so much?</strong></p>
+        <p>PETG is naturally stringy. Fix: lower temperature by 5°C, increase retraction distance by 1mm, reduce retraction speed, and enable "combing" in your slicer to minimize travel moves over open areas.</p>
+
+        <p><strong>Can I mix different filament brands?</strong></p>
+        <p>You can switch between brands mid-spool (not mid-print). Different brands of the same material may need slightly different temperatures — always check the spool label and do a test print when switching brands.</p>
+
+        <p><strong>Which filament is strongest?</strong></p>
+        <p>For tensile strength: Nylon > CF-Nylon > PETG > ABS > PLA. For impact resistance: Nylon > TPU > PETG > ABS > PLA. PLA is the weakest under stress but perfectly adequate for non-load-bearing applications.</p>
+
+        <p><strong>How do I store filament properly?</strong></p>
+        <p>Seal in airtight bags or containers with silica gel desiccant packets. Vacuum-sealed bags are ideal. PETG, Nylon, and TPU are most sensitive to moisture. PLA is relatively resistant but still benefits from dry storage. See <a href="/blog/common-3d-printing-mistakes.html#m5">our storage guide</a> for detailed tips.</p>
+
+        <hr style="margin:2rem 0;border-color:var(--border)">
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:var(--sp-6);margin:var(--sp-6) 0;">
+            <h3 style="margin-top:0;">📚 Related Articles</h3>
+            <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:0.75rem;">
+                <li><a href="/blog/beginners-guide-3d-printing.html" style="color:var(--accent);">📖 The Complete Beginner's Guide to 3D Printing</a></li>
+                <li><a href="/blog/common-3d-printing-mistakes.html" style="color:var(--accent);">⚠️ 10 Common 3D Printing Mistakes</a></li>
+                <li><a href="/blog/fdm-vs-resin.html" style="color:var(--accent);">⚖️ FDM vs Resin: Which Technology Is Right for You?</a></li>
+                <li><a href="/blog/resin-printer-buying-guide.html" style="color:var(--accent);">💧 Resin 3D Printer Buying Guide</a></li>
+            </ul>
+        </div>
+        </div>
+    </main>
+    <footer class="site-footer"><div class="footer-content"><a href="/about.html">About</a><span class="footer-divider">·</span><a href="/contact.html">Contact</a><span class="footer-divider">·</span><a href="/disclosure.html">Disclosure</a><span class="footer-divider">·</span><a href="/methodology.html">Methodology</a><span class="footer-divider">·</span><a href="/blog/">Blog</a><span class="footer-divider">·</span><a href="/privacy.html">Privacy</a><span class="footer-divider">·</span><a href="/terms.html">Terms</a><span class="footer-divider">·</span><span>© 2026 3D Printer Prices</span></div></footer>
+</body>
+</html>
